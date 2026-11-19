@@ -1,23 +1,28 @@
 -- ============================================================
--- Karaoke Successor — Online Leaderboard Schema (v2)
+-- Karaoke Successor — Online Leaderboard Schema (v3.7)
 -- Copyright-safe: No song titles/artists/lyrics stored.
 -- Songs are identified solely by a SHA-256 fingerprint hash.
--- Anti-cheat: proof verification columns added.
+-- Anti-cheat: proof verification columns.
 -- v3: Daily-challenge online board (ks_daily_results) added.
--- v3.2: App-only online accounts (ks_accounts) added: e-mail + bcrypt
---       password login to load a profile on another device. There is NO
---       web login — the API speaks JSON only and requires the X-API-Key.
--- v3.5: Recovery codes (R69): ks_accounts.recovery_hash stores the bcrypt
---       hash of a one-time recovery code (shown once at registration or at
---       the first login on a legacy account). POST /auth/recover resets the
---       password with it and rotates to a fresh code. POST /auth/register
---       replaces a profile's account when the sync_code is presented.
--- v3.6: R72 expansion — ks_play_log (one row per accepted submission; powers
---       month/week time-window boards + recent plays), ks_nonces (anti-replay
---       for POST /scores and POST /br), ks_profiles.br_wins/br_wins_at
---       (Battle-Royale-Siege counter, 120 s min interval), sync_code widened
---       to VARCHAR(16) so NEW codes can be 12 chars (60 bits entropy; legacy
---       8-char codes stay valid).
+-- v3.2: App-only online accounts (ks_accounts): e-mail + bcrypt login.
+-- v3.5: Recovery codes (R69).
+-- v3.6: ks_play_log + ks_nonces, sync_code widened to VARCHAR(16).
+-- v3.7 (R81): SCORE SYSTEM REBUILD —
+--   * Battle-Royale win counter REMOVED (br_wins/br_wins_at dropped from
+--     ks_profiles, POST /br removed from the API). BR has no comparable
+--     score scale (2-player BR ≠ 25-player BR) — fakeable and worthless.
+--   * ks_scores: difficulty is now part of the best-score key
+--     (profile_uid, song_hash, game_type, difficulty) — every difficulty
+--     keeps its own best, so difficulty filters on the boards are true
+--     per-difficulty bests instead of "the winning row happens to be X".
+--   * ks_daily_results: difficulty is now part of the unique key
+--     (profile_uid, challenge_date, challenge_type, difficulty) — the
+--     per-stage Top-3 boxes can rank per difficulty individually.
+--   * challenge_type accepts the full 200-type daily pool of the client
+--     (dailyTypeMeta in index.php is generated from challenge-pools.ts).
+-- FRESH-INSTALL schema: re-importing replaces the whole database
+-- (existing scores / daily results / accounts are lost — by design for
+-- the v3.7 rebuild; the app re-registers on its next game).
 -- ============================================================
 
 SET NAMES utf8mb4;
@@ -43,20 +48,11 @@ CREATE TABLE `ks_profiles` (
   `country_code`   CHAR(2)      NULL     DEFAULT NULL     COMMENT 'ISO 3166-1 alpha-2, nullable',
   `show_on_board`  TINYINT(1)   NOT NULL DEFAULT 1       COMMENT 'Opt-in to leaderboard visibility',
   `show_country`   TINYINT(1)   NOT NULL DEFAULT 1       COMMENT 'Show country flag on leaderboard',
-  -- v3.6: widened CHAR(8) → VARCHAR(16). NEW codes are 12 chars from the
-  -- unambiguous alphabet (60 bits); legacy 8-char codes stay valid until
-  -- Break-Glass or a fresh registration rotates them.
   `sync_code`      VARCHAR(16)  NULL     DEFAULT NULL     COMMENT 'Profile ownership token (12 chars for new profiles, legacy 8 chars; A-Z0-9). Required for writes to this profile; also the profile-sync retrieval code.',
-  -- v3.6 (R72/D): Battle-Royale win counter. Only wins are counted (a BR
-  -- game has no comparable score scale); br_wins_at enforces a minimum
-  -- interval of 120 s between two counted wins (a full BR round takes
-  -- minutes — faster increments are spam or a double submit).
-  `br_wins`        INT          NOT NULL DEFAULT 0       COMMENT 'Battle-Royale-Siege (online counter, party mode)',
-  `br_wins_at`     DATETIME     NULL     DEFAULT NULL   COMMENT 'Timestamp of the last counted BR win (120 s min interval)',
   `total_score`    BIGINT       NOT NULL DEFAULT 0       COMMENT 'Cached sum of best scores',
   `best_score`     INT          NOT NULL DEFAULT 0       COMMENT 'Cached single best score',
   `songs_played`   INT          NOT NULL DEFAULT 0       COMMENT 'Cached count of distinct songs with scores',
-  `games_played`   INT          NOT NULL DEFAULT 0       COMMENT 'Cached total submissions',
+  `games_played`   INT          NOT NULL DEFAULT 0       COMMENT 'Cached count of distinct (song, game_type) bests',
   `avg_accuracy`   DECIMAL(5,2) NOT NULL DEFAULT 0.00   COMMENT 'Cached average accuracy',
   `created_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -65,14 +61,12 @@ CREATE TABLE `ks_profiles` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------
--- Table: ks_play_log (v3.6, R72)
+-- Table: ks_play_log (v3.6)
 -- One row per ACCEPTED score submission (a log, not a best-value table:
--- every finished game appends, regardless of personal best). Powers the
--- time-window boards (month = calendar month, week = ISO week starting
--- Monday, server timezone) and GET /profiles/{uid}/plays (recent plays).
--- Retention: rows older than 400 days are pruned probabilistically (~1 %
--- of submissions trigger a cleanup) — long enough for a yearly look-back,
--- bounded storage for a friends-&-family instance.
+-- every finished game appends, regardless of personal best). Powers
+-- GET /profiles/{uid}/plays (recent plays) and the month/week window
+-- boards. Retention: rows older than 400 days are pruned
+-- probabilistically (~1 % of submissions trigger a cleanup).
 -- NOTE: no song titles here either — the song_hash fingerprint is the
 -- only song reference (copyright-safe by design).
 -- -----------------------------------------------------------
@@ -93,12 +87,12 @@ CREATE TABLE `ks_play_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------
--- Table: ks_nonces (v3.6, R72)
+-- Table: ks_nonces (v3.6)
 -- Replay protection: the client generates a fresh 32-hex-char nonce per
 -- write request; the server INSERTs it — a duplicate primary key means
 -- the request was replayed (or a retry raced) and is rejected with 409.
--- Required for POST /br (counter!), optional for POST /scores (legacy
--- clients). Rows older than 1 day are pruned probabilistically.
+-- Optional for POST /scores (legacy clients). Rows older than 1 day are
+-- pruned probabilistically.
 -- -----------------------------------------------------------
 CREATE TABLE `ks_nonces` (
   `nonce`      CHAR(32)  NOT NULL COMMENT 'Random hex nonce from the client (one per write attempt)',
@@ -126,10 +120,11 @@ CREATE TABLE `ks_profile_sync` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------
--- Table: ks_scores
--- One row per (profile_uid, song_hash, game_type).
--- If a player beats their own score, the row is UPDATEd (upsert).
--- v2: Added anti-cheat columns (verified, ac_flags, song_hash_v2).
+-- Table: ks_scores (v3.7)
+-- One row per (profile_uid, song_hash, game_type, difficulty) — every
+-- difficulty keeps its own best. If a player beats their own score on
+-- the same difficulty, the row is UPDATEd (upsert).
+-- v2: anti-cheat columns (verified, ac_flags, song_hash_v2).
 -- -----------------------------------------------------------
 CREATE TABLE `ks_scores` (
   `id`                 BIGINT       NOT NULL AUTO_INCREMENT,
@@ -152,7 +147,7 @@ CREATE TABLE `ks_scores` (
   `played_at`          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'When this score was achieved (or last improved)',
   `created_at`         TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'First submission',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_profile_song_type` (`profile_uid`, `song_hash`, `game_type`),
+  UNIQUE KEY `uq_profile_song_type_diff` (`profile_uid`, `song_hash`, `game_type`, `difficulty`),
   KEY `idx_song_hash` (`song_hash`),
   KEY `idx_song_hash_v2` (`song_hash_v2`),
   KEY `idx_score` (`score` DESC),
@@ -161,24 +156,28 @@ CREATE TABLE `ks_scores` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------
--- Table: ks_daily_results
+-- Table: ks_daily_results (v3.7)
 -- Daily-challenge online board. One row per
--- (profile_uid, challenge_date, challenge_type): replaying the same
--- challenge on the same day keeps the BEST metric_value (upsert).
+-- (profile_uid, challenge_date, challenge_type, difficulty): replaying
+-- the same challenge on the same day at the same difficulty keeps the
+-- BEST metric_value (upsert, direction-aware per type).
+-- challenge_type: the full 200-type daily pool of the client
+-- (generated map in index.php dailyTypeMeta()).
 -- -----------------------------------------------------------
 CREATE TABLE `ks_daily_results` (
   `id`             BIGINT        NOT NULL AUTO_INCREMENT,
   `profile_uid`    VARCHAR(36)   NOT NULL                 COMMENT 'References ks_profiles',
   `challenge_date` DATE          NOT NULL                 COMMENT 'Challenge day (YYYY-MM-DD, client local time)',
-  `challenge_type` VARCHAR(40)   NOT NULL                 COMMENT 'Daily challenge variant (22-type pool)',
-  `difficulty`     VARCHAR(12)   NOT NULL DEFAULT 'normal' COMMENT 'Selected difficulty: easy|normal|hard|very_hard|insane',
-  `metric_value`   DECIMAL(10,2) NOT NULL                 COMMENT 'Challenge metric (higher = better, except min types: clean_song, steady_hand)',
+  `challenge_type` VARCHAR(40)   NOT NULL                 COMMENT 'Daily challenge variant (200-type pool, see dailyTypeMeta in index.php)',
+  `difficulty`     VARCHAR(12)   NOT NULL DEFAULT 'normal' COMMENT 'Selected tier: easy|normal|hard|very_hard|insane',
+  `metric_value`   DECIMAL(10,2) NOT NULL                 COMMENT 'Challenge metric (better = higher, except min-direction types)',
   `xp_earned`      INT           NOT NULL DEFAULT 0       COMMENT 'XP earned locally for this challenge (informational)',
   `created_at`     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'First submission',
   `updated_at`     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_profile_date_type` (`profile_uid`, `challenge_date`, `challenge_type`),
+  UNIQUE KEY `uq_profile_date_type_diff` (`profile_uid`, `challenge_date`, `challenge_type`, `difficulty`),
   KEY `idx_date` (`challenge_date`),
+  KEY `idx_type` (`challenge_date`, `challenge_type`, `difficulty`),
   CONSTRAINT `fk_daily_profile` FOREIGN KEY (`profile_uid`) REFERENCES `ks_profiles` (`profile_uid`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -188,9 +187,8 @@ CREATE TABLE `ks_daily_results` (
 -- Purpose: load an online profile on another device / location.
 --   email: lowercase, unique. Never shown publicly anywhere.
 --   password_hash: bcrypt (password_hash()).
---   recovery_hash: bcrypt hash of the one-time recovery code (R69, nullable
---     for accounts created before v3.5 — those get a code issued at their
---     next successful login).
+--   recovery_hash: bcrypt hash of the one-time recovery code (R69,
+--     rotated on every use).
 --   profile_uid: the linked profile — exactly one account per profile
 --     and one profile per account (both enforced by unique keys).
 --   failed_attempts / locked_until: brute-force lockout
@@ -217,6 +215,9 @@ CREATE TABLE `ks_accounts` (
 
 -- -----------------------------------------------------------
 -- Stored Procedure: Update cached profile stats after score
+-- v3.7: games_played counts DISTINCT (song_hash, game_type) pairs —
+-- with difficulty in the best-score key a profile holds up to three
+-- rows per song; counting rows would triple-count one performance.
 -- -----------------------------------------------------------
 DELIMITER //
 DROP PROCEDURE IF EXISTS `sp_refresh_profile_stats`//
@@ -226,113 +227,10 @@ BEGIN
     `total_score`  = (SELECT COALESCE(SUM(`score`), 0) FROM `ks_scores` WHERE `profile_uid` = p_uid),
     `best_score`   = (SELECT COALESCE(MAX(`score`), 0) FROM `ks_scores` WHERE `profile_uid` = p_uid),
     `songs_played` = (SELECT COUNT(DISTINCT `song_hash`) FROM `ks_scores` WHERE `profile_uid` = p_uid),
-    `games_played` = (SELECT COUNT(*) FROM `ks_scores` WHERE `profile_uid` = p_uid),
+    `games_played` = (SELECT COUNT(DISTINCT `song_hash`, `game_type`) FROM `ks_scores` WHERE `profile_uid` = p_uid),
     `avg_accuracy` = (SELECT COALESCE(AVG(`accuracy`), 0) FROM `ks_scores` WHERE `profile_uid` = p_uid)
   WHERE `profile_uid` = p_uid;
 END//
 DELIMITER ;
-
--- -----------------------------------------------------------
--- Migration: Add anti-cheat columns to existing v1 table
--- Run this if upgrading from v1 schema (not a fresh install):
--- -----------------------------------------------------------
--- ALTER TABLE `ks_scores` ADD COLUMN `song_hash_v2` VARCHAR(80) NULL DEFAULT NULL AFTER `song_hash`;
--- ALTER TABLE `ks_scores` ADD COLUMN `verified` TINYINT(1) NOT NULL DEFAULT 0 AFTER `notes_missed`;
--- ALTER TABLE `ks_scores` ADD COLUMN `ac_flags` JSON NULL DEFAULT NULL AFTER `verified`;
--- ALTER TABLE `ks_scores` ADD COLUMN `ac_reject_reason` VARCHAR(255) NULL DEFAULT NULL AFTER `ac_flags`;
--- ALTER TABLE `ks_scores` ADD COLUMN `fingerprint_version` ENUM('v1','v2') NOT NULL DEFAULT 'v1' AFTER `ac_reject_reason`;
--- ALTER TABLE `ks_scores` ADD KEY `idx_song_hash_v2` (`song_hash_v2`);
--- ALTER TABLE `ks_scores` ADD KEY `idx_verified` (`verified`);
-
--- -----------------------------------------------------------
--- Migration: Add the daily-challenge table to an existing v3
--- installation (fresh installs already got it above — run only
--- ONE of the two, never both):
--- -----------------------------------------------------------
--- CREATE TABLE IF NOT EXISTS `ks_daily_results` (
---   `id`             BIGINT        NOT NULL AUTO_INCREMENT,
---   `profile_uid`    VARCHAR(36)   NOT NULL                 COMMENT 'References ks_profiles',
---   `challenge_date` DATE          NOT NULL                 COMMENT 'Challenge day (YYYY-MM-DD, client local time)',
---   `challenge_type` VARCHAR(40)   NOT NULL                 COMMENT 'Daily challenge variant (22-type pool)',
---   `difficulty`     VARCHAR(12)   NOT NULL DEFAULT 'normal' COMMENT 'Selected difficulty: easy|normal|hard|very_hard|insane',
---   `metric_value`   DECIMAL(10,2) NOT NULL                 COMMENT 'Challenge metric (higher = better, except min types: clean_song, steady_hand)',
---   `xp_earned`      INT           NOT NULL DEFAULT 0       COMMENT 'XP earned locally for this challenge (informational)',
---   `created_at`     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'First submission',
---   `updated_at`     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
---   PRIMARY KEY (`id`),
---   UNIQUE KEY `uq_profile_date_type` (`profile_uid`, `challenge_date`, `challenge_type`),
---   KEY `idx_date` (`challenge_date`),
---   CONSTRAINT `fk_daily_profile` FOREIGN KEY (`profile_uid`) REFERENCES `ks_profiles` (`profile_uid`) ON DELETE CASCADE ON UPDATE CASCADE
--- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- -----------------------------------------------------------
--- Migration: widen an existing ENUM ks_daily_results table to the
--- 22-type pool + difficulty column (for installations that created
--- the table with the old ENUM variant). ENUM → VARCHAR keeps all
--- existing rows; the difficulty default preserves old submissions:
--- -----------------------------------------------------------
--- ALTER TABLE `ks_daily_results`
---   MODIFY `challenge_type` VARCHAR(40) NOT NULL COMMENT 'Daily challenge variant (22-type pool)',
---   ADD COLUMN `difficulty` VARCHAR(12) NOT NULL DEFAULT 'normal' COMMENT 'Selected difficulty: easy|normal|hard|very_hard|insane' AFTER `challenge_type`;
-
--- -----------------------------------------------------------
--- Migration: Add the online-accounts table to an existing v3.1
--- installation (fresh installs already got it above — run only
--- ONE of the two, never both):
--- -----------------------------------------------------------
--- CREATE TABLE IF NOT EXISTS `ks_accounts` (
---   `id`              BIGINT       NOT NULL AUTO_INCREMENT,
---   `email`           VARCHAR(254) NOT NULL,
---   `password_hash`   VARCHAR(255) NOT NULL,
---   `profile_uid`     VARCHAR(36)  NOT NULL,
---   `failed_attempts` INT          NOT NULL DEFAULT 0,
---   `locked_until`    DATETIME     NULL DEFAULT NULL,
---   `created_at`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
---   `updated_at`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
---   PRIMARY KEY (`id`),
---   UNIQUE KEY `uq_email` (`email`),
---   UNIQUE KEY `uq_account_profile` (`profile_uid`),
---   CONSTRAINT `fk_account_profile` FOREIGN KEY (`profile_uid`) REFERENCES `ks_profiles` (`profile_uid`) ON DELETE CASCADE ON UPDATE CASCADE
--- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- -----------------------------------------------------------
--- Migration: Add the recovery-code column to an existing v3.2/v3.4
--- installation (fresh installs already got it above — run only
--- ONE of the two, never both):
--- -----------------------------------------------------------
--- ALTER TABLE `ks_accounts` ADD COLUMN `recovery_hash` VARCHAR(255) NULL DEFAULT NULL COMMENT 'bcrypt hash of the one-time recovery code (R69; rotated on every use)' AFTER `password_hash`;
-
--- -----------------------------------------------------------
--- Migration v3.5 → v3.6 (R72): run ALL of these on an existing v3.5
--- installation (fresh installs already got everything above — then run
--- NONE of them). Coming from ≤ v3.4? Run the recovery_hash migration
--- above FIRST, then this block.
--- -----------------------------------------------------------
--- CREATE TABLE IF NOT EXISTS `ks_play_log` (
---   `id`          BIGINT       NOT NULL AUTO_INCREMENT,
---   `profile_uid` VARCHAR(36)  NOT NULL,
---   `song_hash`   VARCHAR(80)  NOT NULL,
---   `game_type`   ENUM('s','d') NOT NULL,
---   `score`       INT          NOT NULL,
---   `accuracy`    DECIMAL(5,2) NOT NULL DEFAULT 0.00,
---   `difficulty`  ENUM('easy','normal','hard') NOT NULL DEFAULT 'normal',
---   `created_at`  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
---   PRIMARY KEY (`id`),
---   KEY `idx_pl_profile_created` (`profile_uid`, `created_at`),
---   KEY `idx_pl_created` (`created_at`),
---   KEY `idx_pl_song` (`song_hash`),
---   CONSTRAINT `fk_pl_profile` FOREIGN KEY (`profile_uid`) REFERENCES `ks_profiles` (`profile_uid`) ON DELETE CASCADE ON UPDATE CASCADE
--- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
---
--- CREATE TABLE IF NOT EXISTS `ks_nonces` (
---   `nonce`      CHAR(32)  NOT NULL,
---   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
---   PRIMARY KEY (`nonce`)
--- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
---
--- ALTER TABLE `ks_profiles`
---   ADD COLUMN `br_wins`    INT      NOT NULL DEFAULT 0 COMMENT 'Battle-Royale-Siege (online counter, party mode)' AFTER `avg_accuracy`,
---   ADD COLUMN `br_wins_at` DATETIME NULL DEFAULT NULL COMMENT 'Timestamp of the last counted BR win (120 s min interval)' AFTER `br_wins`,
---   MODIFY `sync_code` VARCHAR(16) NULL DEFAULT NULL COMMENT 'Profile ownership token (12 chars for new profiles, legacy 8 chars; A-Z0-9). Required for writes to this profile; also the profile-sync retrieval code.';
 
 SET FOREIGN_KEY_CHECKS = 1;

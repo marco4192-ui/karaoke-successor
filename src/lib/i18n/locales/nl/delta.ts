@@ -375,10 +375,6 @@ export const deltaTranslations = {
     },
   },
   dailyChallengeScreen: {
-    // R72: daily archive — online board of any past day
-    archiveNextDay: "Volgende dag",
-    archivePrevDay: "Vorige dag",
-    archiveToday: "Vandaag",
     dualPlayerHint: "Twee spelers geselecteerd: dagelijkse en wekelijkse uitdagingen kunnen als duel of team worden gezongen.",
     filterAll: "Alles",
     modeCompleted: "Voltooid",
@@ -403,6 +399,12 @@ export const deltaTranslations = {
     tierProgressToday: "Badgeniveaus vandaag",
     tierProgressWeek: "Badgeniveaus deze week",
     tierSilver: "Zilver",
+    // R81: per-stage Top-3 box (replaces the leaderboard tab; weeklies intentionally without)
+    top3Title: "Top 3",
+    top3Empty: "Nog geen inzendingen op dit niveau.",
+    top3OnlineLoading: "Laden…",
+    top3OnlineError: "Online niet bereikbaar.",
+    top3Retry: "Opnieuw proberen",
     weeklyBestType: "★ beste",
     weeklyCountsAutomatically: "Elk nummer dat je zingt telt automatisch mee voor de wekelijkse uitdagingen",
     weeklyDifficultyLabel: "Wekelijkse moeilijkheidsgraad",
@@ -903,23 +905,12 @@ export const deltaTranslations = {
   gameScreen: {
     midiSynth: "🎛 MIDI-synthese",
   },
-  // R72 — highscore screen: time windows, alternative sorts, percentile
+  // R81 — highscore screen: solo/duo tag, theme-party empty state, best caption
   highscoreScreen: {
-    windowAll: "Algemeen",
-    windowMonth: "Maand",
-    windowWeek: "Week",
-    windowLabel: "Periode",
-    sortScore: "Punten",
-    sortBest: "Beste score",
-    sortAccuracy: "Nauwkeurigheid",
-    sortPlays: "Nummers",
-    sortLabel: "Sorteren op",
-    totalPlayers: "{n} spelers",
-    yourRank: "Je positie: #{rank} van {total}",
-    percentileTop: "Top {p}%",
-    noRoundsInWindow: "Je hebt in deze periode nog geen online rondes gespeeld.",
-    roundsPlayed: "{n} rondes",
-    brWins: "Battle Royale-overwinningen",
+    soloTag: "Solo",
+    duoTag: "Duet",
+    themeNoMatches: "Geen nummer van de huidige themaparty heeft een score.",
+    bestOf: "Beste score",
   },
   homeScreen: {
     allDailyDone: "Alle dagelijkse slots voltooid! 🎉",
@@ -1060,7 +1051,6 @@ export const deltaTranslations = {
     loading: "Online gegevens laden…",
     unavailable: "Online gegevens momenteel onbereikbaar",
     crowns: "Nummerkronen (#1)",
-    brWins: "BR-overwinningen",
     topPercent: "Top {p}%",
     rankOf: "Positie #{rank} van {total}",
     notRanked: "Niet gerangschikt",
@@ -1293,6 +1283,10 @@ export const deltaTranslations = {
     difficulty_easy: "Makkelijk",
     difficulty_normal: "Gemiddeld",
     difficulty_hard: "Moeilijk",
+    // R81: rival box below the scores (top-3 rivals on this song)
+    rivalsTitle: "Rivalen op dit nummer",
+    rivalsEmpty: "Nog geen enkele rivaal heeft dit nummer gespeeld.",
+    topScores: "Top 5",
   },
   songStart: {
     instrumentalAmount: "Zangverwijdering: {n}%",

@@ -376,10 +376,6 @@ export const deltaTranslations = {
     },
   },
   dailyChallengeScreen: {
-    // R72: daily archive — online board of any past day
-    archiveNextDay: "下一天",
-    archivePrevDay: "前一天",
-    archiveToday: "今天",
     dualPlayerHint: "已选择两名玩家：每日和每周挑战可以以对决或团队方式演唱。",
     filterAll: "全部",
     modeCompleted: "已完成",
@@ -404,6 +400,12 @@ export const deltaTranslations = {
     tierProgressToday: "今日勋章等级",
     tierProgressWeek: "本周勋章等级",
     tierSilver: "银牌",
+    // R81: per-stage Top-3 box (replaces the leaderboard tab; weeklies intentionally without)
+    top3Title: "前三名",
+    top3Empty: "该阶段暂无记录。",
+    top3OnlineLoading: "加载中…",
+    top3OnlineError: "无法连接在线服务。",
+    top3Retry: "重试",
     weeklyBestType: "★ 最佳",
     weeklyCountsAutomatically: "你演唱的每首歌都会自动计入每周挑战",
     weeklyDifficultyLabel: "每周难度",
@@ -904,23 +906,12 @@ export const deltaTranslations = {
   gameScreen: {
     midiSynth: "🎛 MIDI 合成",
   },
-  // R72 — highscore screen: time windows, alternative sorts, percentile
+  // R81 — highscore screen: solo/duo tag, theme-party empty state, best caption
   highscoreScreen: {
-    windowAll: "总榜",
-    windowMonth: "月榜",
-    windowWeek: "周榜",
-    windowLabel: "时间范围",
-    sortScore: "积分",
-    sortBest: "最高分",
-    sortAccuracy: "准确度",
-    sortPlays: "歌曲数",
-    sortLabel: "排序方式",
-    totalPlayers: "{n}名玩家",
-    yourRank: "你的排名：#{rank}/{total}",
-    percentileTop: "前 {p}%",
-    noRoundsInWindow: "你在这个时间段内还没有玩过任何在线对局。",
-    roundsPlayed: "{n} 局",
-    brWins: "大逃杀胜利数",
+    soloTag: "单人",
+    duoTag: "二重唱",
+    themeNoMatches: "当前主题派对的所有歌曲都还没有成绩。",
+    bestOf: "最高分",
   },
   homeScreen: {
     allDailyDone: "今日槽位全部完成！🎉",
@@ -1061,7 +1052,6 @@ export const deltaTranslations = {
     loading: "正在加载在线数据…",
     unavailable: "在线数据目前无法访问",
     crowns: "冠军歌曲数（#1）",
-    brWins: "BR 胜场",
     topPercent: "前 {p}%",
     rankOf: "排名 #{rank}/{total}",
     notRanked: "未上榜",
@@ -1294,6 +1284,10 @@ export const deltaTranslations = {
     difficulty_easy: "简单",
     difficulty_normal: "中等",
     difficulty_hard: "困难",
+    // R81: rival box below the scores (top-3 rivals on this song)
+    rivalsTitle: "这首歌的对手",
+    rivalsEmpty: "还没有对手唱过这首歌。",
+    topScores: "前5名",
   },
   songStart: {
     instrumentalAmount: "人声消除：{n}%",

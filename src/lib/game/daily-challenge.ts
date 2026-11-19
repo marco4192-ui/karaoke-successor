@@ -381,14 +381,31 @@ export function getDailyTargetFor(type: string, difficulty: DailyDifficulty, lev
   const def = getDailyType(type);
   const base = def.targets[difficulty] ?? def.targets.normal;
   const isPercent = def.metricKey === 'accuracy' || def.metricKey === 'tickAccuracy';
-  if (isPercent || level === undefined || level <= 1) return base;
-  const scale = 1 + Math.min(0.25, level * 0.0025);
-  if (def.direction === 'min') {
-    return Math.max(1, Math.round(base / scale));
+  // R81: score metrics never scale with level — the ceiling is the fixed
+  // 10,000-point model (scaled insane targets climbed past it).
+  const isScore = def.metricKey === 'score';
+  let target = base;
+  if (!isPercent && !isScore && level !== undefined && level > 1) {
+    const scale = 1 + Math.min(0.25, level * 0.0025);
+    if (def.direction === 'min') {
+      target = Math.max(1, Math.round(base / scale));
+    } else {
+      target = Math.round(base * scale);
+      if (def.cap !== undefined) target = Math.min(def.cap, target);
+    }
   }
-  const scaled = Math.round(base * scale);
-  return def.cap !== undefined ? Math.min(def.cap, scaled) : scaled;
+  // R81: impossible score targets fixed — nothing above the model ceiling.
+  if (isScore) target = Math.min(target, SCORE_TARGET_CAP[difficulty]);
+  return target;
 }
+
+/** R81: per-difficulty ceiling for score-metric daily targets. The eased
+ * pool values demanded up to 14,300 points on insane — impossible against
+ * the 10,000-point scoring model. These caps keep every tier demanding but
+ * reachable (insane ≈ near-perfect, easy ≈ solid performance). */
+const SCORE_TARGET_CAP: Record<DailyDifficulty, number> = {
+  easy: 8400, normal: 9000, hard: 9400, very_hard: 9650, insane: 9900,
+};
 
 /** Outcome of a daily attempt against all difficulty levels. */
 export interface DailyAttemptEvaluation {
@@ -859,6 +876,92 @@ export function isDailySlotUnlocked(slot: number, playerId?: string): boolean {
   return progress.completedSlots.includes(slot - 1);
 }
 
+// ---------------------------------------------------------------------------
+// R81: per-slot daily top scores — feeds the per-stage Top-3 boxes.
+// Separate from the legacy combined board (which is typed to slot 0 and has
+// no per-slot attribution). Best per (player, slot, difficulty) is kept.
+// ---------------------------------------------------------------------------
+
+/** One recorded attempt at a specific slot + difficulty. */
+export interface DailySlotScore {
+  playerId: string;
+  playerName: string;
+  playerAvatar?: string;
+  playerColor: string;
+  slot: number;
+  difficulty: DailyDifficulty;
+  /** the slot type's metric value of this attempt */
+  metric: number;
+  completedAt: number;
+}
+
+const DAILY_SLOT_SCORES_PREFIX = 'karaoke_daily_slot_scores_';
+
+function loadDailySlotScores(date: string): DailySlotScore[] {
+  try {
+    const raw = getItem(DAILY_SLOT_SCORES_PREFIX + date);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as DailySlotScore[] | null;
+    return Array.isArray(parsed) ? parsed.filter(e => e && typeof e.metric === 'number') : [];
+  } catch { return []; }
+}
+
+function saveDailySlotScores(date: string, scores: DailySlotScore[]): void {
+  setJson(DAILY_SLOT_SCORES_PREFIX + date, scores);
+}
+
+/** Record an attempt (keeps the better metric per player+slot+difficulty). */
+function recordDailySlotScore(
+  player: { id: string; name: string; avatar?: string; color: string },
+  slot: number,
+  type: string,
+  difficulty: DailyDifficulty,
+  metric: number,
+): void {
+  if (!Number.isFinite(metric)) return;
+  const today = todayISO();
+  const scores = loadDailySlotScores(today);
+  const idx = scores.findIndex(s => s.playerId === player.id && s.slot === slot && s.difficulty === difficulty);
+  const def = getDailyType(type);
+  if (idx >= 0) {
+    const prev = scores[idx];
+    const better = def.direction === 'min' ? metric < prev.metric : metric > prev.metric;
+    if (!better) return;
+    scores[idx] = { ...prev, metric, completedAt: Date.now() };
+  } else {
+    scores.push({
+      playerId: player.id, playerName: player.name, playerAvatar: player.avatar,
+      playerColor: player.color, slot, difficulty, metric, completedAt: Date.now(),
+    });
+  }
+  saveDailySlotScores(today, scores);
+}
+
+/** Top-N for one slot + difficulty (direction-aware, ties by date). Used by
+ *  the daily screen's per-stage Top-3 box (local side). */
+export function getDailySlotTopScores(
+  slot: number,
+  type: string,
+  difficulty: DailyDifficulty,
+  limit = 3,
+): DailySlotScore[] {
+  const def = getDailyType(type);
+  return loadDailySlotScores(todayISO())
+    .filter(s => s.slot === slot && s.difficulty === difficulty)
+    .sort((a, b) => {
+      const cmp = def.direction === 'min' ? a.metric - b.metric : b.metric - a.metric;
+      if (cmp !== 0) return cmp;
+      return a.completedAt - b.completedAt;
+    })
+    .slice(0, limit);
+}
+
+/** R81: localized metric formatting for the boxes (percent vs. points). */
+export function formatDailyMetric(metricKey: string, value: number): string {
+  if (metricKey === 'accuracy' || metricKey === 'tickAccuracy') return `${(Math.round(value * 10) / 10).toFixed(1)}%`;
+  return Math.round(value).toLocaleString();
+}
+
 /** The first unlocked-but-uncompleted daily slot for the player (null when all 5 are done). */
 export function getActiveDailySlot(playerId?: string): number | null {
   const progress = getPlayerDailySlotProgress(playerId);
@@ -1137,6 +1240,9 @@ export function submitChallengeResult(
     challenge.totalParticipants++;
   }
 
+  // R81: per-slot top-score record (drives the per-stage Top-3 boxes).
+  recordDailySlotScore(player, slot, slotType, difficulty, evaluation.metric);
+
   // ── Slot progress + XP ──
   const alreadyCompleted = slotProgress.completedSlots.includes(slot);
   const slotCompleted = targetMet && !alreadyCompleted;
@@ -1379,7 +1485,7 @@ export function submitCoopChallengeResult(
   players: Array<{ id: string; name: string; avatar?: string; color: string }>,
   results: Array<DailyResultMetrics>,
   options?: { difficulty?: DailyDifficulty; level?: number; slot?: number },
-): { challenge: DailyChallengeData; xpEarned: number; newBadges: DailyBadge[]; targetMet: boolean; metDifficulties: DailyDifficulty[]; slotCompleted: boolean } {
+): { challenge: DailyChallengeData; slot: number; slotType: string; xpEarned: number; newBadges: DailyBadge[]; targetMet: boolean; metDifficulties: DailyDifficulty[]; slotCompleted: boolean } {
   if (players.length < 2 || results.length < 2) {
     throw new Error('Co-op requires at least 2 players and 2 results');
   }
@@ -1609,7 +1715,12 @@ export function submitCoopChallengeResult(
     });
   }
 
-  return { challenge, xpEarned, newBadges, targetMet, metDifficulties: evaluation.met, slotCompleted: anySlotCompleted };
+  // R81: record both players with the team metric (the coop board ranks the
+  // team average — the boxes follow that semantics) + slotType for the hook.
+  for (const p of players) {
+    recordDailySlotScore(p, slot, slotType, difficulty, evaluation.metric);
+  }
+  return { challenge, slot, slotType, xpEarned, newBadges, targetMet, metDifficulties: evaluation.met, slotCompleted: anySlotCompleted };
 }
 
 // ---------------------------------------------------------------------------
@@ -1691,7 +1802,10 @@ export function getWeeklyChallengeForSlot(
   const def = getWeeklyType(entry.type);
   const base = def.targets[difficulty] ?? def.targets.normal;
   let target = base;
-  if (level !== undefined && level > 1 && def.aggregation === 'best' && def.direction === 'max') {
+  // R81: percent AND score metrics never level-scale — percent climbed to
+  // the cap (99 % on every tier) and score past the 10,000-point ceiling.
+  const noScale = def.metricKey === 'accuracy' || def.metricKey === 'tickAccuracy' || def.metricKey === 'score';
+  if (!noScale && level !== undefined && level > 1 && def.aggregation === 'best' && def.direction === 'max') {
     const scale = 1 + Math.min(0.25, level * 0.0025);
     target = Math.round(base * scale);
     if (def.cap !== undefined) target = Math.min(def.cap, target);
@@ -1808,7 +1922,9 @@ export function submitWeeklyChallengeResult(
     const met: DailyDifficulty[] = [];
     for (const d of DAILY_DIFFICULTIES) {
       let target = def.targets[d.id] ?? def.targets.normal;
-      if (level !== undefined && level > 1 && def.aggregation === 'best' && def.direction === 'max') {
+      // R81: percent + score metrics never level-scale (see the display path).
+      const noScale = def.metricKey === 'accuracy' || def.metricKey === 'tickAccuracy' || def.metricKey === 'score';
+      if (!noScale && level !== undefined && level > 1 && def.aggregation === 'best' && def.direction === 'max') {
         const scale = 1 + Math.min(0.25, level * 0.0025);
         target = Math.round(target * scale);
         if (def.cap !== undefined) target = Math.min(def.cap, target);

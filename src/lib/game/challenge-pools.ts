@@ -935,7 +935,12 @@ const SUM_SONGS_HIGH = T(3, 5, 6, 8, 10);
 /** The 100 weekly challenge variants. */
 export const WEEKLY_TYPE_LIST: readonly WeeklyTypeDefinition[] = [
   // ── Performance — best of week (1–25) ──
-  wperf('w_score_peak', '🎵', 'weeklyTypes.names.w_score_peak', P.score, 'score', T(9000, 10500, 12000, 13500, 15000)),
+  // R81: score ladders reworked — the old ones demanded up to 16,500 points
+  // against the 10,000-point scoring model (every tier above easy was
+  // impossible). New shape: easy 8,200–8,600 / insane 9,800–9,980 — a real
+  // ladder that never crosses the ceiling. Level scaling for score metrics
+  // was disabled too (daily-challenge.ts).
+  wperf('w_score_peak', '🎵', 'weeklyTypes.names.w_score_peak', P.score, 'score', T(8200, 8800, 9200, 9600, 9900)),
   wperf('w_accuracy_peak', '🎯', 'weeklyTypes.names.w_accuracy_peak', P.accuracy, 'accuracy', T(88, 91, 93, 95, 97), { cap: 99 }),
   wperf('w_combo_peak', '⚡', 'weeklyTypes.names.w_combo_peak', P.combo, 'maxCombo', T(120, 160, 200, 240, 300)),
   wperf('w_perfect_peak', '💎', 'weeklyTypes.names.w_perfect_peak', P.perfect, 'perfectNotesCount', T(60, 90, 120, 160, 220)),
@@ -943,7 +948,7 @@ export const WEEKLY_TYPE_LIST: readonly WeeklyTypeDefinition[] = [
   wperf('w_notes_peak', '🎶', 'weeklyTypes.names.w_notes_peak', P.notes, 'notesHit', T(400, 550, 700, 850, 1000)),
   wperf('w_tick_peak', '🎚️', 'weeklyTypes.names.w_tick_peak', P.tick, 'tickAccuracy', T(85, 89, 92, 94, 96), { cap: 99 }),
   wperf('w_clean_peak', '🧼', 'weeklyTypes.names.w_clean_peak', P.missMax, 'notesMissed', T(8, 5, 3, 2, 1), { direction: 'min' }),
-  wperf('w_score_elite', '👑', 'weeklyTypes.names.w_score_elite', P.scoreAcc, 'score', T(10000, 11500, 13000, 14500, 16000), {
+  wperf('w_score_elite', '👑', 'weeklyTypes.names.w_score_elite', P.scoreAcc, 'score', T(8500, 9000, 9300, 9600, 9900), {
     gates: [{ metricKey: 'accuracy', op: '>=', value: 85 }], descriptionParams: { m: '85%' },
   }),
   wperf('w_accuracy_elite', '👑', 'weeklyTypes.names.w_accuracy_elite', P.accNotes, 'accuracy', T(90, 93, 95, 96, 98), {
@@ -961,16 +966,16 @@ export const WEEKLY_TYPE_LIST: readonly WeeklyTypeDefinition[] = [
   wperf('w_notes_monsoon', '⛈️', 'weeklyTypes.names.w_notes_monsoon', P.notesCombo, 'notesHit', T(500, 650, 800, 950, 1100), {
     gates: [{ metricKey: 'maxCombo', op: '>=', value: 80 }], descriptionParams: { m: '80' },
   }),
-  wperf('w_score_phantom', '👻', 'weeklyTypes.names.w_score_phantom', P.scoreMiss, 'score', T(9500, 11000, 12500, 14000, 15500), {
+  wperf('w_score_phantom', '👻', 'weeklyTypes.names.w_score_phantom', P.scoreMiss, 'score', T(8300, 8800, 9200, 9500, 9800), {
     gates: [{ metricKey: 'notesMissed', op: '<=', value: 8 }], descriptionParams: { m: '8' },
   }),
   wperf('w_apex_accuracy', '😇', 'weeklyTypes.names.w_apex_accuracy', P.accMiss, 'accuracy', T(92, 94, 96, 97, 99), {
     cap: 99, gates: [{ metricKey: 'notesMissed', op: '<=', value: 5 }], descriptionParams: { m: '5' },
   }),
-  wperf('w_apex_score', '😇', 'weeklyTypes.names.w_apex_score', P.scoreCombo, 'score', T(10500, 12000, 13500, 15000, 16500), {
+  wperf('w_apex_score', '😇', 'weeklyTypes.names.w_apex_score', P.scoreCombo, 'score', T(8400, 8900, 9300, 9600, 9900), {
     gates: [{ metricKey: 'maxCombo', op: '>=', value: 70 }], descriptionParams: { m: '70' },
   }),
-  wperf('w_double_trouble', '🔀', 'weeklyTypes.names.w_double_trouble', P.scoreAcc, 'score', T(9200, 10700, 12200, 13700, 15200), {
+  wperf('w_double_trouble', '🔀', 'weeklyTypes.names.w_double_trouble', P.scoreAcc, 'score', T(8200, 8800, 9200, 9600, 9900), {
     gates: [{ metricKey: 'perfectNotesCount', op: '>=', value: 40 }, { metricKey: 'goldenNotesCount', op: '>=', value: 6 }], descriptionParams: { m: '85%' },
   }),
   wperf('w_symphony', '🎼', 'weeklyTypes.names.w_symphony', P.tickNotes, 'tickAccuracy', T(87, 90, 93, 95, 97), {
@@ -985,7 +990,7 @@ export const WEEKLY_TYPE_LIST: readonly WeeklyTypeDefinition[] = [
   wperf('w_comeback_king', '🔄', 'weeklyTypes.names.w_comeback_king', P.comeback, 'maxCombo', T(100, 130, 160, 190, 230), {
     gates: [{ metricKey: 'notesMissed', op: '>=', value: 15 }], descriptionParams: { m: '15' },
   }),
-  wperf('w_score_maestro', '🎩', 'weeklyTypes.names.w_score_maestro', P.scoreAcc, 'score', T(9800, 11300, 12800, 14300, 15800), {
+  wperf('w_score_maestro', '🎩', 'weeklyTypes.names.w_score_maestro', P.scoreAcc, 'score', T(8600, 9100, 9400, 9700, 9950), {
     gates: [{ metricKey: 'tickAccuracy', op: '>=', value: 82 }], descriptionParams: { m: '82%' },
   }),
   wperf('w_perfect_maestro', '🎩', 'weeklyTypes.names.w_perfect_maestro', P.perfectAcc, 'perfectNotesCount', T(70, 100, 130, 170, 230), {
@@ -1062,7 +1067,7 @@ export const WEEKLY_TYPE_LIST: readonly WeeklyTypeDefinition[] = [
   wcat('w_artist_nz', '🆎', 'weeklyTypes.names.w_artist_nz', WP.artistStartsSum, { field: 'artistStartsRange', value: 'N-Z' }, SUM_SONGS, { descriptionParams: { range: 'N–Z' } }),
 
   // ── Zephyr tier (80–82) ──
-  wperf('w_zephyr_score', '🌬️', 'weeklyTypes.names.w_zephyr_score', P.scoreAcc, 'score', T(9100, 10600, 12100, 13600, 15100), {
+  wperf('w_zephyr_score', '🌬️', 'weeklyTypes.names.w_zephyr_score', P.scoreAcc, 'score', T(8300, 8800, 9200, 9500, 9800), {
     gates: [{ metricKey: 'accuracy', op: '>=', value: 82 }], descriptionParams: { m: '82%' },
   }),
   wperf('w_zephyr_combo', '🌬️', 'weeklyTypes.names.w_zephyr_combo', P.comboNotes, 'maxCombo', T(130, 170, 210, 250, 310), {
@@ -1076,7 +1081,7 @@ export const WEEKLY_TYPE_LIST: readonly WeeklyTypeDefinition[] = [
   wperf('w_ember_accuracy', '🔥', 'weeklyTypes.names.w_ember_accuracy', P.accGolden, 'accuracy', T(89, 92, 94, 96, 97), {
     cap: 99, gates: [{ metricKey: 'goldenNotesCount', op: '>=', value: 5 }], descriptionParams: { m: '5' },
   }),
-  wperf('w_ember_score', '🔥', 'weeklyTypes.names.w_ember_score', P.scoreAcc, 'score', T(9400, 10900, 12400, 13900, 15400), {
+  wperf('w_ember_score', '🔥', 'weeklyTypes.names.w_ember_score', P.scoreAcc, 'score', T(8400, 8900, 9300, 9600, 9900), {
     gates: [{ metricKey: 'perfectNotesCount', op: '>=', value: 35 }], descriptionParams: { m: '85%' },
   }),
   wperf('w_ember_combo', '🔥', 'weeklyTypes.names.w_ember_combo', P.comboGolden, 'maxCombo', T(140, 180, 220, 260, 320), {
@@ -1090,7 +1095,7 @@ export const WEEKLY_TYPE_LIST: readonly WeeklyTypeDefinition[] = [
   wperf('w_tide_tick', '🌊', 'weeklyTypes.names.w_tide_tick', P.tickCombo, 'tickAccuracy', T(86, 90, 93, 95, 97), {
     cap: 99, gates: [{ metricKey: 'maxCombo', op: '>=', value: 50 }], descriptionParams: { m: '50' },
   }),
-  wperf('w_tide_score', '🌊', 'weeklyTypes.names.w_tide_score', P.scoreAcc, 'score', T(9600, 11100, 12600, 14100, 15600), {
+  wperf('w_tide_score', '🌊', 'weeklyTypes.names.w_tide_score', P.scoreAcc, 'score', T(8500, 9000, 9400, 9700, 9950), {
     gates: [{ metricKey: 'notesHit', op: '>=', value: 180 }], descriptionParams: { m: '85%' },
   }),
 
@@ -1106,7 +1111,7 @@ export const WEEKLY_TYPE_LIST: readonly WeeklyTypeDefinition[] = [
   }),
 
   // ── Dusk tier (92–94) ──
-  wperf('w_dusk_score', '🌆', 'weeklyTypes.names.w_dusk_score', P.scoreCombo, 'score', T(9300, 10800, 12300, 13800, 15300), {
+  wperf('w_dusk_score', '🌆', 'weeklyTypes.names.w_dusk_score', P.scoreCombo, 'score', T(8300, 8900, 9200, 9500, 9800), {
     gates: [{ metricKey: 'maxCombo', op: '>=', value: 65 }], descriptionParams: { m: '65' },
   }),
   wperf('w_dusk_accuracy', '🌆', 'weeklyTypes.names.w_dusk_accuracy', P.accPerfect, 'accuracy', T(86, 89, 91, 93, 95), {
@@ -1128,7 +1133,7 @@ export const WEEKLY_TYPE_LIST: readonly WeeklyTypeDefinition[] = [
   }),
 
   // ── Nebula tier (98–100) ──
-  wperf('w_nebula_score', '🌌', 'weeklyTypes.names.w_nebula_score', P.scoreMiss, 'score', T(9700, 11200, 12700, 14200, 15700), {
+  wperf('w_nebula_score', '🌌', 'weeklyTypes.names.w_nebula_score', P.scoreMiss, 'score', T(8600, 9100, 9500, 9800, 9980), {
     gates: [{ metricKey: 'notesMissed', op: '<=', value: 9 }], descriptionParams: { m: '9' },
   }),
   wperf('w_nebula_accuracy', '🌌', 'weeklyTypes.names.w_nebula_accuracy', P.accCombo, 'accuracy', T(88, 91, 93, 95, 97), {

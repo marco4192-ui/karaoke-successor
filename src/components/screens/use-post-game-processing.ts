@@ -67,26 +67,25 @@ function toIdentity(profile: PlayerProfile): PlayerIdentity {
   return { id: profile.id, name: profile.name, avatar: profile.avatar, color: profile.color };
 }
 
-/** Game modes that count as "party" games (shared by isPartyMode and the party counter). */
-const PARTY_GAME_MODES = ['pass-the-mic', 'medley', 'battle-royale', 'competitive-words', 'competitive-blind', 'companion-singalong'];
+/** R81: local YYYY-MM-DD — daily boards are grouped by the player's local
+ *  day; the old UTC slice flipped days between 22:00 and midnight CET. */
+function localDateISO(): string {
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+}
+
+// R81: moved to the shared module — the highscore boards and the song modal
+// filter party games with the same list.
+import { PARTY_GAME_MODES, isPartyGameMode } from '@/lib/game/party-modes';
 
 /** Count duet games from the highscore history for a player. */
 function countDuetGames(highscores: HighscoreEntry[], playerId: string): number {
   return highscores.filter(h => h.playerId === playerId && h.gameMode === 'duet').length;
 }
 
-/** Count party games from the highscore history for a player. */
-function countPartyGames(highscores: HighscoreEntry[], playerId: string): number {
-  return highscores.filter(h => h.playerId === playerId && PARTY_GAME_MODES.includes(h.gameMode)).length;
-}
-
-/** Count games finished today from the highscore history for a player. */
-function countGamesToday(highscores: HighscoreEntry[], playerId: string): number {
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  const startTime = start.getTime();
-  return highscores.filter(h => h.playerId === playerId && h.playedAt >= startTime).length;
-}
+// (R81) countPartyGames/countGamesToday entfielen — Party-Spiele schreiben
+// keine Highscore-Einträge mehr; beide Zähler laufen persistente über
+// AchievementCounters (bumpGamesToday / bumpAchievementCounter('partyGames')).
 
 /**
  * Per-profile achievement counters that cannot be derived from the existing
@@ -95,6 +94,13 @@ function countGamesToday(highscores: HighscoreEntry[], playerId: string): number
  */
 interface AchievementCounters {
   duelsWon: number;
+  /** R81: party games no longer produce highscore entries, so the cumulative
+   *  counters that used to be derived from the highscore list moved here.
+   *  Bumped BEFORE the achievement check (same pattern as duelsWon). */
+  partyGames: number;
+  gamesToday: number;
+  /** YYYY-MM-DD the gamesToday counter was last bumped (daily reset). */
+  gamesTodayDate: string;
 }
 
 const ACHIEVEMENT_COUNTERS_PREFIX = 'achievement_counters_';
@@ -102,16 +108,37 @@ const ACHIEVEMENT_COUNTERS_PREFIX = 'achievement_counters_';
 function getAchievementCounters(profileId: string): AchievementCounters {
   try {
     const raw = getItem(ACHIEVEMENT_COUNTERS_PREFIX + profileId);
-    if (!raw) return { duelsWon: 0 };
+    if (!raw) return { duelsWon: 0, partyGames: 0, gamesToday: 0, gamesTodayDate: '' };
     const parsed = JSON.parse(raw) as Partial<AchievementCounters> | null;
-    const duelsWon = parsed?.duelsWon;
-    return { duelsWon: typeof duelsWon === 'number' && Number.isFinite(duelsWon) ? duelsWon : 0 };
+    const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+    return {
+      duelsWon: num(parsed?.duelsWon),
+      partyGames: num(parsed?.partyGames),
+      gamesToday: num(parsed?.gamesToday),
+      gamesTodayDate: typeof parsed?.gamesTodayDate === 'string' ? parsed.gamesTodayDate : '',
+    };
   } catch {
-    return { duelsWon: 0 };
+    return { duelsWon: 0, partyGames: 0, gamesToday: 0, gamesTodayDate: '' };
   }
 }
 
-function bumpAchievementCounter(profileId: string, key: keyof AchievementCounters): void {
+/** R81: bump the per-day games counter (resets on the first game of a day). */
+function bumpGamesToday(profileId: string): void {
+  try {
+    const counters = getAchievementCounters(profileId);
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    if (counters.gamesTodayDate !== today) {
+      counters.gamesToday = 0;
+      counters.gamesTodayDate = today;
+    }
+    counters.gamesToday += 1;
+    setItem(ACHIEVEMENT_COUNTERS_PREFIX + profileId, JSON.stringify(counters));
+  } catch { /* non-critical */ }
+}
+
+/** Numeric counters only — gamesTodayDate is a string field (excluded). */
+function bumpAchievementCounter(profileId: string, key: 'duelsWon' | 'partyGames' | 'gamesToday'): void {
   try {
     const counters = getAchievementCounters(profileId);
     counters[key] += 1;
@@ -207,14 +234,16 @@ function buildAchievementContext(
     genreCount: genreSet.size,
     disneyGames: Math.max(genreStats['Disney']?.games ?? 0, extendedStats.genrePlayCount['Disney'] ?? 0)
       + (currentGenre === 'Disney' ? 1 : 0),
-    gamesToday: countGamesToday(highscores, profile.id) + (extras.countsCurrentGame ? 1 : 0),
+    // R81: persistent counter (bumped before the check) — party games never
+    // produced highscore entries, so the list-derived count stalled.
+    gamesToday: getAchievementCounters(profile.id).gamesToday,
     hourOfDay: new Date().getHours(),
     dayOfWeek: new Date().getDay(),
     // Level projection (per profile)
     level: getLevelForXP(projectedXP).level,
     // localStorage-backed per-profile counters
     duelsWon: getAchievementCounters(profile.id).duelsWon,
-    partyGames: countPartyGames(highscores, profile.id) + (extras.countsCurrentGame && isPartyMode ? 1 : 0),
+    partyGames: getAchievementCounters(profile.id).partyGames,
     // Special flags
     isPartyMode,
     isDuelWin: result.isDuelWin,
@@ -278,8 +307,13 @@ export function usePostGameProcessing({
       const profile = profiles.find(p => p.id === activeProfileId);
 
       if (profile && playerResult) {
+        // R81: party games produce NO highscores — not locally, not online,
+        // not on daily/weekly boards (no comparable score scale). The local
+        // hall of fame and the party screens keep their own state untouched.
+        const isPartyGame = PARTY_GAME_MODES.includes(gameState.gameMode);
+
         // Save to local highscore
-        addHighscore({
+        if (!isPartyGame) addHighscore({
           playerId: profile.id,
           playerName: profile.name,
           playerAvatar: profile.avatar,
@@ -341,7 +375,9 @@ export function usePostGameProcessing({
             : 'normal';
 
         try {
-          const dailyFlag = getItem(StorageKeys.DAILY_CHALLENGE_ACTIVE);
+          // R81: party games never count for daily challenges (the daily
+          // screen only starts standard/duel games — defense in depth).
+          const dailyFlag = isPartyGame ? null : getItem(StorageKeys.DAILY_CHALLENGE_ACTIVE);
           if (dailyFlag) {
             const parsed = JSON.parse(dailyFlag);
             if (parsed.active) {
@@ -420,15 +456,18 @@ export function usePostGameProcessing({
                 // server would reject it anyway; don't put opt-out data on
                 // the wire in the first place).
                 if (onlineEnabled && profile.storageMode !== 'local' && (profile.privacy?.showOnLeaderboard ?? true)) {
-                  const type = coopResult.challenge.type;
-                  const todayISO = new Date().toISOString().slice(0, 10);
+                  // R81: attribute to the SLOT's type (the old code sent the
+                // slot-0 type for every slot) and use the LOCAL date (the old
+                // UTC slice flipped days between 22:00 and midnight CET).
+                const slotType = coopResult.slotType ?? coopResult.challenge.type;
+                  const todayISO = localDateISO();
                   onlineDailySubmission = () => {
                     import('@/lib/api/leaderboard-service').then(({ leaderboardService }) =>
                       leaderboardService.submitDailyResult({
                         profile,
                         challengeDate: todayISO,
-                        challengeType: type,
-                        metricValue: metricOf(type, avgResult),
+                        challengeType: slotType,
+                        metricValue: metricOf(slotType, avgResult),
                         xpEarned: coopResult.xpEarned,
                         difficulty: dailyDifficulty,
                       }),
@@ -444,15 +483,16 @@ export function usePostGameProcessing({
 
                 // Online daily board for P1 (fire-and-forget, R69 opt-in gate)
                 if (onlineEnabled && profile.storageMode !== 'local' && (profile.privacy?.showOnLeaderboard ?? true)) {
-                  const type = r1.challenge.type;
-                  const todayISO = new Date().toISOString().slice(0, 10);
+                  // R81: slot's type + local date (see the coop branch above).
+                const slotType = r1.slotType;
+                  const todayISO = localDateISO();
                   onlineDailySubmission = () => {
                     import('@/lib/api/leaderboard-service').then(({ leaderboardService }) =>
                       leaderboardService.submitDailyResult({
                         profile,
                         challengeDate: todayISO,
-                        challengeType: type,
-                        metricValue: metricOf(type, p1Result),
+                        challengeType: slotType,
+                        metricValue: metricOf(slotType, p1Result),
                         xpEarned: r1.xpEarned,
                         difficulty: dailyDifficulty,
                       }),
@@ -485,7 +525,11 @@ export function usePostGameProcessing({
 
         // ── WEEKLY CHALLENGE SUBMISSION (every song counts toward the
         //    week's 5 slots — best-of-week and cumulative types) ──
+        // R81: party games never count here either (no comparable score).
         try {
+          if (isPartyGame) {
+            // skipped — see comment above
+          } else {
           const freshLevelW = useGameStore.getState().profiles.find(p => p.id === profile.id)?.level ?? profile.level ?? 1;
           const weeklyResult: DailyResultMetrics = {
             score: playerResult.score,
@@ -520,6 +564,7 @@ export function usePostGameProcessing({
             }, { difficulty: weeklyDifficulty, level: p2Profile.level ?? 1 });
             dailyXPEarned += w2.xpEarned;
           }
+        } // R81: !isPartyGame wrapper
         } catch {
           // Ignore weekly challenge submission errors — not critical
         }
@@ -595,6 +640,11 @@ export function usePostGameProcessing({
         // (before the check so this win counts immediately).
         if (isDuelWin) bumpAchievementCounter(profile.id, 'duelsWon');
 
+        // R81: party-games + games-today counters (party games produce no
+        // highscore entries, so these can no longer be list-derived).
+        if (isPartyGame) bumpAchievementCounter(profile.id, 'partyGames');
+        bumpGamesToday(profile.id);
+
         // P1's highscore entry (saved above) already includes this game;
         // project the song XP that is awarded further below for level checks.
         const p1SongXP = calculateSongXP(
@@ -636,6 +686,9 @@ export function usePostGameProcessing({
 
         // ── ACHIEVEMENTS: P2 (duel/duet/competitive modes with a registered profile) ──
         if (player2Result && p2Profile && isMultiplayerMode && p2Profile.id !== profile.id) {
+          // R81: P2's counters too (before the check, same as P1).
+          if (isPartyGame) bumpAchievementCounter(p2Profile.id, 'partyGames');
+          bumpGamesToday(p2Profile.id);
           const p2PerfectNotes = estimatePerfectNotes(player2Result.notesHit, player2Result.rating);
           const p2IsDuelWin = isDuel && playerResult.score < player2Result.score;
 
@@ -683,7 +736,7 @@ export function usePostGameProcessing({
 
         // Save P2 highscore for duel/competitive modes if P2 has a registered profile
         if (player2Result && player2Result.playerId && isMultiplayerMode && p2Profile) {
-          addHighscore({
+          if (!isPartyGame) addHighscore({ // R81: party games produce no highscores
             playerId: p2Profile.id,
             playerName: p2Profile.name,
             playerAvatar: p2Profile.avatar,
@@ -741,8 +794,10 @@ export function usePostGameProcessing({
         );
 
         // Upload to global leaderboard — only for ONLINE profiles that opted in
+        // R81: …and never for party games (no comparable score scale).
         const isOnlineProfile = profile.storageMode !== 'local';
-        if (onlineEnabled && isOnlineProfile && (profile.privacy?.showOnLeaderboard ?? true)) {
+
+        if (!isPartyGame && onlineEnabled && isOnlineProfile && (profile.privacy?.showOnLeaderboard ?? true)) {
           setIsVerified(undefined);
 
           // R67 anti-cheat serialization contract (see anti-cheat-proof.ts):

@@ -195,9 +195,12 @@ export const libraryTranslations = {
     difficulty_all: 'All',
     difficulty_easy: 'Easy',
     difficulty_normal: 'Normal',
-    difficulty_hard: 'Hard'
-  },
-
+    difficulty_hard: 'Hard',
+  // R81: rival box below the scores (top-3 rivals on this song)
+  rivalsTitle: 'Rivals on this song',
+  rivalsEmpty: 'No rival has played this song yet.',
+  topScores: 'Top 5',
+},
   songLeaderboardPreview: {
     title: 'Song Leaderboard',
     viewAll: 'View All →',

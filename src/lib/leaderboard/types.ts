@@ -35,8 +35,6 @@ export interface OnlineProfile {
   songs_played: number;
   games_played: number;
   avg_accuracy: number;
-  /** R72: Battle-Royale-Siege (all-time online counter) */
-  br_wins?: number;
   created_at: string;
   updated_at: string;
 }
@@ -115,8 +113,6 @@ export interface GlobalLeaderboardEntry {
   songs_played: number;
   games_played: number;
   avg_accuracy: number;
-  /** R72: Battle-Royale-Siege (all-time counter, informational on window boards) */
-  br_wins?: number;
 }
 
 /** R72: full GET /leaderboard/global response — window/sort echo, total
@@ -158,15 +154,6 @@ export interface OnlinePlayEntry {
   created_at: string;
 }
 
-// ── R72/D: Battle-Royale result ──────────────────────────
-export interface SubmitBrResultResult {
-  ok: boolean;
-  /** false = loss (accepted, never counted) or win blocked by the 120 s
-   *  min-interval (double submit / spam) */
-  counted?: boolean;
-  /** The profile's current online BR win count */
-  br_wins?: number;
-}
 
 // ── Profile sync (cross-device backup) ────────────────────
 import type { PlayerProfile, HighscoreEntry } from '@/types/game';

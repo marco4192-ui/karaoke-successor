@@ -376,10 +376,6 @@ export const deltaTranslations = {
     },
   },
   dailyChallengeScreen: {
-    // R72: daily archive — online board of any past day
-    archiveNextDay: "다음 날",
-    archivePrevDay: "전날",
-    archiveToday: "오늘",
     dualPlayerHint: "플레이어 2명 선택됨: 일일/주간 챌린지를 듀얼 또는 팀으로 부를 수 있어요.",
     filterAll: "전체",
     modeCompleted: "완료됨",
@@ -404,6 +400,12 @@ export const deltaTranslations = {
     tierProgressToday: "오늘의 배지 등급",
     tierProgressWeek: "이번 주 배지 등급",
     tierSilver: "실버",
+    // R81: per-stage Top-3 box (replaces the leaderboard tab; weeklies intentionally without)
+    top3Title: "상위 3위",
+    top3Empty: "이 단계에는 아직 기록이 없어요.",
+    top3OnlineLoading: "불러오는 중…",
+    top3OnlineError: "온라인에 연결할 수 없어요.",
+    top3Retry: "재시도",
     weeklyBestType: "★ 최고",
     weeklyCountsAutomatically: "부르는 모든 곡이 주간 챌린지에 자동으로 반영돼요",
     weeklyDifficultyLabel: "주간 난이도",
@@ -904,23 +906,12 @@ export const deltaTranslations = {
   gameScreen: {
     midiSynth: "🎛 MIDI 합성",
   },
-  // R72 — highscore screen: time windows, alternative sorts, percentile
+  // R81 — highscore screen: solo/duo tag, theme-party empty state, best caption
   highscoreScreen: {
-    windowAll: "역대",
-    windowMonth: "월간",
-    windowWeek: "주간",
-    windowLabel: "기간",
-    sortScore: "포인트",
-    sortBest: "최고 점수",
-    sortAccuracy: "정확도",
-    sortPlays: "곡 수",
-    sortLabel: "정렬 기준",
-    totalPlayers: "{n}명의 플레이어",
-    yourRank: "내 순위: {total}명 중 #{rank}위",
-    percentileTop: "상위 {p}%",
-    noRoundsInWindow: "이 기간에는 아직 온라인 라운드를 플레이하지 않았어요.",
-    roundsPlayed: "{n}라운드",
-    brWins: "배틀로얄 승리",
+    soloTag: "솔로",
+    duoTag: "듀엣",
+    themeNoMatches: "현재 테마 파티의 곡에는 아직 점수가 없어요.",
+    bestOf: "최고 점수",
   },
   homeScreen: {
     allDailyDone: "일일 슬롯을 모두 완료했습니다! 🎉",
@@ -1061,7 +1052,6 @@ export const deltaTranslations = {
     loading: "온라인 데이터 불러오는 중…",
     unavailable: "온라인 데이터에 현재 접속할 수 없어요",
     crowns: "1위 곡 수(#1)",
-    brWins: "BR 승리",
     topPercent: "상위 {p}%",
     rankOf: "{total}명 중 #{rank}위",
     notRanked: "순위 없음",
@@ -1294,6 +1284,10 @@ export const deltaTranslations = {
     difficulty_easy: "쉬움",
     difficulty_normal: "보통",
     difficulty_hard: "어려움",
+    // R81: rival box below the scores (top-3 rivals on this song)
+    rivalsTitle: "이 곡의 라이벌",
+    rivalsEmpty: "아직 이 곡을 부른 라이벌이 없어요.",
+    topScores: "상위 5위",
   },
   songStart: {
     instrumentalAmount: "보컬 제거: {n}%",

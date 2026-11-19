@@ -376,10 +376,6 @@ export const deltaTranslations = {
     },
   },
   dailyChallengeScreen: {
-    // R72: daily archive — online board of any past day
-    archiveNextDay: "翌日",
-    archivePrevDay: "前日",
-    archiveToday: "今日",
     dualPlayerHint: "2プレイヤー選択中：デイリーとウィークリーのチャレンジはデュエルまたはチームで歌えます。",
     filterAll: "すべて",
     modeCompleted: "完了済み",
@@ -404,6 +400,12 @@ export const deltaTranslations = {
     tierProgressToday: "今日のバッジ段階",
     tierProgressWeek: "今週のバッジ段階",
     tierSilver: "シルバー",
+    // R81: per-stage Top-3 box (replaces the leaderboard tab; weeklies intentionally without)
+    top3Title: "トップ3",
+    top3Empty: "このステージにはまだ記録がありません。",
+    top3OnlineLoading: "読み込み中…",
+    top3OnlineError: "オンラインに接続できません。",
+    top3Retry: "再試行",
     weeklyBestType: "★ ベスト",
     weeklyCountsAutomatically: "歌った曲はすべてウィークリーチャレンジに自動的にカウントされます",
     weeklyDifficultyLabel: "ウィークリー難易度",
@@ -904,23 +906,12 @@ export const deltaTranslations = {
   gameScreen: {
     midiSynth: "🎛 MIDI合成",
   },
-  // R72 — highscore screen: time windows, alternative sorts, percentile
+  // R81 — highscore screen: solo/duo tag, theme-party empty state, best caption
   highscoreScreen: {
-    windowAll: "全期間",
-    windowMonth: "月間",
-    windowWeek: "週間",
-    windowLabel: "期間",
-    sortScore: "ポイント",
-    sortBest: "最高スコア",
-    sortAccuracy: "正確さ",
-    sortPlays: "曲数",
-    sortLabel: "並べ替え",
-    totalPlayers: "{n}人のプレイヤー",
-    yourRank: "自分の順位：{total}人中#{rank}位",
-    percentileTop: "上位{p}%",
-    noRoundsInWindow: "この期間ではまだオンラインラウンドをプレイしていません。",
-    roundsPlayed: "{n}ラウンド",
-    brWins: "バトルロイヤル勝利数",
+    soloTag: "ソロ",
+    duoTag: "デュエット",
+    themeNoMatches: "現在のテーマパーティーの曲にはまだスコアがありません。",
+    bestOf: "最高スコア",
   },
   homeScreen: {
     allDailyDone: "デイリースロットをすべて完了！ 🎉",
@@ -1061,7 +1052,6 @@ export const deltaTranslations = {
     loading: "オンラインデータを読み込み中…",
     unavailable: "オンラインデータに現在アクセスできません",
     crowns: "1位獲得曲数（#1）",
-    brWins: "BR勝利数",
     topPercent: "上位{p}%",
     rankOf: "{total}人中#{rank}位",
     notRanked: "ランク外",
@@ -1294,6 +1284,10 @@ export const deltaTranslations = {
     difficulty_easy: "イージー",
     difficulty_normal: "ノーマル",
     difficulty_hard: "ハード",
+    // R81: rival box below the scores (top-3 rivals on this song)
+    rivalsTitle: "この曲のライバル",
+    rivalsEmpty: "この曲を歌ったライバルはまだいません。",
+    topScores: "トップ5",
   },
   songStart: {
     instrumentalAmount: "ボーカル除去: {n}%",

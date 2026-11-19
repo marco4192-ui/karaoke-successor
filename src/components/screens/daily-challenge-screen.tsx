@@ -46,6 +46,8 @@ import {
   getActiveQuests,
   claimQuestReward,
   getPlayerDailyStats,
+  getDailySlotTopScores,
+  formatDailyMetric,
   type DailyDifficulty,
   type DailyTypeDefinition,
   type WeeklyTypeDefinition,
@@ -93,12 +95,18 @@ function typeName(def: DailyTypeDefinition | WeeklyTypeDefinition, t: (key: stri
   return name;
 }
 
+/** Today's date as YYYY-MM-DD in LOCAL time — toISOString() would flip the
+ *  day after 22:00 CET because it renders in UTC. */
+function localDateISO(d = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 // ===================== DAILY CHALLENGE SCREEN =====================
 export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_song: Song, _options?: { gameMode?: GameMode; playerIds?: string[] }) => void }) {
   const { t, language } = useTranslation();
   const { toast } = useToast();
   const { profiles, activeProfileId, setActiveProfile, addPlayer, setPlayers } = useGameStore();
-  const [activeTab, setActiveTab] = useState<'challenge' | 'weekly' | 'modes' | 'leaderboard' | 'badges'>('challenge');
+  const [activeTab, setActiveTab] = useState<'challenge' | 'weekly' | 'modes' | 'badges'>('challenge');
 
   // ── Slot activation UX: clicking a slot card selects it, scrolls the play
   //    area into view and briefly highlights it so the action is visible. ──
@@ -218,15 +226,16 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
   // Challenge modes difficulty filter
   const [modeFilter, setModeFilter] = useState<'all' | 'easy' | 'medium' | 'hard' | 'extreme'>('all');
 
-  // Online daily leaderboard state
-  const [boardSource, setBoardSource] = useState<'local' | 'online'>('local');
-  const [onlineEntries, setOnlineEntries] = useState<OnlineDailyEntry[] | null>(null);
-  const [onlineLoading, setOnlineLoading] = useState(false);
-  const [onlineError, setOnlineError] = useState<string | null>(null);
-  // R72/D: archive — which day the ONLINE board shows (default: today).
-  // The server accepts any past date (max 7 days back for submissions, but
-  // the board view itself is unlimited → full archive).
-  const [boardDate, setBoardDate] = useState<string>(new Date().toISOString().slice(0, 10));
+  // ── Per-stage Top-3 box (daily play area): local slot scores vs. today's
+  //    online daily board. Local is synchronous (localStorage); online is
+  //    fetched ONCE and cached — per-stage/difficulty filtering is client-side.
+  const [top3Source, setTop3Source] = useState<'local' | 'online'>('local');
+  const [onlineTop3, setOnlineTop3] = useState<OnlineDailyEntry[] | null>(null);
+  const [onlineTop3Loading, setOnlineTop3Loading] = useState(false);
+  const [onlineTop3Error, setOnlineTop3Error] = useState<string | null>(null);
+  // Reload trigger for the local Top-3 — bumped when the window regains
+  // focus so freshly recorded scores appear without a remount.
+  const [top3ReloadKey, setTop3ReloadKey] = useState(0);
 
   const activeProfiles = useMemo(() => profiles.filter(p => p.isActive !== false), [profiles]);
 
@@ -318,60 +327,86 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
   // eslint-disable-next-line react-hooks/exhaustive-deps -- regenerate on slot/difficulty/refresh change
   }, [selectedWeeklySlot, weeklySongRefreshKey, language, weeklyDifficulty, viewProfileLevel]);
 
-  // Load online daily leaderboard when the online tab is opened
-  const loadOnlineBoard = useCallback(async (date?: string) => {
-    setOnlineLoading(true);
-    setOnlineError(null);
+  // Online side of the Top-3 box: fetch TODAY's daily board once when the
+  // user switches to Online (local date — see localDateISO); afterwards the
+  // entries are served from state and filtered per stage + difficulty.
+  const loadOnlineTop3 = useCallback(async () => {
+    setOnlineTop3Loading(true);
+    setOnlineTop3Error(null);
     try {
       const { leaderboardService } = await import('@/lib/api/leaderboard-service');
-      // R72/D: archive — fetch the board of the selected day
-      // (undefined = today, pre-R72 behaviour).
-      const entries = await leaderboardService.fetchDailyLeaderboard(date || boardDate);
-      setOnlineEntries(entries);
+      const entries = await leaderboardService.fetchDailyLeaderboard(localDateISO());
+      setOnlineTop3(entries);
     } catch (err) {
-      setOnlineEntries(null);
-      setOnlineError(err instanceof Error ? err.message : 'Server nicht erreichbar');
+      setOnlineTop3(null);
+      setOnlineTop3Error(err instanceof Error ? err.message : 'Server nicht erreichbar');
     } finally {
-      setOnlineLoading(false);
+      setOnlineTop3Loading(false);
     }
-  }, [boardDate]);
+  }, []);
 
+  // Fetch once on the first switch to Online (the error flag guards the
+  // effect against a refetch loop after a failed request — retry via button).
   useEffect(() => {
-    if (activeTab === 'leaderboard' && boardSource === 'online') {
-      loadOnlineBoard();
+    if (top3Source === 'online' && onlineTop3 === null && !onlineTop3Loading && onlineTop3Error === null) {
+      void loadOnlineTop3();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- loadOnlineBoard changes with boardDate (archive navigation refetches)
-  }, [activeTab, boardSource, boardDate]);
+  }, [top3Source, onlineTop3, onlineTop3Loading, onlineTop3Error, loadOnlineTop3]);
+
+  // Reload trigger for the LOCAL Top-3: today's slot scores live in
+  // localStorage — re-read them when the window regains focus (e.g. when
+  // returning from a finished game).
+  useEffect(() => {
+    const onFocused = () => setTop3ReloadKey(k => k + 1);
+    const onVisibility = () => { if (document.visibilityState === 'visible') setTop3ReloadKey(k => k + 1); };
+    window.addEventListener('focus', onFocused);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('focus', onFocused);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, []);
 
   // Live-updating challenge description for the played slot
   const challengeDescription = interpolateChallengeText(
     t(typeDef.descriptionKey), typeDef.descriptionParams, challenge.target, typeDef.metricKey,
   );
 
-  // Sort leaderboard by slots completed today, then by slot-0 metric (direction-aware).
-  const sortMetric = (entry: typeof challenge.entries[0]): number =>
-    getBestResultMetric({
-      playerId: entry.playerId,
-      score: entry.score,
-      accuracy: entry.accuracy,
-      combo: entry.combo,
-      perfectNotes: entry.perfectNotesCount,
-      goldenNotes: entry.goldenNotesCount,
-      notesHit: entry.notesHit,
-      notesMissed: entry.notesMissed,
-      tickAccuracy: entry.tickAccuracy,
-      completedAt: entry.completedAt,
-      targetMet: false,
-    }, challenge.type);
-  const sortedLeaderboard = [...challenge.entries].sort((a, b) => {
-    const slotDiff = (b.slotsCompletedToday ?? 0) - (a.slotsCompletedToday ?? 0);
-    if (slotDiff !== 0) return slotDiff;
-    const metricA = sortMetric(a);
-    const metricB = sortMetric(b);
-    const diff = typeDef.direction === 'min' ? metricA - metricB : metricB - metricA;
-    if (diff !== 0) return diff;
-    return a.playerId.localeCompare(b.playerId);
-  });
+  // Best result of the first selected player for the played slot (if any) —
+  // rendered next to the target box in the play area (grid md:grid-cols-2).
+  const bestResult = (() => {
+    const first = selectedPlayerIds[0];
+    if (!first) return null;
+    const best = getPlayerBestResult(first);
+    if (!best || best.slot !== playSlot) return null;
+    const currentMetric = getBestResultMetric(best, challenge.type);
+    const target = challenge.target;
+    const pct = typeDef.direction === 'min'
+      ? (currentMetric <= target ? 100 : Math.min(99, Math.round((target / Math.max(1, currentMetric)) * 100)))
+      : Math.min(100, Math.round((currentMetric / target) * 100));
+    const remaining = typeDef.direction === 'min'
+      ? Math.max(0, currentMetric - target)
+      : Math.max(0, target - currentMetric);
+    return { currentMetric, target, pct, remaining };
+  })();
+
+  // ── Per-stage Top-3 (play area): follows the played slot + the selected
+  //    difficulty — recomputed individually per stage, no shared state. ──
+  const top3SlotType = dailySlots[playSlot]?.type ?? 'score';
+  // Local: today's best attempts for this stage + difficulty (synchronous).
+  const localTop3Rows = useMemo(
+    () => getDailySlotTopScores(playSlot, top3SlotType, selectedDifficulty, 3),
+    [playSlot, top3SlotType, selectedDifficulty, top3ReloadKey],
+  );
+  // Online: today's cached board filtered to this stage + difficulty
+  // (direction-aware — 'min' types sort ascending).
+  const onlineTop3Rows = useMemo(() => {
+    if (!onlineTop3) return [] as OnlineDailyEntry[];
+    return onlineTop3
+      .filter(e => e.challenge_type === top3SlotType && e.difficulty === selectedDifficulty)
+      .sort((a, b) => (typeDef.direction === 'min' ? a.metric_value - b.metric_value : b.metric_value - a.metric_value))
+      .slice(0, 3);
+  }, [onlineTop3, top3SlotType, selectedDifficulty, typeDef.direction]);
 
   /** Format a metric value for display (percent types get one decimal + %). */
   function formatDailyValue(metricKey: string, value: number): string {
@@ -481,17 +516,18 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
     onPlayChallenge(song);
   }, [selectedMode, setupGamePlayers, onPlayChallenge]);
 
-  // Metric label for a daily type (board value captions)
-  const metricLabel = (type: string): string => {
-    switch (getDailyType(type).metricKey) {
-      case 'accuracy': return '%';
-      case 'tickAccuracy': return t('dailyChallengeScreen.tickAccuracyLabel');
-      case 'maxCombo': return t('dailyChallengeScreen.comboLabel');
-      case 'perfectNotesCount': return t('dailyChallengeScreen.perfectNotesLabel');
-      case 'goldenNotesCount': return t('dailyChallengeScreen.goldenNotesLabel');
-      case 'notesHit': return t('dailyChallengeScreen.notesHitLabel');
-      case 'notesMissed': return t('dailyChallengeScreen.missedNotesLabel');
-      default: return t('dailyChallengeScreen.points');
+  /** Localized label for a challenge-mode completion metric. R81: the old
+   *  dailyChallengeScreen.*Label/points keys were removed from the locales —
+   *  reuse the stable results/game namespaces instead (present in every
+   *  locale, no dependency on the pending 14-locale follow-up). */
+  const modeMetricLabel = (metric: string): string => {
+    switch (metric) {
+      case 'notesHit': return t('results.notesHit');
+      case 'perfectNotes': return t('resultsScreen.perfectNotes');
+      case 'goldenNotes': return t('resultsScreen.goldenNotes');
+      case 'maxCombo': return t('results.bestCombo');
+      case 'notesMissed': return t('results.notesMissed');
+      default: return t('game.score');
     }
   };
 
@@ -520,6 +556,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
   };
 
   const TIER_ICONS: Record<string, string> = { bronze: '🥉', silver: '🥈', gold: '🥇' };
+  const TOP3_MEDALS = ['🥇', '🥈', '🥉'] as const;
   const TIER_LABEL_KEYS: Record<string, string> = {
     bronze: 'dailyChallengeScreen.tierBronze',
     silver: 'dailyChallengeScreen.tierSilver',
@@ -635,7 +672,6 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
           ['challenge', 'dailyChallengeScreen.challenges'],
           ['weekly', 'dailyChallengeScreen.weeklyChallenge'],
           ['modes', 'dailyChallengeScreen.challengeModes'],
-          ['leaderboard', 'dailyChallengeScreen.leaderboard'],
           ['badges', 'dailyChallengeScreen.badges'],
         ] as const).map(([tab, key]) => (
           <Button
@@ -822,51 +858,133 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                 </div>
               )}
 
-              <div className="mb-4 p-4 bg-white/5 rounded-lg">
-                <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="text-white/60">{t('dailyChallengeScreen.target')}</span>
-                  <span className="font-medium">{formatDailyValue(typeDef.metricKey, challenge.target)}</span>
+              {/* Target + best result of the first selected player — compact,
+                  side by side on md+ screens (makes room for the Top-3 box) */}
+              <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className={`p-3 bg-white/5 rounded-lg ${bestResult ? '' : 'md:col-span-2'}`}>
+                  <div className="flex items-center justify-between text-sm mb-2">
+                    <span className="text-white/60">{t('dailyChallengeScreen.target')}</span>
+                    <span className="font-medium">{formatDailyValue(typeDef.metricKey, challenge.target)}</span>
+                  </div>
+                  <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full transition-all ${completedToday ? 'bg-green-500' : 'bg-gradient-to-r from-cyan-500 to-purple-500'}`}
+                      style={{ width: completedToday ? '100%' : '0%' }}
+                    />
+                  </div>
                 </div>
-                <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full transition-all ${completedToday ? 'bg-green-500' : 'bg-gradient-to-r from-cyan-500 to-purple-500'}`}
-                    style={{ width: completedToday ? '100%' : '0%' }}
-                  />
-                </div>
-              </div>
-
-              {/* Best result of the first selected player (same slot) */}
-              {selectedPlayerIds[0] && (() => {
-                const best = getPlayerBestResult(selectedPlayerIds[0]);
-                if (!best || best.slot !== playSlot) return null;
-                const currentMetric = getBestResultMetric(best, challenge.type);
-                const target = challenge.target;
-                const pct = typeDef.direction === 'min'
-                  ? (currentMetric <= target ? 100 : Math.min(99, Math.round((target / Math.max(1, currentMetric)) * 100)))
-                  : Math.min(100, Math.round((currentMetric / target) * 100));
-                const remaining = typeDef.direction === 'min'
-                  ? Math.max(0, currentMetric - target)
-                  : Math.max(0, target - currentMetric);
-
-                return (
-                  <div className="mb-4 p-3 bg-white/5 rounded-lg">
+                {bestResult && (
+                  <div className="p-3 bg-white/5 rounded-lg">
                     <div className="flex items-center justify-between text-sm mb-1">
                       <span className="text-white/60">{t('dailyChallengeScreen.bestResult')}</span>
                       <span className="font-medium text-cyan-400">
-                        {formatDailyValue(typeDef.metricKey, currentMetric)} / {formatDailyValue(typeDef.metricKey, target)}
+                        {formatDailyValue(typeDef.metricKey, bestResult.currentMetric)} / {formatDailyValue(typeDef.metricKey, bestResult.target)}
                       </span>
                     </div>
                     <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 transition-all" style={{ width: `${pct}%` }} />
+                      <div className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 transition-all" style={{ width: `${bestResult.pct}%` }} />
                     </div>
                     <div className="text-xs text-white/40 mt-1">
-                      {pct >= 100
+                      {bestResult.pct >= 100
                         ? t('dailyChallengeScreen.challengeComplete')
-                        : t(typeDef.direction === 'min' ? 'dailyChallengeScreen.remainingFewer' : 'dailyChallengeScreen.remainingMore').replace('{n}', remaining.toLocaleString())}
+                        : t(typeDef.direction === 'min' ? 'dailyChallengeScreen.remainingFewer' : 'dailyChallengeScreen.remainingMore').replace('{n}', bestResult.remaining.toLocaleString())}
                     </div>
                   </div>
-                );
-              })()}
+                )}
+              </div>
+
+              {/* ── Top 3 of exactly this stage + difficulty — Local vs. Online ── */}
+              <div className="mb-4 rounded-xl border border-white/10 bg-white/5 p-3" data-testid="daily-top3-box">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                  <span className="text-xs font-medium text-white/70 truncate">
+                    🏆 {t('dailyChallengeScreen.top3Title')} · {playSlot + 1}. {typeName(typeDef, t)} · {DAILY_DIFFICULTIES.find(d => d.id === selectedDifficulty)?.icon}
+                  </span>
+                  <div className="flex gap-1 bg-white/5 rounded-lg p-1 border border-white/10 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setTop3Source('local')}
+                      data-testid="daily-top3-local"
+                      className={`px-2.5 py-0.5 rounded-md text-[11px] font-medium transition-all ${
+                        top3Source === 'local' ? 'bg-cyan-500 text-white' : 'text-white/60 hover:text-white'
+                      }`}
+                    >
+                      {t('dailyChallengeScreen.localBoard')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTop3Source('online')}
+                      data-testid="daily-top3-online"
+                      className={`px-2.5 py-0.5 rounded-md text-[11px] font-medium transition-all ${
+                        top3Source === 'online' ? 'bg-cyan-500 text-white' : 'text-white/60 hover:text-white'
+                      }`}
+                    >
+                      🌐 {t('dailyChallengeScreen.onlineBoard')}
+                    </button>
+                  </div>
+                </div>
+
+                {top3Source === 'local' ? (
+                  localTop3Rows.length === 0 ? (
+                    <p className="text-xs text-white/40 py-2 text-center" data-testid="daily-top3-empty">
+                      {t('dailyChallengeScreen.top3Empty')}
+                    </p>
+                  ) : (
+                    <div className="space-y-1">
+                      {localTop3Rows.map((row, i) => (
+                        <div
+                          key={row.playerId}
+                          data-testid={`daily-top3-row-${i}`}
+                          className={`flex items-center gap-2 px-2 py-1.5 rounded-lg border ${
+                            i === 0 ? 'bg-amber-500/15 border-amber-500/25'
+                            : i === 1 ? 'bg-gray-400/15 border-gray-400/25'
+                            : 'bg-orange-700/15 border-orange-700/25'
+                          }`}
+                        >
+                          <span className="w-5 text-sm shrink-0" aria-hidden>{TOP3_MEDALS[i]}</span>
+                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: row.playerColor }} />
+                          <span className="text-xs font-medium text-white/85 truncate flex-1 min-w-0">{row.playerName}</span>
+                          <span className="text-xs font-bold text-white/90 shrink-0">{formatDailyMetric(typeDef.metricKey, row.metric)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                ) : onlineTop3Loading ? (
+                  <div className="flex items-center justify-center gap-2 py-2 text-white/50" data-testid="daily-top3-online-loading">
+                    <span className="animate-spin inline-block w-4 h-4 border-2 border-cyan-500 border-t-transparent rounded-full" aria-hidden />
+                    <span className="text-xs">{t('dailyChallengeScreen.top3OnlineLoading')}</span>
+                  </div>
+                ) : onlineTop3Error ? (
+                  <div className="flex flex-col items-center gap-2 py-2" data-testid="daily-top3-online-error">
+                    <p className="text-xs text-amber-400/90 text-center">{t('dailyChallengeScreen.top3OnlineError')}</p>
+                    <Button size="sm" variant="outline" className="h-7 px-2.5 text-xs border-white/20" onClick={() => void loadOnlineTop3()}>
+                      {t('dailyChallengeScreen.top3Retry')}
+                    </Button>
+                  </div>
+                ) : onlineTop3Rows.length === 0 ? (
+                  <p className="text-xs text-white/40 py-2 text-center" data-testid="daily-top3-empty">
+                    {t('dailyChallengeScreen.top3Empty')}
+                  </p>
+                ) : (
+                  <div className="space-y-1">
+                    {onlineTop3Rows.map((entry, i) => (
+                      <div
+                        key={entry.profile_uid}
+                        data-testid={`daily-top3-row-${i}`}
+                        className={`flex items-center gap-2 px-2 py-1.5 rounded-lg border ${
+                          i === 0 ? 'bg-amber-500/15 border-amber-500/25'
+                          : i === 1 ? 'bg-gray-400/15 border-gray-400/25'
+                          : 'bg-orange-700/15 border-orange-700/25'
+                        }`}
+                      >
+                        <span className="w-5 text-sm shrink-0" aria-hidden>{TOP3_MEDALS[i]}</span>
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: entry.color || '#8B5CF6' }} />
+                        <span className="text-xs font-medium text-white/85 truncate flex-1 min-w-0">{entry.display_name}</span>
+                        <span className="text-xs font-bold text-white/90 shrink-0">{formatDailyMetric(typeDef.metricKey, entry.metric_value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* Evaluation mode when two players are selected (players
                   themselves are picked in step 1 at the top) */}
@@ -1279,12 +1397,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                       <p className="text-[10px] text-white/40 mb-2">
                         🎯 {t('dailyChallengeScreen.modeTarget')}: {mode.completionTarget.direction === 'min' ? '≥' : '≤'}{
                           mode.completionTarget.metric === 'accuracy' ? `${mode.completionTarget.value}%` : mode.completionTarget.value.toLocaleString()
-                        } {mode.completionTarget.metric === 'notesHit' ? t('dailyChallengeScreen.notesHitLabel')
-                          : mode.completionTarget.metric === 'perfectNotes' ? t('dailyChallengeScreen.perfectNotesLabel')
-                          : mode.completionTarget.metric === 'goldenNotes' ? t('dailyChallengeScreen.goldenNotesLabel')
-                          : mode.completionTarget.metric === 'maxCombo' ? t('dailyChallengeScreen.comboLabel')
-                          : mode.completionTarget.metric === 'notesMissed' ? t('dailyChallengeScreen.missedNotesLabel')
-                          : t('dailyChallengeScreen.points')}
+                        } {modeMetricLabel(mode.completionTarget.metric)}
                       </p>
                     )}
                     <div className="flex items-center justify-between">
@@ -1385,216 +1498,6 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
             </CardContent>
           </Card>
         </div>
-      )}
-
-      {/* ══ TAB: Leaderboard ══ */}
-      {activeTab === 'leaderboard' && (
-        <Card className="bg-white/5 border-white/10 mb-6">
-          <CardHeader>
-            <CardTitle className="flex flex-wrap items-center justify-between gap-3">
-              <span>{t('dailyChallengeScreen.todayLeaderboard')}</span>
-              <div className="flex flex-wrap items-center gap-2">
-                {/* R72/D: archive navigation for the ONLINE board */}
-                {boardSource === 'online' && (
-                  <div className="flex items-center gap-1" data-testid="daily-archive-nav">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const prev = new Date(boardDate + 'T12:00:00');
-                        prev.setDate(prev.getDate() - 1);
-                        setBoardDate(prev.toISOString().slice(0, 10));
-                      }}
-                      className="min-h-[28px] px-2 rounded-md border border-white/15 text-white/60 hover:text-white hover:border-white/30 text-xs"
-                      aria-label={t('dailyChallengeScreen.archivePrevDay')}
-                      title={t('dailyChallengeScreen.archivePrevDay')}
-                      data-testid="daily-archive-prev"
-                    >
-                      ◀
-                    </button>
-                    <span className="text-xs text-white/50 min-w-24 text-center" data-testid="daily-archive-date">
-                      {boardDate === new Date().toISOString().slice(0, 10)
-                        ? t('dailyChallengeScreen.archiveToday')
-                        : new Intl.DateTimeFormat(undefined, { weekday: 'short', day: '2-digit', month: '2-digit' }).format(new Date(boardDate + 'T12:00:00'))}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const next = new Date(boardDate + 'T12:00:00');
-                        next.setDate(next.getDate() + 1);
-                        setBoardDate(next.toISOString().slice(0, 10));
-                      }}
-                      disabled={boardDate >= new Date().toISOString().slice(0, 10)}
-                      className="min-h-[28px] px-2 rounded-md border border-white/15 text-white/60 hover:text-white hover:border-white/30 text-xs disabled:opacity-30 disabled:cursor-not-allowed"
-                      aria-label={t('dailyChallengeScreen.archiveNextDay')}
-                      title={t('dailyChallengeScreen.archiveNextDay')}
-                      data-testid="daily-archive-next"
-                    >
-                      ▶
-                    </button>
-                  </div>
-                )}
-                {/* Local / Online switch */}
-                <div className="flex gap-1 bg-white/5 rounded-lg p-1 border border-white/10">
-                  <button
-                    onClick={() => setBoardSource('local')}
-                    className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                      boardSource === 'local' ? 'bg-cyan-500 text-white' : 'text-white/60 hover:text-white'
-                    }`}
-                  >
-                    {t('dailyChallengeScreen.localBoard')}
-                  </button>
-                  <button
-                    onClick={() => { setBoardSource('online'); void loadOnlineBoard(); }}
-                    className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                      boardSource === 'online' ? 'bg-cyan-500 text-white' : 'text-white/60 hover:text-white'
-                    }`}
-                >
-                  🌐 {t('dailyChallengeScreen.onlineBoard')}
-                </button>
-                </div>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {boardSource === 'local' ? (
-              <>
-                {sortedLeaderboard.length === 0 ? (
-                  <div className="text-center py-8 text-white/40">
-                    <div className="text-4xl mb-2">🎯</div>
-                    <p>{t('dailyChallengeScreen.noLeaderboardEntries')}</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {sortedLeaderboard.slice(0, 10).map((entry, idx) => (
-                      <div
-                        key={entry.playerId}
-                        className={`flex items-center gap-3 p-3 rounded-lg ${
-                          idx === 0 ? 'bg-amber-500/20 border border-amber-500/30' :
-                          idx === 1 ? 'bg-gray-400/20 border border-gray-400/30' :
-                          idx === 2 ? 'bg-orange-700/20 border border-orange-700/30' :
-                          'bg-white/5'
-                        }`}
-                      >
-                        <div className="text-xl font-bold w-8">
-                          {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
-                        </div>
-                        {entry.playerAvatar ? (
-                          <img src={entry.playerAvatar} alt={entry.playerName} className="w-10 h-10 rounded-full object-cover" />
-                        ) : (
-                          <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
-                            style={{ backgroundColor: entry.playerColor }}
-                          >
-                            {entry.playerName.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        <div className="flex-1">
-                          <div className="font-medium flex items-center gap-2">
-                            {entry.playerName}
-                            {entry.dailyBadge && (
-                              <span title={t(TIER_LABEL_KEYS[entry.dailyBadge])} aria-label={t(TIER_LABEL_KEYS[entry.dailyBadge])}>
-                                {entry.dailyBadge === 'gold' ? '🥇' : entry.dailyBadge === 'silver' ? '🥈' : '🥉'}
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-xs text-white/60">
-                            {t('dailyChallengeScreen.slotsCompletedLabel').replace('{n}', String(entry.slotsCompletedToday ?? 0))}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold text-lg flex items-center gap-2 justify-end">
-                            {formatDailyValue(typeDef.metricKey, sortMetric(entry))}
-                            {entry.difficulty && DAILY_DIFFICULTIES.some(d => d.id === entry.difficulty) && (
-                              <span
-                                className="text-[10px] px-1.5 py-0.5 rounded border border-white/15 text-white/60"
-                                title={t(DAILY_DIFFICULTIES.find(d => d.id === entry.difficulty)!.labelKey)}
-                              >
-                                {DAILY_DIFFICULTIES.find(d => d.id === entry.difficulty)!.icon}
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-xs text-white/40">{metricLabel(challenge.type)}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div className="mt-4 text-center text-sm text-white/40">
-                  {challenge.totalParticipants} {challenge.totalParticipants !== 1 ? t('dailyChallengeScreen.participants') : t('dailyChallengeScreen.participant')} {t('dailyChallengeScreen.dayStreak').toLowerCase()}
-                </div>
-              </>
-            ) : (
-              /* ── Online daily leaderboard ── */
-              <>
-                {onlineLoading && (
-                  <div className="text-center py-8 text-white/50">
-                    <div className="animate-spin inline-block w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full mb-3" />
-                    <p className="text-sm">{t('dailyChallengeScreen.onlineBoardLoading')}</p>
-                  </div>
-                )}
-                {!onlineLoading && onlineError && (
-                  <div className="text-center py-8">
-                    <div className="text-4xl mb-2">📡</div>
-                    <p className="text-sm text-amber-400/90 mb-3">{t('dailyChallengeScreen.onlineBoardUnavailable')}</p>
-                    <p className="text-xs text-white/40 mb-4">{onlineError}</p>
-                    <Button size="sm" variant="outline" className="border-white/20" onClick={() => void loadOnlineBoard()}>
-                      {t('dailyChallengeScreen.onlineBoardRefresh')}
-                    </Button>
-                  </div>
-                )}
-                {!onlineLoading && !onlineError && onlineEntries && onlineEntries.length === 0 && (
-                  <div className="text-center py-8 text-white/40">
-                    <div className="text-4xl mb-2">🌐</div>
-                    <p>{t('dailyChallengeScreen.onlineBoardEmpty')}</p>
-                  </div>
-                )}
-                {!onlineLoading && !onlineError && onlineEntries && onlineEntries.length > 0 && (
-                  <div className="space-y-2">
-                    {onlineEntries.map((entry) => (
-                      <div
-                        key={entry.profile_uid}
-                        className={`flex items-center gap-3 p-3 rounded-lg ${
-                          entry.rank === 1 ? 'bg-amber-500/20 border border-amber-500/30' :
-                          entry.rank === 2 ? 'bg-gray-400/20 border border-gray-400/30' :
-                          entry.rank === 3 ? 'bg-orange-700/20 border border-orange-700/30' :
-                          'bg-white/5'
-                        }`}
-                      >
-                        <div className="text-xl font-bold w-8">
-                          {entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : `#${entry.rank}`}
-                        </div>
-                        <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
-                          style={{ backgroundColor: entry.color || '#8B5CF6' }}
-                        >
-                          {entry.display_name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-medium">{entry.display_name}</div>
-                          <div className="text-xs text-white/60">{metricLabel(entry.challenge_type)}</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold text-lg flex items-center gap-2 justify-end">
-                            {formatDailyValue(getDailyType(entry.challenge_type).metricKey, entry.metric_value)}
-                            {entry.difficulty && DAILY_DIFFICULTIES.some(d => d.id === entry.difficulty) && (
-                              <span
-                                className="text-[10px] px-1.5 py-0.5 rounded border border-white/15 text-white/60"
-                                title={t(DAILY_DIFFICULTIES.find(d => d.id === entry.difficulty)!.labelKey)}
-                              >
-                                {DAILY_DIFFICULTIES.find(d => d.id === entry.difficulty)!.icon}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
       )}
 
       {/* ══ TAB: Badges ══ */}

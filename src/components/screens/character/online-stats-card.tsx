@@ -10,7 +10,6 @@ import type { OnlinePlayEntry } from '@/lib/leaderboard/types';
 interface OnlineStats {
   crowns: number;
   crownSongs: Song[]; // local songs behind the crown hashes (up to 3)
-  brWins: number;
   totalScore: number;
   rank: number | null;
   total: number;
@@ -59,9 +58,8 @@ export function OnlineStatsCard({ profile, onlineEnabled }: { profile: PlayerPro
       setStats({
         crowns: crownsRes?.crowns ?? 0,
         crownSongs,
-        // BR wins + points come from the public profile (always present for
+        // Points come from the public profile (always present for
         // the player themselves — not just when ranked in the Top N).
-        brWins: publicProfile?.br_wins ?? 0,
         totalScore: publicProfile?.total_score ?? 0,
         rank: boardRes?.you?.rank ?? null,
         total: boardRes?.total_players ?? 0,
@@ -102,7 +100,7 @@ export function OnlineStatsCard({ profile, onlineEnabled }: { profile: PlayerPro
             📡 {t('onlineStats.title')}
             {stats && !open && (
               <span className="text-xs font-normal text-white/40">
-                👑 {stats.crowns} · ⚔️ {stats.brWins}
+                👑 {stats.crowns}
               </span>
             )}
           </CardTitle>
@@ -131,17 +129,14 @@ export function OnlineStatsCard({ profile, onlineEnabled }: { profile: PlayerPro
 
           {!isLoading && !error && stats && (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 {/* Crowns */}
                 <div className="rounded-lg border border-yellow-500/25 bg-yellow-500/5 p-3 text-center" data-testid="stat-crowns">
                   <p className="text-2xl font-bold text-yellow-400">👑 {stats.crowns}</p>
                   <p className="text-[11px] text-white/50 mt-0.5">{t('onlineStats.crowns')}</p>
                 </div>
-                {/* BR wins */}
-                <div className="rounded-lg border border-amber-500/25 bg-amber-500/5 p-3 text-center" data-testid="stat-br-wins">
-                  <p className="text-2xl font-bold text-amber-400">⚔️ {stats.brWins}</p>
-                  <p className="text-[11px] text-white/50 mt-0.5">{t('onlineStats.brWins')}</p>
-                </div>
+                {/* (R81) BR-wins tile removed — the BR online counter flew out
+                    of the score system together with POST /br. */}
                 {/* Percentile */}
                 <div className="rounded-lg border border-cyan-500/25 bg-cyan-500/5 p-3 text-center" data-testid="stat-percentile">
                   <p className="text-xl font-bold text-cyan-300">

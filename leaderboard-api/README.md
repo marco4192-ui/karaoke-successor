@@ -54,7 +54,7 @@ Public `GET /profiles/{uid}` responses never contain the sync_code.
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/` | API info |
-| GET | `/health` | **v3.6.1** Deployment diagnostics behind the API key: DB connection (+ connected database name), all 7 tables + every column the API references (with copy-paste `ALTER TABLE` fixes), `sync_code` width, stored procedure, and the real board queries executed live — a failing query reports the exact MySQL error. Response: `problems[]` + `fixes[]`. |
+| GET | `/health` | **v3.7** Deployment diagnostics behind the API key: DB connection (+ connected database name), all 7 tables + every column the API references (with copy-paste `ALTER TABLE` fixes), `sync_code` width, stored procedure, and the real board queries executed live — a failing query reports the exact MySQL error. Response: `problems[]` + `fixes[]`. |
 | POST | `/profiles` | Register/upsert profile (`profile_uid`, `display_name`, `color`, `country_code`, `show_on_board`, `show_country`, optional `sync_code`). Upserting an existing profile requires its sync_code; new profiles get one generated when omitted. |
 | GET | `/profiles/{uid}` | Public profile data (no sync_code) |
 | GET | `/profiles/{uid}/plays?limit=N` | **v3.6** Recent online rounds (play log, newest first — song hashes only) |
@@ -63,10 +63,9 @@ Public `GET /profiles/{uid}` responses never contain the sync_code.
 | PUT | `/profiles/{uid}/sync` | Store private profile sync snapshot — requires `sync_code` |
 | GET | `/profiles/sync/{code}` | Retrieve profile sync snapshot by code |
 | POST | `/scores` | Submit score (upsert — higher score wins, with anti-cheat proof) — requires profile `sync_code`; optional `nonce` (32 hex chars, replay protection) |
-| GET | `/leaderboard/song/{hash}?game_type=s|d&difficulty=all|easy|normal|hard&limit=N` | Per-song Top N — **v3.6**: real difficulty filter, soft-flag badges (`ac_flags` in rows) |
-| GET | `/leaderboard/global?window=all|month|week&sort=score|best|accuracy|plays&uid=…&limit=N&offset=M` | Global player ranking — **v3.6**: time windows (calendar month / ISO week), alternative sorts, `total_players`, own `rank` + `percentile_top` via `uid`, `br_wins` per row |
+| GET | `/leaderboard/song/{hash}?game_type=s|d&difficulty=all|easy|normal|hard&limit=N` | Per-song Top N — **v3.7**: difficulty filter is a TRUE per-difficulty best (difficulty is part of the best-score key); `difficulty=all` shows each player's overall best. Soft-flag badges (`ac_flags`) in rows |
+| GET | `/leaderboard/global?window=all|month|week&sort=score|best|accuracy|plays&uid=…&limit=N&offset=M` | Global player ranking — time windows (calendar month / ISO week), alternative sorts, `total_players`, own `rank` + `percentile_top` via `uid` |
 | GET | `/leaderboard/crowns?uid=…` | **v3.6** Song-#1 ("crown") count + list for a visible profile |
-| POST | `/br` | **v3.6** Battle-Royale result (`won` true/false) — requires `sync_code` + `nonce` (mandatory, counter replay protection); wins counted at most once per 120 s |
 | POST | `/daily` | Submit daily-challenge result (upsert — best metric wins) — requires profile `sync_code` |
 | GET | `/daily?date=YYYY-MM-DD&limit=N` | Daily-challenge board for a date (all challenge types, ranked per type) |
 | POST | `/auth/register` | Link an e-mail + password account to a profile — requires profile `sync_code`. Returns a one-time `recovery_code`. Re-registering a profile that already has an account REPLACES it (forgot-password rescue, sync_code is the ownership proof). |
@@ -190,6 +189,24 @@ old and new app versions) — `isValidSongHash` in `config.php` accepts the
   (insults/slurs/extremist terms, German + English, leet-normalized,
   word-boundary matching) with HTTP 422. Extend at runtime via the
   `KS_NAME_BLOCKLIST` env var (comma-separated) — no code change needed.
+
+**v3.7 (R81) — score system rebuild:**
+- **Battle-Royale win counter REMOVED**: `br_wins`/`br_wins_at` columns and
+  `POST /br` are gone. BR has no comparable score scale (2-player BR is
+  easier than 25-player BR) and win counters are trivially fakeable.
+- **difficulty is part of the best-score keys**: `ks_scores` keeps one row
+  per `(profile, song, game_type, difficulty)`, `ks_daily_results` one row
+  per `(profile, date, type, difficulty)` — difficulty filters are true
+  per-difficulty bests; `difficulty=all` dedupes per profile to the overall
+  best (songBoard + /scores/batch).
+- **Daily pool**: `challenge_type` accepts the client's full 200-type pool
+  (generated from challenge-pools.ts — `dailyTypeMeta()` in index.php).
+- **Path decoding**: the router `rawurldecode`s the request path — the
+  client percent-encodes the song hash's `:` as `%3A`; undecoded, every
+  `/leaderboard/song/{hash}` failed with `Invalid song_hash`.
+- FRESH-INSTALL schema: re-importing schema.sql replaces the whole database
+  (scores / daily results / accounts are lost by design; the app
+  re-registers on its next game).
 
 **v3.6.2 (R78) fix:**
 - **`POST /scores` upsert repaired**: since R69 a PHP `//` comment sat
@@ -361,11 +378,10 @@ no IP stored (rate limiting uses IPs only in temporary files, not the DB).
 
 **v3.6 additions to the data set:** `ks_play_log` (one row per accepted
 score submission: profile, song hash, game type, score, accuracy,
-difficulty, timestamp — the basis of the month/week boards and the recent
-rounds list; pruned after 400 days) and `ks_profiles.br_wins` (BR win
-counter + timestamp of the last counted win). Song titles never leave the
-client — the play log stores fingerprints only, exactly like the score
-boards.
+difficulty, timestamp — the basis of the recent rounds list; pruned after
+400 days). The v3.6 BR win counter (`ks_profiles.br_wins`) was REMOVED in
+v3.7. Song titles never leave the client — the play log stores
+fingerprints only, exactly like the score boards.
 
 ## Rate limiting
 

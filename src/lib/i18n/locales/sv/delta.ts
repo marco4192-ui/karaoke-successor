@@ -376,10 +376,6 @@ export const deltaTranslations = {
     },
   },
   dailyChallengeScreen: {
-    // R72: daily archive — online board of any past day
-    archiveNextDay: "Nästa dag",
-    archivePrevDay: "Föregående dag",
-    archiveToday: "Idag",
     dualPlayerHint: "Två spelare valda: dagliga och veckovisa utmaningar kan sjungas som duell eller lag.",
     filterAll: "Alla",
     modeCompleted: "Slutförd",
@@ -404,6 +400,12 @@ export const deltaTranslations = {
     tierProgressToday: "Märkesnivåer idag",
     tierProgressWeek: "Märkesnivåer den här veckan",
     tierSilver: "Silver",
+    // R81: per-stage Top-3 box (replaces the leaderboard tab; weeklies intentionally without)
+    top3Title: "Topp 3",
+    top3Empty: "Inga poster på denna nivå ännu.",
+    top3OnlineLoading: "Laddar…",
+    top3OnlineError: "Online-data oåtkomlig.",
+    top3Retry: "Försök igen",
     weeklyBestType: "★ bäst",
     weeklyCountsAutomatically: "Varje låt du sjunger räknas automatiskt mot veckoutmaningarna",
     weeklyDifficultyLabel: "Veckosvårighetsgrad",
@@ -904,23 +906,12 @@ export const deltaTranslations = {
   gameScreen: {
     midiSynth: "🎛 MIDI-syntes",
   },
-  // R72 — highscore screen: time windows, alternative sorts, percentile
+  // R81 — highscore screen: solo/duo tag, theme-party empty state, best caption
   highscoreScreen: {
-    windowAll: "Alltid",
-    windowMonth: "Månad",
-    windowWeek: "Vecka",
-    windowLabel: "Tidsperiod",
-    sortScore: "Poäng",
-    sortBest: "Bästa poäng",
-    sortAccuracy: "Noggrannhet",
-    sortPlays: "Låtar",
-    sortLabel: "Sortera efter",
-    totalPlayers: "{n} spelare",
-    yourRank: "Din placering: #{rank} av {total}",
-    percentileTop: "Topp {p}%",
-    noRoundsInWindow: "Du har inte spelat några online-omgångar i den här perioden ännu.",
-    roundsPlayed: "{n} omgångar",
-    brWins: "Battle Royale-segrar",
+    soloTag: "Solo",
+    duoTag: "Duett",
+    themeNoMatches: "Ingen låt från den aktuella temafesten har någon poäng.",
+    bestOf: "Bästa poäng",
   },
   homeScreen: {
     allDailyDone: "Alla dagliga luckor rensade! 🎉",
@@ -1061,7 +1052,6 @@ export const deltaTranslations = {
     loading: "Laddar online-data…",
     unavailable: "Online-data är just nu oåtkomlig",
     crowns: "Låtkronor (#1)",
-    brWins: "BR-segrar",
     topPercent: "Topp {p}%",
     rankOf: "Placering #{rank} av {total}",
     notRanked: "Inte placerad",
@@ -1294,6 +1284,10 @@ export const deltaTranslations = {
     difficulty_easy: "Lätt",
     difficulty_normal: "Medel",
     difficulty_hard: "Svårt",
+    // R81: rival box below the scores (top-3 rivals on this song)
+    rivalsTitle: "Rivaler på denna låt",
+    rivalsEmpty: "Ingen rival har spelat denna låt ännu.",
+    topScores: "Topp 5",
   },
   songStart: {
     instrumentalAmount: "Sångborttagning: {n}%",

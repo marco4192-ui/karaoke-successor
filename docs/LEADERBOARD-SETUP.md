@@ -69,14 +69,15 @@ nicht zwingend nötig — die History enthält dann nur noch tote Werte.
    `ks_profiles`, `ks_scores`, `ks_profile_sync`, `ks_daily_results`,
    `ks_accounts`, `ks_play_log` (v3.6), `ks_nonces` (v3.6) und die Stored
    Procedure `sp_refresh_profile_stats`.
-3. **Bestehende Installation updaten (v3.5 → v3.6, R72):** NICHT das ganze
-   `schema.sql` neu importieren (es enthält `DROP TABLE`-Anweisungen!),
-   sondern nur den kommentierten Migrationsblock „Migration v3.5 → v3.6"
-   am Ende der Datei in phpMyAdmin ausführen. Er legt `ks_play_log` +
-   `ks_nonces` an, fügt `ks_profiles.br_wins`/`br_wins_at` hinzu und weitet
-   `sync_code` auf `VARCHAR(16)` (neue Codes: 12 Zeichen). Wer noch auf
-   ≤ v3.4 steht, führt ZUERST die dortige `recovery_hash`-Migration aus und
-   dann denselben v3.6-Block.
+3. **Update auf v3.7 (R81, Score-System-Neubau):** v3.7 ist ein
+   FRESH-IMPORT — `schema.sql` in phpMyAdmin RE-IMPORTIEREN (die Datei beginnt
+   mit `DROP TABLE IF EXISTS`; bestehende Scores/Daily-Ergebnisse/Konten
+   werden bewusst geopfert — die App registriert sich beim nächsten Spiel
+   neu). Grund: `difficulty` ist jetzt Teil der Bestwert-Schlüssel
+   (`ks_scores` und `ks_daily_results`) — eine Migration der alten
+   Bestwerte wäre mehrdeutig (welcher Schwierigkeitsgrad war der Beste?).
+   Ebenso fliegen `ks_profiles.br_wins`/`br_wins_at` raus (BR-Siege sind
+   nicht vergleichbar und wurden aus dem System entfernt).
 4. **Achtung (Vorfall 18.11.2026):** Auf diesem netcup-Hosting NICHT
    `localhost` als `DB_HOST` eintragen — auch wenn App und Datenbank
    „auf demselben Webspace" liegen. PHP verbindet sich dann über den
@@ -133,7 +134,7 @@ diese haben Vorrang vor `config.local.php`).
 
 ```
 GET https://hosting236176.ae88b.netcup.net/leaderboard-api/
-→ {"name":"Karaoke Leaderboard","version":"3.6.2",...}
+→ {"name":"Karaoke Leaderboard","version":"3.7.0",...}
 ```
 
 (Ohne `X-API-Key`-Header kommt erwartungsgemäß `401 Unauthorized` — auch das
@@ -420,7 +421,7 @@ Die URL und der API-Key werden zur **Build-Zeit** eingebrannt:
 
 ## 6. Betrieb & Pflege
 
-### Server-Diagnose: `GET /health` (v3.6.1)
+### Server-Diagnose: `GET /health` (v3.7)
 
 Wenn die App oder der CI-Check („Leaderboard-API Check") meldet, dass ein
 Board nicht lädt, nennt der Server auf dem normalen Weg nur
@@ -440,7 +441,7 @@ einzigen Aufruf prüft:
   Score-Uploads mit 500 fehl),
 - die **echten Board-Queries** (All-time + Zeitfenster Monat/Woche) live
   ausgeführt — schlägt eine fehl, steht die exakte MySQL-Fehlermeldung
-  (z. B. `Unknown column 'p.br_wins' …`) in `queries.*.error`,
+  (z. B. `Unknown column …`) in `queries.*.error`,
 - `problems[]` (Klartext-Beschreibungen) und `fixes[]` (SQL zum
   Copy-Pasten).
 
@@ -457,7 +458,7 @@ Typische Befunde nach einem Datenbank-Neuaufbau:
 |---|---|
 | `DB-Verbindung fehlgeschlagen` / `SQLSTATE[HY000] [1045] Access denied` | `config.local.php` prüfen. Vorfall 18.11.: `DB_HOST=localhost` verbindet auf netcup über den Unix-Socket mit einer anderen MySQL-Instanz als der Plesk-DB — Host durch den Plesk-Hostnamen ersetzen (z. B. `mysqle88c.netcup.net`); Tabellen/User/Passwort können dabei völlig korrekt sein. `/info` funktioniert trotzdem, weil es die DB nie berührt. |
 | `Tabelle ks_play_log fehlt in Datenbank …` | Tabellen wurden in einer **anderen** Datenbank angelegt, als `DB_NAME` sagt — oder der Migrationsblock fehlt. `database_name` oben in der Antwort zeigt, wo die API tatsächlich landet. |
-| `Tabelle ks_profiles existiert, aber es fehlen Spalten: br_wins …` | Alter Tabellenstand (v3.5) — `fixes[]` enthält das fertige `ALTER TABLE`. |
+| `Tabelle ks_profiles existiert, aber es fehlen Spalten …` | Alter Tabellenstand — v3.7 erwartet den FRESH-IMPORT (siehe Schritt 3 oben); `fixes[]` nennt die fehlenden Spalten. |
 | `Query board_window_month schlaegt fehl: …` | Die exakte MySQL-Meldung der sonst 500-enden Board-Abfrage. |
 
 Der CI-Job „Leaderboard-API Check" ruft `/health` automatisch mit auf und

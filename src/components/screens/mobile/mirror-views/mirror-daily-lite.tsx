@@ -11,19 +11,11 @@ import {
 } from '@/lib/game/daily-challenge';
 import { CHALLENGE_MODES } from '@/lib/game/progression-levels';
 import { FlagAwareEmoji } from '@/components/screens/character/country-picker';
-import type { OnlineDailyEntry } from '@/lib/leaderboard/types';
 
 // ===================== Props =====================
 
 /** Host profile as pushed by the desktop (POST sethostprofiles). */
-interface HostProfileLite {
-  id: string;
-  name: string;
-  avatar?: string;
-  color: string;
-  isActive?: boolean;
-}
-
+// (R81) HostProfileLite entfiel mit der Rangliste
 interface MirrorDailyLiteProps {
   gameState: GameState;
   onNavigate: (v: MobileView) => void;
@@ -51,13 +43,12 @@ const SCROLL_AREA = 'overflow-y-auto overscroll-contain pr-1 kz-scroll';
 
 // ===================== Tabs (exakte Desktop-Struktur) =====================
 
-type DailyTab = 'challenge' | 'weekly' | 'modes' | 'leaderboard' | 'badges';
+type DailyTab = 'challenge' | 'weekly' | 'modes' | 'badges';
 
 const DAILY_TABS: { id: DailyTab; icon: string; labelKey: string; fallback: string }[] = [
   { id: 'challenge',  icon: '🎯', labelKey: 'dailyChallengeScreen.challenges',     fallback: 'Herausforderungen' },
   { id: 'weekly',     icon: '📅', labelKey: 'dailyChallengeScreen.weeklyChallenge', fallback: 'Wöchentliche Herausforderung' },
   { id: 'modes',      icon: '🎮', labelKey: 'dailyChallengeScreen.challengeModes',  fallback: 'Challenge-Modi' },
-  { id: 'leaderboard',icon: '🏆', labelKey: 'dailyChallengeScreen.leaderboard',    fallback: 'Rangliste' },
   { id: 'badges',     icon: '🎖️', labelKey: 'dailyChallengeScreen.badges',         fallback: 'Abzeichen' },
 ];
 
@@ -106,26 +97,9 @@ export function MirrorDailyLite({
     const [localError, setLocalError] = useState(false);
     const [reloadTick, setReloadTick] = useState(0);
 
-    // ── R72/D: Online-Daily-Board — reine ANZEIGE-Parität zum Desktop
-    //    (Companion ist Eingabegerät, Scores gehören immer zum Profil;
-    //    gleiche Daten, gleicher Server, kein eigenes Companion-Scoring).
-    const [boardSource, setBoardSource] = useState<'local' | 'online'>('local');
-    const [onlineEntries, setOnlineEntries] = useState<OnlineDailyEntry[] | null>(null);
-    const [onlineLoading, setOnlineLoading] = useState(false);
-    const [onlineError, setOnlineError] = useState<string | null>(null);
-
-    const loadOnlineBoard = useCallback(() => {
-      setOnlineLoading(true);
-      setOnlineError(null);
-      import('@/lib/api/leaderboard-service')
-        .then(({ leaderboardService }) => leaderboardService.fetchDailyLeaderboard())
-        .then((entries) => { setOnlineEntries(entries); })
-        .catch((err: Error) => {
-          setOnlineEntries(null);
-          setOnlineError(err.message || 'Server nicht erreichbar');
-        })
-        .finally(() => setOnlineLoading(false));
-    }, []);
+    // (R81) Online-Daily-Board-Tab ENTFERNT — der Desktop hat seine
+    // „Rangliste“ durch die per-Stufe-Top-3-Boxen ersetzt; der Companion
+    // folgt (Parität).
 
     useEffect(() => {
       // Shell-Pfad: Daten über den Hook laden lassen (Props-Aktualisierung)
@@ -148,20 +122,6 @@ export function MirrorDailyLite({
       return () => { cancelled = true; };
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [reloadTick]);
-
-    // Host-Profile für die Rangliste (Namen/Farben/Avatare)
-    const [hostProfiles, setHostProfiles] = useState<HostProfileLite[]>([]);
-    useEffect(() => {
-      let cancelled = false;
-      fetch('/api/mobile?action=hostprofiles')
-        .then((r) => r.json())
-        .then((d) => {
-          if (cancelled || !d?.success) return;
-          setHostProfiles((d.profiles || []) as HostProfileLite[]);
-        })
-        .catch(() => { /* Rangliste zeigt dann Initialen */ });
-      return () => { cancelled = true; };
-    }, []);
 
     const retry = useCallback(() => {
       haptic();
@@ -414,209 +374,7 @@ export function MirrorDailyLite({
       </div>
     );
 
-    const renderLeaderboardTab = () => (
-      <div className="flex flex-col gap-3">
-        {/* R72/D: Local / Online switch — Desktop-Parität (nur Anzeige) */}
-        <div className="flex gap-1 rounded-xl border border-white/10 bg-white/5 p-1" role="group">
-          <button
-            type="button"
-            onClick={() => { haptic(); setBoardSource('local'); }}
-            className={`flex-1 min-h-[36px] rounded-lg text-xs font-semibold transition-colors ${
-              boardSource === 'local' ? 'bg-cyan-500 text-white' : 'text-white/60'
-            }`}
-            data-testid="mirror-daily-board-local"
-          >
-            {tOr(t, 'dailyChallengeScreen.localBoard', 'Lokal')}
-          </button>
-          <button
-            type="button"
-            onClick={() => { haptic(); setBoardSource('online'); loadOnlineBoard(); }}
-            className={`flex-1 min-h-[36px] rounded-lg text-xs font-semibold transition-colors ${
-              boardSource === 'online' ? 'bg-cyan-500 text-white' : 'text-white/60'
-            }`}
-            data-testid="mirror-daily-board-online"
-          >
-            🌐 {tOr(t, 'dailyChallengeScreen.onlineBoard', 'Online')}
-          </button>
-        </div>
-
-        {boardSource === 'online' ? renderOnlineLeaderboard() : renderLocalLeaderboard()}
-      </div>
-    );
-
-    /** R72/D: the online daily board — same data as the desktop view. */
-    const renderOnlineLeaderboard = () => {
-      if (onlineLoading) {
-        return (
-          <div className="flex flex-col items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-6">
-            <div className="h-7 w-7 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />
-            <p className="text-sm text-white/50">
-              {tOr(t, 'dailyChallengeScreen.onlineBoardLoading', 'Lade Online-Rangliste…')}
-            </p>
-          </div>
-        );
-      }
-      if (onlineError) {
-        return (
-          <div className="flex flex-col items-center gap-3 rounded-xl border border-amber-500/25 bg-amber-500/5 p-6 text-center">
-            <span className="text-3xl" aria-hidden>📡</span>
-            <p className="text-sm text-amber-300/90">
-              {tOr(t, 'dailyChallengeScreen.onlineBoardUnavailable', 'Online-Rangliste nicht erreichbar.')}
-            </p>
-            <p className="max-w-xs text-xs text-white/40 break-words">{onlineError}</p>
-            <button
-              type="button"
-              onClick={() => { haptic(); loadOnlineBoard(); }}
-              className="min-h-[44px] rounded-lg border border-cyan-400/40 bg-cyan-500/20 px-5 py-2.5 text-sm font-semibold text-cyan-300 transition-transform active:scale-95"
-              data-testid="mirror-daily-online-retry"
-            >
-              {tOr(t, 'dailyChallengeScreen.onlineBoardRefresh', 'Aktualisieren')}
-            </button>
-          </div>
-        );
-      }
-      if (!onlineEntries || onlineEntries.length === 0) {
-        return (
-          <div className="flex flex-col items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-6 text-center">
-            <span className="text-4xl" aria-hidden>🌐</span>
-            <p className="max-w-xs text-sm text-white/50">
-              {tOr(t, 'dailyChallengeScreen.onlineBoardEmpty', 'Noch keine Online-Einträge für heute.')}
-            </p>
-          </div>
-        );
-      }
-      return (
-        <div className="flex flex-col gap-2">
-          {onlineEntries.map((entry) => {
-            const def = getDailyType(entry.challenge_type);
-            const name = typeName(def.nameKey, def.nameParams, t, entry.challenge_type);
-            const diffDef = entry.difficulty ? DAILY_DIFFICULTIES.find(d => d.id === entry.difficulty) : undefined;
-            return (
-              <div
-                key={entry.profile_uid}
-                className={
-                  'flex items-center gap-3 rounded-xl border p-3 ' +
-                  (entry.rank === 1 ? 'border-amber-500/30 bg-amber-500/15' :
-                   entry.rank === 2 ? 'border-white/20 bg-white/[0.07]' :
-                   entry.rank === 3 ? 'border-orange-700/30 bg-orange-700/10' :
-                   'border-white/[0.08] bg-white/[0.03]')
-                }
-                data-testid="mirror-daily-online-row"
-              >
-                <div className="flex w-9 shrink-0 items-center justify-center text-sm font-bold text-white/60">
-                  {entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : `#${entry.rank}`}
-                </div>
-                <div
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-                  style={{ backgroundColor: entry.color || '#8B5CF6' }}
-                >
-                  {(entry.display_name?.[0] || '?').toUpperCase()}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-white">{entry.display_name}</p>
-                  <p className="truncate text-xs text-white/50">{name}</p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <p className="text-base font-bold text-yellow-400">
-                    {formatDailyValue(def.metricKey, entry.metric_value)}
-                    {diffDef && (
-                      <span
-                        className="ml-1 rounded border border-white/15 px-1 py-0.5 text-[10px] font-bold text-white/60"
-                        title={t(diffDef.labelKey)}
-                      >
-                        {diffDef.icon}
-                      </span>
-                    )}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      );
-    };
-
-    const renderLocalLeaderboard = () => {
-      if (!dailyMap || Object.keys(dailyMap).length === 0) {
-        return (
-          <div className="flex flex-col items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-6 text-center">
-            <span className="text-4xl" aria-hidden>🏆</span>
-            <p className="max-w-xs text-sm text-white/50">
-              {tOr(t, 'dailyChallengeScreen.noLeaderboardEntries', 'Noch keine Einträge! Sei der Erste, der die heutige Herausforderung abschließt!')}
-            </p>
-          </div>
-        );
-      }
-      // Spieler nach heutigen Abschlüssen + Streak sortieren
-      const rows = Object.entries(dailyMap)
-        .map(([pid, state]) => {
-          const profile = hostProfiles.find((p) => p.id === pid);
-          const completedToday = (state.slots ?? []).filter((s) => s.completed).length;
-          return {
-            pid,
-            name: profile?.name ?? tOr(t, 'mobile.mirrorPlayer', 'Spieler'),
-            color: profile?.color ?? '#06B6D4',
-            avatar: profile?.avatar,
-            completedToday,
-            streak: state.streak ?? 0,
-          };
-        })
-        .sort((a, b) => b.completedToday - a.completedToday || b.streak - a.streak);
-
-      return (
-        <div className="flex flex-col gap-2">
-          {rows.map((row, index) => {
-            const isOwn = !!profileId && row.pid === profileId;
-            return (
-              <div
-                key={row.pid}
-                className={
-                  'flex items-center gap-3 rounded-xl border p-3 ' +
-                  (isOwn
-                    ? 'border-white/20 bg-white/[0.08]'
-                    : 'border-white/[0.08] bg-white/[0.03]')
-                }
-                style={isOwn ? { borderLeft: `4px solid ${row.color}` } : undefined}
-              >
-                <div className="flex w-9 shrink-0 items-center justify-center">
-                  <span className="text-sm font-bold text-white/40">#{index + 1}</span>
-                </div>
-                <div
-                  className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full text-sm font-bold text-white"
-                  style={{ backgroundColor: row.color }}
-                >
-                  {row.avatar ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- Companion-Spiegel nutzt einfache data-URLs
-                    <img src={row.avatar} alt={row.name} className="h-full w-full rounded-full object-cover" />
-                  ) : (
-                    (row.name?.[0] || '?').toUpperCase()
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className={'truncate text-sm font-semibold ' + (isOwn ? 'text-cyan-300' : 'text-white')}>
-                    {row.name}
-                    {isOwn ? (
-                      <span className="ml-1.5 rounded bg-cyan-500/20 px-1.5 py-0.5 text-[10px] font-bold text-cyan-300">
-                        {tOr(t, 'mobile.mirrorProfileYou', 'Du')}
-                      </span>
-                    ) : null}
-                  </p>
-                  <p className="text-xs text-white/50">
-                    🔥 {row.streak} {tOr(t, 'dailyChallengeScreen.dayStreak', 'Tage in Folge')}
-                  </p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <p className="text-base font-bold text-yellow-400">{row.completedToday}</p>
-                  <p className="text-[10px] uppercase tracking-wide text-white/40">
-                    {tOr(t, 'dailyChallengeScreen.completed', 'Abgeschlossen')}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      );
-    };
+    // (R81) Online-/Local-Rangliste-Renderer entfernt — der Tab existiert nicht mehr.
 
     const renderBadgesTab = () => {
       if (!myDaily) {
@@ -749,7 +507,6 @@ export function MirrorDailyLite({
               {activeTab === 'challenge' && renderChallengeTab()}
               {activeTab === 'weekly' && renderWeeklyTab()}
               {activeTab === 'modes' && renderModesTab()}
-              {activeTab === 'leaderboard' && renderLeaderboardTab()}
               {activeTab === 'badges' && renderBadgesTab()}
             </div>
 

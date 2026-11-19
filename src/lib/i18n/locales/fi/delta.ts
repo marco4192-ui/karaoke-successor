@@ -375,10 +375,6 @@ export const deltaTranslations = {
     },
   },
   dailyChallengeScreen: {
-    // R72: daily archive — online board of any past day
-    archiveNextDay: "Seuraava päivä",
-    archivePrevDay: "Edellinen päivä",
-    archiveToday: "Tänään",
     dualPlayerHint: "Kaksi pelaajaa valittuna: päivittäisiä ja viikoittaisia haasteita voi laulaa kaksinkamppailuna tai tiiminä.",
     filterAll: "Kaikki",
     modeCompleted: "Suoritettu",
@@ -403,6 +399,12 @@ export const deltaTranslations = {
     tierProgressToday: "Merkitasot tänään",
     tierProgressWeek: "Merkitasot tällä viikolla",
     tierSilver: "Hopea",
+    // R81: per-stage Top-3 box (replaces the leaderboard tab; weeklies intentionally without)
+    top3Title: "Top 3",
+    top3Empty: "Tällä tasolla ei vielä tuloksia.",
+    top3OnlineLoading: "Ladataan…",
+    top3OnlineError: "Online ei ole tavoitettavissa.",
+    top3Retry: "Yritä uudelleen",
     weeklyBestType: "★ paras",
     weeklyCountsAutomatically: "Jokainen laulamasi kappale lasketaan automaattisesti viikkohaasteisiin",
     weeklyDifficultyLabel: "Viikon vaikeustaso",
@@ -903,23 +905,12 @@ export const deltaTranslations = {
   gameScreen: {
     midiSynth: "🎛 MIDI-synteesi",
   },
-  // R72 — highscore screen: time windows, alternative sorts, percentile
+  // R81 — highscore screen: solo/duo tag, theme-party empty state, best caption
   highscoreScreen: {
-    windowAll: "Kaikki ajat",
-    windowMonth: "Kuukausi",
-    windowWeek: "Viikko",
-    windowLabel: "Aikaväli",
-    sortScore: "Pisteet",
-    sortBest: "Paras tulos",
-    sortAccuracy: "Tarkkuus",
-    sortPlays: "Kappaleet",
-    sortLabel: "Järjestä",
-    totalPlayers: "{n} pelaajaa",
-    yourRank: "Sijasi: #{rank} / {total}",
-    percentileTop: "Top {p}%",
-    noRoundsInWindow: "Et ole vielä pelannut yhtään online-kierrosta tällä aikavälillä.",
-    roundsPlayed: "{n} kierrosta",
-    brWins: "Battle Royale -voitot",
+    soloTag: "Soolo",
+    duoTag: "Duetto",
+    themeNoMatches: "Mikään nykyisen teemajuhlan kappaleista ei ole vielä saanut tulosta.",
+    bestOf: "Paras tulos",
   },
   homeScreen: {
     allDailyDone: "Kaikki päivittäiset paikat suoritettu! 🎉",
@@ -1060,7 +1051,6 @@ export const deltaTranslations = {
     loading: "Ladataan online-tietoja…",
     unavailable: "Online-tiedot eivät ole juuri nyt saatavilla",
     crowns: "Kappalekruunut (#1)",
-    brWins: "BR-voitot",
     topPercent: "Top {p}%",
     rankOf: "Sija #{rank} / {total}",
     notRanked: "Ei listalla",
@@ -1293,6 +1283,10 @@ export const deltaTranslations = {
     difficulty_easy: "Helppo",
     difficulty_normal: "Keskiverto",
     difficulty_hard: "Vaikea",
+    // R81: rival box below the scores (top-3 rivals on this song)
+    rivalsTitle: "Tämän kappaleen kilpailijat",
+    rivalsEmpty: "Yksikään kilpailija ei ole vielä laulanut tätä kappaletta.",
+    topScores: "Top 5",
   },
   songStart: {
     instrumentalAmount: "Vokaalien poisto: {n}%",

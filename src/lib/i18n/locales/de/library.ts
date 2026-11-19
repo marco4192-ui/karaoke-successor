@@ -186,6 +186,10 @@ songHighscoreModal: {
   difficulty_easy: 'Leicht',
   difficulty_normal: 'Normal',
   difficulty_hard: 'Schwer',
+  // R81: Rivalen-Kasten unter den Scores (Top-3-Rivalen auf diesem Song)
+  rivalsTitle: 'Rivalen auf diesem Song',
+  rivalsEmpty: 'Kein Rivale hat auf diesem Song gespielt.',
+  topScores: 'Top 5',
 },
 songLeaderboardPreview: {
   title: 'Song-Leaderboard',

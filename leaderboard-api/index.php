@@ -9,6 +9,21 @@
  * registration). The sync_code also unlocks the profile sync backup and
  * profile deletion.
  *
+ * v3.7 (R81): SCORE SYSTEM REBUILD.
+ *   - Battle-Royale win counter REMOVED (br_wins/br_wins_at columns dropped,
+ *     POST /br removed): BR has no comparable score scale — 2-player BR is
+ *     easier than 25-player BR and wins are trivially fakeable.
+ *   - difficulty is now part of the best-score keys: ks_scores keeps one row
+ *     per (profile, song, game_type, difficulty), ks_daily_results one row per
+ *     (profile, date, type, difficulty) — difficulty filters are TRUE
+ *     per-difficulty bests, and the daily per-stage boxes rank per tier.
+ *   - songBoard/batchScores: difficulty='all' dedupes per profile to the
+ *     overall best row (a player appears once per song).
+ *   - dailyTypeMeta covers the client's full 200-type daily pool (generated
+ *     from challenge-pools.ts — see the comment at the function).
+ *   - Router rawurldecodes the path: the client percent-encodes the song
+ *     hash's ':' as %3A; undecoded, every /leaderboard/song/{hash} failed
+ *     isValidSongHash ("Invalid song_hash") although the hash was valid.
  * v3.6.2 (R78): POST /scores upsert repaired — since R69 a PHP '//' comment
  *   sat INSIDE the SQL string; MySQL has no '//' comments, so the statement
  *   failed with 1064 and every score upload answered 500. Caught by the
@@ -42,10 +57,8 @@
  *   GET    /leaderboard/song/{hash}   Per-song leaderboard (Top N, optional difficulty filter — R72)
  *   GET    /leaderboard/global        Global player ranking — R72: time windows (all|month|week),
  *                                     alternative sorts (score|best|accuracy|plays), own rank +
- *                                     percentile via &uid=, BR win counter per row
+ *                                     percentile via &uid=
  *   GET    /leaderboard/crowns?uid=   Song-#1 ("crown") count + list for a profile — R72
- *   POST   /br                        Battle-Royale result (won=true increments br_wins;
- *                                     nonce REQUIRED — counter replay protection) — R72
  *   POST   /daily                     Submit daily-challenge result (requires profile sync_code)
  *   GET    /daily?date=YYYY-MM-DD     Daily-challenge board for a date (all types, ranked per type;
  *                                     any past date works → archive views)
@@ -68,7 +81,13 @@
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/anti-cheat.php';
 
-$uri    = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+// R81: REQUEST_URI is the raw, still percent-encoded request line — the
+// client encodes the song hash's ':' as %3A in path segments. Without the
+// decode every /leaderboard/song/{hash} died at isValidSongHash ("v1%3A-..."
+// contains no literal colon -> "Invalid song_hash") although the hash was
+// valid. Decoding the whole path is safe: no legit segment of this API
+// ever contains a literal '%'.
+$uri    = rawurldecode((string)parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 $uri    = preg_replace('#^/leaderboard-api#', '', $uri);
 $uri    = rtrim($uri, '/') ?: '/';
 $parts  = array_values(array_filter(explode('/', $uri)));
@@ -84,14 +103,13 @@ $T_NONCES   = tbl('nonces');
 
 try {
     match ($parts[0] ?? '') {
-        '', 'info'    => json(['name' => 'Karaoke Leaderboard', 'version' => '3.6.2', 'copyright_safe' => true, 'anti_cheat' => true, 'app_only_auth' => true]),
+        '', 'info'    => json(['name' => 'Karaoke Leaderboard', 'version' => '3.7.0', 'copyright_safe' => true, 'anti_cheat' => true, 'app_only_auth' => true]),
         'health'      => apiHealth($T_PROFILES, $T_SCORES, $T_DAILY, $T_ACCOUNTS, $T_PLAYLOG, $T_NONCES),
         'profiles'    => routeProfiles($parts, $method, $T_PROFILES, $T_SCORES),
         'scores'      => routeScores($parts, $method, $T_PROFILES, $T_SCORES, $T_PLAYLOG, $T_NONCES),
         'leaderboard' => routeLeaderboard($parts, $method, $T_PROFILES, $T_SCORES, $T_PLAYLOG),
         'daily'       => routeDaily($parts, $method, $T_PROFILES, $T_DAILY),
         'auth'        => routeAuth($parts, $method, $T_PROFILES, $T_ACCOUNTS),
-        'br'          => routeBr($method, $T_PROFILES),
         default       => err('Not found', 404),
     };
 } catch (PDOException $e) {
@@ -268,7 +286,7 @@ function fetchProfile(string $uid, string $TP, bool $withCode): void {
     if ($withCode) {
         $s = db()->prepare("SELECT * FROM `$TP` WHERE `profile_uid` = ?");
     } else {
-        $s = db()->prepare("SELECT `profile_uid`,`display_name`,`color`,`country_code`,`show_on_board`,`show_country`,`total_score`,`best_score`,`songs_played`,`games_played`,`avg_accuracy`,`br_wins`,`created_at`,`updated_at` FROM `$TP` WHERE `profile_uid` = ?");
+        $s = db()->prepare("SELECT `profile_uid`,`display_name`,`color`,`country_code`,`show_on_board`,`show_country`,`total_score`,`best_score`,`songs_played`,`games_played`,`avg_accuracy`,`created_at`,`updated_at` FROM `$TP` WHERE `profile_uid` = ?");
     }
     $s->execute([$uid]);
     $p = $s->fetch() ?: null;
@@ -519,6 +537,9 @@ function batchScores(string $TP, string $TS): void {
     foreach ($hashes as $h) { if (!isValidSongHash($h)) err('Invalid hash: '.$h); }
 
     $gt    = in_array($_GET['game_type'] ?? 's', ['s','d']) ? $_GET['game_type'] : 's';
+    // R81: real difficulty filter (v3.7 keeps one row per difficulty — a
+    // specific difficulty returns each player's best ON THAT difficulty).
+    $diff  = in_array($_GET['difficulty'] ?? 'all', ['easy','normal','hard'], true) ? $_GET['difficulty'] : 'all';
     $limit = min((int)($_GET['limit'] ?? 5000), 10000);
 
     $ph = implode(',', array_fill(0, count($hashes), '?'));
@@ -531,12 +552,23 @@ function batchScores(string $TP, string $TS): void {
         p.`display_name`, p.`color`,
         IF(p.`show_country`=1, p.`country_code`, NULL) AS `country_code`
         FROM `$TS` s JOIN `$TP` p ON s.`profile_uid` = p.`profile_uid`
-        WHERE (s.`song_hash` IN ($ph) OR s.`song_hash_v2` IN ($ph)) AND s.`game_type` = ? AND p.`show_on_board` = 1
+        WHERE (s.`song_hash` IN ($ph) OR s.`song_hash_v2` IN ($ph)) AND s.`game_type` = ? AND p.`show_on_board` = 1"
+        . ($diff !== 'all' ? " AND s.`difficulty` = ?" : "") . "
         ORDER BY s.`score` DESC
         LIMIT $limit";
     $stmt = db()->prepare($sql);
-    $stmt->execute(array_merge($hashes, $hashes, [$gt]));
+    $stmt->execute(array_merge($hashes, $hashes, [$gt], $diff !== 'all' ? [$diff] : []));
     $rows = $stmt->fetchAll();
+
+    // R81: difficulty is part of the best-score key — a profile holds up to
+    // three rows per song. Keep only each player's best row per hash (rows
+    // arrive score-sorted, so the FIRST row per player is already the max).
+    $dedup = [];
+    foreach ($rows as $row) {
+        $key = $row['song_hash'] . '|' . $row['profile_uid'];
+        if (!isset($dedup[$key])) $dedup[$key] = $row;
+    }
+    $rows = array_values($dedup);
 
     $result = []; $ranks = [];
     foreach ($rows as $row) {
@@ -617,7 +649,7 @@ function globalBoard(string $TP, string $TL): void {
         $sql = "SELECT
             `profile_uid`,`display_name`,`color`,
             IF(`show_country`=1,`country_code`,NULL) AS `country_code`,
-            `total_score`,`best_score`,`songs_played`,`games_played`,`avg_accuracy`,`br_wins`
+            `total_score`,`best_score`,`songs_played`,`games_played`,`avg_accuracy`
             FROM `$TP`
             WHERE `show_on_board` = 1
             ORDER BY `$sortCol` DESC, `total_score` DESC
@@ -672,12 +704,12 @@ function globalBoard(string $TP, string $TL): void {
             MAX(l.`score`)               AS `window_best`,
             ROUND(AVG(l.`accuracy`), 2)  AS `window_avg`,
             COUNT(*)                     AS `window_plays`,
-            p.`display_name`, p.`color`, p.`br_wins`,
+            p.`display_name`, p.`color`,
             IF(p.`show_country`=1, p.`country_code`, NULL) AS `country_code`
             FROM `$TL` l JOIN `$TP` p ON l.`profile_uid` = p.`profile_uid`
             WHERE l.`created_at` >= ? AND p.`show_on_board` = 1
             GROUP BY l.`profile_uid`, p.`profile_uid`, p.`display_name`, p.`color`,
-                     p.`br_wins`, p.`show_country`, p.`country_code`
+                     p.`show_country`, p.`country_code`
             ORDER BY `$sortAlias` DESC, `window_score` DESC
             LIMIT ? OFFSET ?";
         $stmt = db()->prepare($sql); $stmt->execute([$cutoff, $limit, $offset]);
@@ -733,7 +765,7 @@ function globalBoard(string $TP, string $TL): void {
     foreach ($rows as &$row) {
         $row['rank'] = $r++;
         // Aggregates may come back as strings depending on the driver.
-        foreach (['total_score','best_score','songs_played','games_played','br_wins'] as $k) {
+        foreach (['total_score','best_score','songs_played','games_played'] as $k) {
             if (isset($row[$k])) $row[$k] = (int)$row[$k];
         }
     }
@@ -772,6 +804,18 @@ function songBoard(string $hash, string $TP, string $TS): void {
     $params[] = $limit;
     $stmt = db()->prepare($sql); $stmt->execute($params);
     $rows = $stmt->fetchAll();
+
+    // v3.7: with difficulty in the best-score key a profile holds up to three
+    // rows per song (one per difficulty). The board must show each player
+    // ONCE — keep their overall best row (rows arrive score-sorted, so the
+    // first row per player is already the max).
+    $byProfile = [];
+    foreach ($rows as $row) {
+        $pid = $row['profile_uid'];
+        if (!isset($byProfile[$pid])) $byProfile[$pid] = $row;
+    }
+    $rows = array_values($byProfile);
+
     $r = 1;
     foreach ($rows as &$row) {
         $row['rank'] = $r++;
@@ -829,36 +873,217 @@ function crownsBoard(string $TP, string $TS): void {
 // ============================================================
 
 /**
- * Valid daily challenge types (must match the client's DAILY_TYPE_LIST).
- * 'max' bound = plausibility ceiling for metric_value,
- * 'dir'      = ranking direction ('min' = lower is better, e.g. missed notes).
+ * Valid daily challenge types — the client's FULL 200-type daily pool.
+ * R81: GENERATED from src/lib/game/challenge-pools.ts (DAILY_TYPE_LIST) via
+ * bun scripts/generate-daily-meta.ts — regenerate when the pool changes;
+ * scripts/daily-types.json is emitted from the same source (test seeder).
+ * 'max' bound = plausibility ceiling for metric_value (per metric family:
+ * score <= 10,000; accuracy/tick <= 100; combo <= 2,500; perfect <= 1,500;
+ * golden <= 600; notes-hit <= 1,500; missed <= 600),
+ * 'dir' = ranking direction ('min' = lower is better, e.g. missed notes).
  */
 function dailyTypeMeta(): array {
     return [
-        // R69: 'score'-like metrics come from the standard 10,000-point
-        // scoring model (MAX_POINTS_PER_SONG) — 100000 was pure sandbox.
-        'score'           => ['max' => 10000,  'dir' => 'max'],
-        'accuracy'        => ['max' => 100,    'dir' => 'max'],
-        'combo'           => ['max' => 5000,   'dir' => 'max'],
-        'perfect_notes'   => ['max' => 5000,   'dir' => 'max'],
-        'golden_notes'    => ['max' => 2000,   'dir' => 'max'],
-        'notes_hit'       => ['max' => 5000,   'dir' => 'max'],
-        'tick_accuracy'   => ['max' => 100,    'dir' => 'max'],
-        'clean_song'      => ['max' => 5000,   'dir' => 'min'],
-        'comeback'        => ['max' => 5000,   'dir' => 'max'],
-        'sharpshooter'    => ['max' => 100,    'dir' => 'max'],
-        'combo_master'    => ['max' => 5000,   'dir' => 'max'],
-        'perfect_storm'   => ['max' => 5000,   'dir' => 'max'],
-        'endurance'       => ['max' => 5000,   'dir' => 'max'],
-        'golden_groove'   => ['max' => 2000,   'dir' => 'max'],
-        'precision'       => ['max' => 100,    'dir' => 'max'],
-        'flawless_finale' => ['max' => 100,    'dir' => 'max'],
-        'score_sniper'    => ['max' => 10000,  'dir' => 'max'],
-        'combo_race'      => ['max' => 5000,   'dir' => 'max'],
-        'perfect_pitch'   => ['max' => 5000,   'dir' => 'max'],
-        'golden_fingers'  => ['max' => 2000,   'dir' => 'max'],
-        'steady_hand'     => ['max' => 5000,   'dir' => 'min'],
-        'titan'           => ['max' => 10000,  'dir' => 'max'],
+        'score' => ['max' => 10000, 'dir' => 'max'],
+        'accuracy' => ['max' => 100, 'dir' => 'max'],
+        'combo' => ['max' => 2500, 'dir' => 'max'],
+        'perfect_notes' => ['max' => 1500, 'dir' => 'max'],
+        'golden_notes' => ['max' => 600, 'dir' => 'max'],
+        'notes_hit' => ['max' => 1500, 'dir' => 'max'],
+        'tick_accuracy' => ['max' => 100, 'dir' => 'max'],
+        'clean_song' => ['max' => 600, 'dir' => 'min'],
+        'comeback' => ['max' => 2500, 'dir' => 'max'],
+        'sharpshooter' => ['max' => 100, 'dir' => 'max'],
+        'combo_master' => ['max' => 2500, 'dir' => 'max'],
+        'perfect_storm' => ['max' => 1500, 'dir' => 'max'],
+        'endurance' => ['max' => 1500, 'dir' => 'max'],
+        'golden_groove' => ['max' => 600, 'dir' => 'max'],
+        'precision' => ['max' => 100, 'dir' => 'max'],
+        'flawless_finale' => ['max' => 100, 'dir' => 'max'],
+        'score_sniper' => ['max' => 10000, 'dir' => 'max'],
+        'combo_race' => ['max' => 2500, 'dir' => 'max'],
+        'perfect_pitch' => ['max' => 1500, 'dir' => 'max'],
+        'golden_fingers' => ['max' => 600, 'dir' => 'max'],
+        'steady_hand' => ['max' => 600, 'dir' => 'min'],
+        'titan' => ['max' => 10000, 'dir' => 'max'],
+        'score_sprout' => ['max' => 10000, 'dir' => 'max'],
+        'score_sprinter' => ['max' => 10000, 'dir' => 'max'],
+        'score_slayer' => ['max' => 10000, 'dir' => 'max'],
+        'score_phantom' => ['max' => 10000, 'dir' => 'max'],
+        'score_boulder' => ['max' => 10000, 'dir' => 'max'],
+        'score_eclipse' => ['max' => 10000, 'dir' => 'max'],
+        'score_comet' => ['max' => 10000, 'dir' => 'max'],
+        'score_volcano' => ['max' => 10000, 'dir' => 'max'],
+        'accuracy_adept' => ['max' => 100, 'dir' => 'max'],
+        'accuracy_artisan' => ['max' => 100, 'dir' => 'max'],
+        'accuracy_archer' => ['max' => 100, 'dir' => 'max'],
+        'accuracy_navigator' => ['max' => 100, 'dir' => 'max'],
+        'accuracy_horizon' => ['max' => 100, 'dir' => 'max'],
+        'accuracy_zenith' => ['max' => 100, 'dir' => 'max'],
+        'accuracy_mirage' => ['max' => 100, 'dir' => 'max'],
+        'combo_spark' => ['max' => 2500, 'dir' => 'max'],
+        'combo_forge' => ['max' => 2500, 'dir' => 'max'],
+        'combo_tornado' => ['max' => 2500, 'dir' => 'max'],
+        'combo_glacier' => ['max' => 2500, 'dir' => 'max'],
+        'combo_phoenix' => ['max' => 2500, 'dir' => 'max'],
+        'combo_avalanche' => ['max' => 2500, 'dir' => 'max'],
+        'combo_tsunami' => ['max' => 2500, 'dir' => 'max'],
+        'perfect_dawn' => ['max' => 1500, 'dir' => 'max'],
+        'perfect_bloom' => ['max' => 1500, 'dir' => 'max'],
+        'perfect_cascade' => ['max' => 1500, 'dir' => 'max'],
+        'perfect_summit' => ['max' => 1500, 'dir' => 'max'],
+        'perfect_galaxy' => ['max' => 1500, 'dir' => 'max'],
+        'perfect_aurora' => ['max' => 1500, 'dir' => 'max'],
+        'golden_spark' => ['max' => 600, 'dir' => 'max'],
+        'golden_rush' => ['max' => 600, 'dir' => 'max'],
+        'golden_treasure' => ['max' => 600, 'dir' => 'max'],
+        'golden_eclipse' => ['max' => 600, 'dir' => 'max'],
+        'golden_legend' => ['max' => 600, 'dir' => 'max'],
+        'notes_river' => ['max' => 1500, 'dir' => 'max'],
+        'notes_storm' => ['max' => 1500, 'dir' => 'max'],
+        'notes_mountain' => ['max' => 1500, 'dir' => 'max'],
+        'notes_odyssey' => ['max' => 1500, 'dir' => 'max'],
+        'notes_horizon' => ['max' => 1500, 'dir' => 'max'],
+        'miss_guard' => ['max' => 600, 'dir' => 'min'],
+        'miss_anchor' => ['max' => 600, 'dir' => 'min'],
+        'miss_diamond' => ['max' => 600, 'dir' => 'min'],
+        'miss_bubble' => ['max' => 600, 'dir' => 'min'],
+        'miss_zero' => ['max' => 600, 'dir' => 'min'],
+        'tick_harmony' => ['max' => 100, 'dir' => 'max'],
+        'tick_metro' => ['max' => 100, 'dir' => 'max'],
+        'tick_quartz' => ['max' => 100, 'dir' => 'max'],
+        'tick_symphony' => ['max' => 100, 'dir' => 'max'],
+        'genre_pop' => ['max' => 100, 'dir' => 'max'],
+        'genre_rock' => ['max' => 100, 'dir' => 'max'],
+        'genre_metal' => ['max' => 100, 'dir' => 'max'],
+        'genre_punk' => ['max' => 100, 'dir' => 'max'],
+        'genre_rap' => ['max' => 100, 'dir' => 'max'],
+        'genre_rnb' => ['max' => 100, 'dir' => 'max'],
+        'genre_soul' => ['max' => 100, 'dir' => 'max'],
+        'genre_funk' => ['max' => 100, 'dir' => 'max'],
+        'duo_day' => ['max' => 100, 'dir' => 'max'],
+        'genre_blues' => ['max' => 100, 'dir' => 'max'],
+        'genre_folk' => ['max' => 100, 'dir' => 'max'],
+        'genre_country' => ['max' => 100, 'dir' => 'max'],
+        'genre_electronic' => ['max' => 100, 'dir' => 'max'],
+        'genre_reggae' => ['max' => 100, 'dir' => 'max'],
+        'genre_latin' => ['max' => 100, 'dir' => 'max'],
+        'genre_classical' => ['max' => 100, 'dir' => 'max'],
+        'genre_schlager' => ['max' => 100, 'dir' => 'max'],
+        'genre_volksmusik' => ['max' => 100, 'dir' => 'max'],
+        'genre_musical' => ['max' => 100, 'dir' => 'max'],
+        'genre_soundtrack' => ['max' => 100, 'dir' => 'max'],
+        'genre_disney' => ['max' => 100, 'dir' => 'max'],
+        'genre_childrens' => ['max' => 100, 'dir' => 'max'],
+        'genre_kpop' => ['max' => 100, 'dir' => 'max'],
+        'genre_jpop' => ['max' => 100, 'dir' => 'max'],
+        'lang_english' => ['max' => 100, 'dir' => 'max'],
+        'lang_german' => ['max' => 100, 'dir' => 'max'],
+        'lang_spanish' => ['max' => 100, 'dir' => 'max'],
+        'lang_french' => ['max' => 100, 'dir' => 'max'],
+        'lang_italian' => ['max' => 100, 'dir' => 'max'],
+        'lang_portuguese' => ['max' => 100, 'dir' => 'max'],
+        'lang_japanese' => ['max' => 100, 'dir' => 'max'],
+        'lang_korean' => ['max' => 100, 'dir' => 'max'],
+        'lang_chinese' => ['max' => 100, 'dir' => 'max'],
+        'lang_russian' => ['max' => 100, 'dir' => 'max'],
+        'lang_dutch' => ['max' => 100, 'dir' => 'max'],
+        'lang_polish' => ['max' => 100, 'dir' => 'max'],
+        'lang_turkish' => ['max' => 100, 'dir' => 'max'],
+        'lang_arabic' => ['max' => 100, 'dir' => 'max'],
+        'lang_swedish' => ['max' => 100, 'dir' => 'max'],
+        'lang_latin' => ['max' => 100, 'dir' => 'max'],
+        'lang_norwegian' => ['max' => 100, 'dir' => 'max'],
+        'lang_danish' => ['max' => 100, 'dir' => 'max'],
+        'lang_finnish' => ['max' => 100, 'dir' => 'max'],
+        'lang_hindi' => ['max' => 100, 'dir' => 'max'],
+        'lang_thai' => ['max' => 100, 'dir' => 'max'],
+        'lang_indonesian' => ['max' => 100, 'dir' => 'max'],
+        'lang_atypical' => ['max' => 100, 'dir' => 'max'],
+        'decade_1950' => ['max' => 100, 'dir' => 'max'],
+        'decade_1960' => ['max' => 100, 'dir' => 'max'],
+        'decade_1970' => ['max' => 100, 'dir' => 'max'],
+        'decade_1980' => ['max' => 100, 'dir' => 'max'],
+        'decade_1990' => ['max' => 100, 'dir' => 'max'],
+        'decade_2000' => ['max' => 100, 'dir' => 'max'],
+        'decade_2010' => ['max' => 100, 'dir' => 'max'],
+        'decade_2020' => ['max' => 100, 'dir' => 'max'],
+        'decade_vintage' => ['max' => 100, 'dir' => 'max'],
+        'shape_longballad' => ['max' => 100, 'dir' => 'max'],
+        'shape_epic' => ['max' => 100, 'dir' => 'max'],
+        'shape_quickie' => ['max' => 100, 'dir' => 'max'],
+        'shape_sprint' => ['max' => 100, 'dir' => 'max'],
+        'shape_title_am' => ['max' => 100, 'dir' => 'max'],
+        'shape_title_nz' => ['max' => 100, 'dir' => 'max'],
+        'shape_oneword' => ['max' => 100, 'dir' => 'max'],
+        'shape_love_title' => ['max' => 100, 'dir' => 'max'],
+        'shape_number_title' => ['max' => 100, 'dir' => 'max'],
+        'shape_question' => ['max' => 100, 'dir' => 'max'],
+        'shape_feat' => ['max' => 100, 'dir' => 'max'],
+        'shape_band' => ['max' => 100, 'dir' => 'max'],
+        'shape_bpm_fast' => ['max' => 100, 'dir' => 'max'],
+        'shape_bpm_slow' => ['max' => 100, 'dir' => 'max'],
+        'shape_fresh' => ['max' => 100, 'dir' => 'max'],
+        'shape_recent' => ['max' => 100, 'dir' => 'max'],
+        'shape_rating5' => ['max' => 100, 'dir' => 'max'],
+        'shape_diff_easy' => ['max' => 100, 'dir' => 'max'],
+        'shape_diff_hard' => ['max' => 100, 'dir' => 'max'],
+        'maestro_score' => ['max' => 10000, 'dir' => 'max'],
+        'maestro_accuracy' => ['max' => 100, 'dir' => 'max'],
+        'maestro_combo' => ['max' => 2500, 'dir' => 'max'],
+        'maestro_perfect' => ['max' => 1500, 'dir' => 'max'],
+        'maestro_golden' => ['max' => 600, 'dir' => 'max'],
+        'virtuoso_score' => ['max' => 10000, 'dir' => 'max'],
+        'virtuoso_accuracy' => ['max' => 100, 'dir' => 'max'],
+        'virtuoso_combo' => ['max' => 2500, 'dir' => 'max'],
+        'virtuoso_perfect' => ['max' => 1500, 'dir' => 'max'],
+        'virtuoso_golden' => ['max' => 600, 'dir' => 'max'],
+        'titan_notes' => ['max' => 1500, 'dir' => 'max'],
+        'titan_tick' => ['max' => 100, 'dir' => 'max'],
+        'ghost_miss' => ['max' => 600, 'dir' => 'min'],
+        'ghost_score' => ['max' => 10000, 'dir' => 'max'],
+        'ghost_combo' => ['max' => 2500, 'dir' => 'max'],
+        'phoenix_accuracy' => ['max' => 100, 'dir' => 'max'],
+        'phoenix_score' => ['max' => 10000, 'dir' => 'max'],
+        'phoenix_perfect' => ['max' => 1500, 'dir' => 'max'],
+        'storm_notes' => ['max' => 1500, 'dir' => 'max'],
+        'storm_tick' => ['max' => 100, 'dir' => 'max'],
+        'storm_score' => ['max' => 10000, 'dir' => 'max'],
+        'prism_accuracy' => ['max' => 100, 'dir' => 'max'],
+        'prism_combo' => ['max' => 2500, 'dir' => 'max'],
+        'prism_score' => ['max' => 10000, 'dir' => 'max'],
+        'apex_score' => ['max' => 10000, 'dir' => 'max'],
+        'apex_accuracy' => ['max' => 100, 'dir' => 'max'],
+        'apex_combo' => ['max' => 2500, 'dir' => 'max'],
+        'apex_perfect' => ['max' => 1500, 'dir' => 'max'],
+        'apex_golden' => ['max' => 600, 'dir' => 'max'],
+        'apex_notes' => ['max' => 1500, 'dir' => 'max'],
+        'apex_tick' => ['max' => 100, 'dir' => 'max'],
+        'apex_clean' => ['max' => 600, 'dir' => 'min'],
+        'nova_score' => ['max' => 10000, 'dir' => 'max'],
+        'nova_combo' => ['max' => 2500, 'dir' => 'max'],
+        'nova_perfect' => ['max' => 1500, 'dir' => 'max'],
+        'nova_golden' => ['max' => 600, 'dir' => 'max'],
+        'echo_score' => ['max' => 10000, 'dir' => 'max'],
+        'echo_combo' => ['max' => 2500, 'dir' => 'max'],
+        'echo_perfect' => ['max' => 1500, 'dir' => 'max'],
+        'echo_golden' => ['max' => 600, 'dir' => 'max'],
+        'drift_accuracy' => ['max' => 100, 'dir' => 'max'],
+        'drift_combo' => ['max' => 2500, 'dir' => 'max'],
+        'drift_score' => ['max' => 10000, 'dir' => 'max'],
+        'drift_notes' => ['max' => 1500, 'dir' => 'max'],
+        'pulse_tick' => ['max' => 100, 'dir' => 'max'],
+        'pulse_score' => ['max' => 10000, 'dir' => 'max'],
+        'pulse_perfect' => ['max' => 1500, 'dir' => 'max'],
+        'pulse_combo' => ['max' => 2500, 'dir' => 'max'],
+        'lunar_accuracy' => ['max' => 100, 'dir' => 'max'],
+        'lunar_score' => ['max' => 10000, 'dir' => 'max'],
+        'lunar_perfect' => ['max' => 1500, 'dir' => 'max'],
+        'lunar_golden' => ['max' => 600, 'dir' => 'max'],
+        'solar_notes' => ['max' => 1500, 'dir' => 'max'],
+        'solar_tick' => ['max' => 100, 'dir' => 'max'],
+        'solar_score' => ['max' => 10000, 'dir' => 'max'],
+        'solar_combo' => ['max' => 2500, 'dir' => 'max'],
     ];
 }
 
@@ -910,10 +1135,9 @@ function submitDaily(string $TP, string $TD): void {
     $p->execute([$uid]);
     if (!(int)$p->fetchColumn()) err('Profile opted out');
 
-    // UPSERT: same day + type keeps the better metric_value —
-    // 'max' types keep the higher value, 'min' types (missed notes)
-    // keep the lower one. xp follows the winning attempt; difficulty
-    // reflects the latest submission (informational only).
+    // UPSERT (v3.7): difficulty is part of the unique key — the same day +
+    // type + tier keeps the better metric_value ('max' types keep the higher
+    // value, 'min' types the lower one). xp follows the winning attempt.
     $better = ($types[$type]['dir'] === 'min')
         ? "IF(VALUES(`metric_value`) < `metric_value`, VALUES(`metric_value`), `metric_value`)"
         : "IF(VALUES(`metric_value`) > `metric_value`, VALUES(`metric_value`), `metric_value`)";
@@ -922,8 +1146,7 @@ function submitDaily(string $TP, string $TD): void {
            VALUES (?,?,?,?,?,?)
            ON DUPLICATE KEY UPDATE
                `metric_value` = $better,
-               `xp_earned`    = IF(VALUES(`metric_value`) = `metric_value` AND VALUES(`xp_earned`) > `xp_earned`, VALUES(`xp_earned`), `xp_earned`),
-               `difficulty`   = VALUES(`difficulty`)")
+               `xp_earned`    = IF(VALUES(`metric_value`) = `metric_value` AND VALUES(`xp_earned`) > `xp_earned`, VALUES(`xp_earned`), `xp_earned`)")
         ->execute([$uid, $date, $type, $diff, $mv, $xp]);
 
     json(['ok' => true]);
@@ -936,10 +1159,11 @@ function dailyBoard(string $TP, string $TD): void {
     $limit = max(1, min((int)($_GET['limit'] ?? 100), 100));
     $types = dailyTypeMeta();
 
-    // One day of results is small (the unique key caps it at 22 rows per
-    // profile — one per type); the SQL bound is only a hard safety cap.
+    // One day of results is small (the unique key caps it at 5 slots x 5
+    // tiers per profile); the SQL bound is only a hard safety cap.
     // Ranking per type happens in PHP so 'min' types (missed notes) can
-    // sort ascending while everything else sorts descending.
+    // sort ascending while everything else sorts descending. The v3.7
+    // per-stage boxes group the rows by (type, difficulty) client-side.
     $sql = "SELECT
         r.`profile_uid`, r.`challenge_type`, r.`difficulty`, r.`metric_value`, r.`created_at`,
         p.`display_name`, p.`color`,
@@ -1013,52 +1237,6 @@ function recentPlays(string $uid, string $TP, string $TL): void {
 }
 
 // ============================================================
-// BATTLE ROYALE (R72/D: online win counter)
-// ============================================================
-/**
- * POST /br — submit a Battle-Royale result. BR has no comparable score
- * scale (rounds × players), so only WINS are counted — br_wins on the
- * profile doubles as the board column (sort=plays is NOT it; the client
- * surfaces it as its own stat / the global rows carry br_wins).
- *
- * Anti-abuse: (1) the sync_code proves ownership, (2) a 32-hex nonce is
- * REQUIRED (a replayed request must never increment a counter twice),
- * (3) two counted wins must be ≥ 120 s apart — a full BR round takes
- * minutes; the atomic UPDATE enforces the interval without a race.
- */
-function routeBr(string $method, string $TP): void {
-    if ($method !== 'POST') err('Method not allowed', 405);
-    $d = body();
-    requireFields($d, ['profile_uid', 'sync_code', 'won', 'nonce']);
-    $uid = clean((string)$d['profile_uid']);
-    if (!isValidUUID($uid)) err('Invalid profile_uid');
-
-    requireOwnership($uid, $d, $TP);
-
-    $p = db()->prepare("SELECT `show_on_board` FROM `$TP` WHERE `profile_uid` = ?");
-    $p->execute([$uid]);
-    if (!(int)$p->fetchColumn()) err('Profile opted out');
-
-    // Counter write → nonce is mandatory (see docblock).
-    consumeNonce(clean((string)$d['nonce']), true);
-
-    if (!filter_var($d['won'], FILTER_VALIDATE_BOOLEAN)) {
-        // A loss is accepted (and the nonce burned) but never counted.
-        json(['ok' => true, 'counted' => false]);
-    }
-
-    $upd = db()->prepare("UPDATE `$TP` SET `br_wins` = `br_wins` + 1, `br_wins_at` = NOW()
-        WHERE `profile_uid` = ?
-          AND (`br_wins_at` IS NULL OR `br_wins_at` < (NOW() - INTERVAL 120 SECOND))");
-    $upd->execute([$uid]);
-    $counted = $upd->rowCount() === 1;
-
-    $cur = db()->prepare("SELECT `br_wins` FROM `$TP` WHERE `profile_uid` = ?");
-    $cur->execute([$uid]);
-    json(['ok' => true, 'counted' => $counted, 'br_wins' => (int)$cur->fetchColumn()]);
-}
-
-// ============================================================
 // HEALTH / DIAGNOSTICS (v3.6.1)
 // ============================================================
 /**
@@ -1072,8 +1250,8 @@ function routeBr(string $method, string $TP): void {
  *   - DB connection refused (config.local.php credentials after a
  *     database rebuild / new password)
  *   - tables created in a DIFFERENT database than DB_NAME points to
- *   - tables exist, but individual columns are missing (e.g. an old
- *     ks_profiles without br_wins/br_wins_at from a partial migration)
+ *   - tables exist, but individual columns are missing (e.g. an old dump
+ *     still carrying pre-v3.7 columns like br_wins)
  *   - sync_code still CHAR(8) (12-char codes would be rejected/truncated)
  *   - stored procedure sp_refresh_profile_stats missing (phpMyAdmin
  *     DELIMITER block skipped) — POST /scores would 500
@@ -1085,7 +1263,7 @@ function routeBr(string $method, string $TP): void {
  */
 function apiHealth(string $TP, string $TS, string $TD, string $TA, string $TL, string $TN): void {
     header('Cache-Control: no-store');
-    $version = '3.6.2';
+    $version = '3.7.0';
     $problems = [];
     $fixes    = [];
 
@@ -1130,8 +1308,6 @@ function apiHealth(string $TP, string $TS, string $TD, string $TA, string $TL, s
             'show_on_board' => 'TINYINT(1) NOT NULL DEFAULT 1',
             'show_country'  => 'TINYINT(1) NOT NULL DEFAULT 1',
             'sync_code'     => 'VARCHAR(16) NULL DEFAULT NULL',
-            'br_wins'       => 'INT NOT NULL DEFAULT 0',
-            'br_wins_at'    => 'DATETIME NULL DEFAULT NULL',
             'total_score'   => 'BIGINT NOT NULL DEFAULT 0',
             'best_score'    => 'INT NOT NULL DEFAULT 0',
             'songs_played'  => 'INT NOT NULL DEFAULT 0',
@@ -1289,7 +1465,7 @@ function apiHealth(string $TP, string $TS, string $TD, string $TA, string $TL, s
     $probes = [
         'board_all_time' => "SELECT `profile_uid`,`display_name`,`color`,
                 IF(`show_country`=1,`country_code`,NULL) AS `country_code`,
-                `total_score`,`best_score`,`songs_played`,`games_played`,`avg_accuracy`,`br_wins`
+                `total_score`,`best_score`,`songs_played`,`games_played`,`avg_accuracy`
             FROM `$TP`
             WHERE `show_on_board` = 1
             ORDER BY `total_score` DESC, `total_score` DESC
@@ -1302,12 +1478,12 @@ function apiHealth(string $TP, string $TS, string $TD, string $TA, string $TL, s
                 COUNT(*)                     AS `games_played`,
                 ROUND(AVG(l.`accuracy`), 2)  AS `avg_accuracy`,
                 SUM(l.`score`)               AS `window_score`,
-                p.`display_name`, p.`color`, p.`br_wins`,
+                p.`display_name`, p.`color`,
                 IF(p.`show_country`=1, p.`country_code`, NULL) AS `country_code`
             FROM `$TL` l JOIN `$TP` p ON l.`profile_uid` = p.`profile_uid`
             WHERE l.`created_at` >= ? AND p.`show_on_board` = 1
             GROUP BY l.`profile_uid`, p.`profile_uid`, p.`display_name`, p.`color`,
-                     p.`br_wins`, p.`show_country`, p.`country_code`
+                     p.`show_country`, p.`country_code`
             ORDER BY `window_score` DESC, `window_score` DESC
             LIMIT 1 OFFSET 0",
         'board_window_week' => "SELECT
@@ -1318,12 +1494,12 @@ function apiHealth(string $TP, string $TS, string $TD, string $TA, string $TL, s
                 COUNT(*)                     AS `games_played`,
                 ROUND(AVG(l.`accuracy`), 2)  AS `avg_accuracy`,
                 SUM(l.`score`)               AS `window_score`,
-                p.`display_name`, p.`color`, p.`br_wins`,
+                p.`display_name`, p.`color`,
                 IF(p.`show_country`=1, p.`country_code`, NULL) AS `country_code`
             FROM `$TL` l JOIN `$TP` p ON l.`profile_uid` = p.`profile_uid`
             WHERE l.`created_at` >= ? AND p.`show_on_board` = 1
             GROUP BY l.`profile_uid`, p.`profile_uid`, p.`display_name`, p.`color`,
-                     p.`br_wins`, p.`show_country`, p.`country_code`
+                     p.`show_country`, p.`country_code`
             ORDER BY `window_score` DESC, `window_score` DESC
             LIMIT 1 OFFSET 0",
     ];

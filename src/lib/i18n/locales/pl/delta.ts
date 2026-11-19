@@ -375,10 +375,6 @@ export const deltaTranslations = {
     },
   },
   dailyChallengeScreen: {
-    // R72: daily archive — online board of any past day
-    archiveNextDay: "Następny dzień",
-    archivePrevDay: "Poprzedni dzień",
-    archiveToday: "Dzisiaj",
     dualPlayerHint: "Wybrano dwóch graczy: codzienne i tygodniowe wyzwania można śpiewać pojedynkiem lub drużynowo.",
     filterAll: "Wszystkie",
     modeCompleted: "Ukończono",
@@ -403,6 +399,12 @@ export const deltaTranslations = {
     tierProgressToday: "Poziomy odznak dzisiaj",
     tierProgressWeek: "Poziomy odznak w tym tygodniu",
     tierSilver: "Srebro",
+    // R81: per-stage Top-3 box (replaces the leaderboard tab; weeklies intentionally without)
+    top3Title: "Top 3",
+    top3Empty: "Na tym etapie nie ma jeszcze wpisów.",
+    top3OnlineLoading: "Ładowanie…",
+    top3OnlineError: "Brak połączenia online.",
+    top3Retry: "Spróbuj ponownie",
     weeklyBestType: "★ najlepiej",
     weeklyCountsAutomatically: "Każda zaśpiewana piosenka automatycznie liczy się do wyzwań tygodniowych",
     weeklyDifficultyLabel: "Tygodniowa trudność",
@@ -903,23 +905,12 @@ export const deltaTranslations = {
   gameScreen: {
     midiSynth: "🎛 Synteza MIDI",
   },
-  // R72 — highscore screen: time windows, alternative sorts, percentile
+  // R81 — highscore screen: solo/duo tag, theme-party empty state, best caption
   highscoreScreen: {
-    windowAll: "Zawsze",
-    windowMonth: "Miesiąc",
-    windowWeek: "Tydzień",
-    windowLabel: "Zakres czasu",
-    sortScore: "Punkty",
-    sortBest: "Najlepszy wynik",
-    sortAccuracy: "Celność",
-    sortPlays: "Piosenki",
-    sortLabel: "Sortuj według",
-    totalPlayers: "{n} graczy",
-    yourRank: "Twoja pozycja: #{rank} z {total}",
-    percentileTop: "Top {p}%",
-    noRoundsInWindow: "Nie zagrałeś jeszcze żadnej rundy online w tym okresie.",
-    roundsPlayed: "{n} rund",
-    brWins: "Zwycięstwa w Battle Royale",
+    soloTag: "Solo",
+    duoTag: "Duet",
+    themeNoMatches: "Żadna piosenka obecnej imprezy tematycznej nie ma jeszcze wyniku.",
+    bestOf: "Najlepszy wynik",
   },
   homeScreen: {
     allDailyDone: "Wszystkie codzienne sloty ukończone! 🎉",
@@ -1060,7 +1051,6 @@ export const deltaTranslations = {
     loading: "Ładowanie danych online…",
     unavailable: "Dane online są obecnie niedostępne",
     crowns: "Korony za piosenki (#1)",
-    brWins: "Zwycięstwa BR",
     topPercent: "Top {p}%",
     rankOf: "Pozycja #{rank} z {total}",
     notRanked: "Poza rankingiem",
@@ -1293,6 +1283,10 @@ export const deltaTranslations = {
     difficulty_easy: "Łatwy",
     difficulty_normal: "Średni",
     difficulty_hard: "Trudny",
+    // R81: rival box below the scores (top-3 rivals on this song)
+    rivalsTitle: "Rywale tej piosenki",
+    rivalsEmpty: "Żaden rywal nie zagrał jeszcze tej piosenki.",
+    topScores: "Top 5",
   },
   songStart: {
     instrumentalAmount: "Usuwanie wokalu: {n}%",

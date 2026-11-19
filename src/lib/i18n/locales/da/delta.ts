@@ -375,10 +375,6 @@ export const deltaTranslations = {
     },
   },
   dailyChallengeScreen: {
-    // R72: daily archive — online board of any past day
-    archiveNextDay: "Næste dag",
-    archivePrevDay: "Forrige dag",
-    archiveToday: "I dag",
     dualPlayerHint: "To spillere valgt: daglige og ugentlige udfordringer kan synges som duel eller hold.",
     filterAll: "Alle",
     modeCompleted: "Gennemført",
@@ -403,6 +399,12 @@ export const deltaTranslations = {
     tierProgressToday: "Badgeniveauer i dag",
     tierProgressWeek: "Badgeniveauer denne uge",
     tierSilver: "Sølv",
+    // R81: per-stage Top-3 box (replaces the leaderboard tab; weeklies intentionally without)
+    top3Title: "Top 3",
+    top3Empty: "Endnu ingen resultater på dette niveau.",
+    top3OnlineLoading: "Indlæser…",
+    top3OnlineError: "Online utilgængelig.",
+    top3Retry: "Prøv igen",
     weeklyBestType: "★ bedste",
     weeklyCountsAutomatically: "Hver sang, du synger, tæller automatisk med i de ugentlige udfordringer",
     weeklyDifficultyLabel: "Ugentlig sværhedsgrad",
@@ -903,23 +905,12 @@ export const deltaTranslations = {
   gameScreen: {
     midiSynth: "🎛 MIDI-syntese",
   },
-  // R72 — highscore screen: time windows, alternative sorts, percentile
+  // R81 — highscore screen: solo/duo tag, theme-party empty state, best caption
   highscoreScreen: {
-    windowAll: "Samlet",
-    windowMonth: "Måned",
-    windowWeek: "Uge",
-    windowLabel: "Tidsrum",
-    sortScore: "Point",
-    sortBest: "Bedste score",
-    sortAccuracy: "Nøjagtighed",
-    sortPlays: "Sange",
-    sortLabel: "Sortér efter",
-    totalPlayers: "{n} spillere",
-    yourRank: "Din placering: #{rank} af {total}",
-    percentileTop: "Top {p}%",
-    noRoundsInWindow: "Du har ikke spillet nogen online-runder i denne periode endnu.",
-    roundsPlayed: "{n} runder",
-    brWins: "Battle Royale-sejre",
+    soloTag: "Solo",
+    duoTag: "Duet",
+    themeNoMatches: "Ingen sange fra den aktuelle temafest har en score.",
+    bestOf: "Bedste score",
   },
   homeScreen: {
     allDailyDone: "Alle daglige brikker gennemført! 🎉",
@@ -1060,7 +1051,6 @@ export const deltaTranslations = {
     loading: "Indlæser online-data…",
     unavailable: "Online-data er i øjeblikket utilgængelige",
     crowns: "Sangkroner (#1)",
-    brWins: "BR-sejre",
     topPercent: "Top {p}%",
     rankOf: "Placering #{rank} af {total}",
     notRanked: "Ikke placeret",
@@ -1293,6 +1283,10 @@ export const deltaTranslations = {
     difficulty_easy: "Nem",
     difficulty_normal: "Medium",
     difficulty_hard: "Svær",
+    // R81: rival box below the scores (top-3 rivals on this song)
+    rivalsTitle: "Rivaler på denne sang",
+    rivalsEmpty: "Ingen rivaler har spillet denne sang endnu.",
+    topScores: "Top 5",
   },
   songStart: {
     instrumentalAmount: "Vokalfjernelse: {n}%",

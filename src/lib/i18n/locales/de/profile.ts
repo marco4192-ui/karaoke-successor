@@ -662,7 +662,6 @@ onlineStats: {
   loading: 'Lade Online-Daten…',
   unavailable: 'Online-Daten momentan nicht erreichbar',
   crowns: 'Song-Kronen (#1)',
-  brWins: 'BR-Siege',
   topPercent: 'Top {p}%',
   rankOf: 'Platz #{rank} von {total}',
   notRanked: 'Nicht platziert',

@@ -1,0 +1,1206 @@
+{
+  "ids": [
+    "score",
+    "accuracy",
+    "combo",
+    "perfect_notes",
+    "golden_notes",
+    "notes_hit",
+    "tick_accuracy",
+    "clean_song",
+    "comeback",
+    "sharpshooter",
+    "combo_master",
+    "perfect_storm",
+    "endurance",
+    "golden_groove",
+    "precision",
+    "flawless_finale",
+    "score_sniper",
+    "combo_race",
+    "perfect_pitch",
+    "golden_fingers",
+    "steady_hand",
+    "titan",
+    "score_sprout",
+    "score_sprinter",
+    "score_slayer",
+    "score_phantom",
+    "score_boulder",
+    "score_eclipse",
+    "score_comet",
+    "score_volcano",
+    "accuracy_adept",
+    "accuracy_artisan",
+    "accuracy_archer",
+    "accuracy_navigator",
+    "accuracy_horizon",
+    "accuracy_zenith",
+    "accuracy_mirage",
+    "combo_spark",
+    "combo_forge",
+    "combo_tornado",
+    "combo_glacier",
+    "combo_phoenix",
+    "combo_avalanche",
+    "combo_tsunami",
+    "perfect_dawn",
+    "perfect_bloom",
+    "perfect_cascade",
+    "perfect_summit",
+    "perfect_galaxy",
+    "perfect_aurora",
+    "golden_spark",
+    "golden_rush",
+    "golden_treasure",
+    "golden_eclipse",
+    "golden_legend",
+    "notes_river",
+    "notes_storm",
+    "notes_mountain",
+    "notes_odyssey",
+    "notes_horizon",
+    "miss_guard",
+    "miss_anchor",
+    "miss_diamond",
+    "miss_bubble",
+    "miss_zero",
+    "tick_harmony",
+    "tick_metro",
+    "tick_quartz",
+    "tick_symphony",
+    "genre_pop",
+    "genre_rock",
+    "genre_metal",
+    "genre_punk",
+    "genre_rap",
+    "genre_rnb",
+    "genre_soul",
+    "genre_funk",
+    "duo_day",
+    "genre_blues",
+    "genre_folk",
+    "genre_country",
+    "genre_electronic",
+    "genre_reggae",
+    "genre_latin",
+    "genre_classical",
+    "genre_schlager",
+    "genre_volksmusik",
+    "genre_musical",
+    "genre_soundtrack",
+    "genre_disney",
+    "genre_childrens",
+    "genre_kpop",
+    "genre_jpop",
+    "lang_english",
+    "lang_german",
+    "lang_spanish",
+    "lang_french",
+    "lang_italian",
+    "lang_portuguese",
+    "lang_japanese",
+    "lang_korean",
+    "lang_chinese",
+    "lang_russian",
+    "lang_dutch",
+    "lang_polish",
+    "lang_turkish",
+    "lang_arabic",
+    "lang_swedish",
+    "lang_latin",
+    "lang_norwegian",
+    "lang_danish",
+    "lang_finnish",
+    "lang_hindi",
+    "lang_thai",
+    "lang_indonesian",
+    "lang_atypical",
+    "decade_1950",
+    "decade_1960",
+    "decade_1970",
+    "decade_1980",
+    "decade_1990",
+    "decade_2000",
+    "decade_2010",
+    "decade_2020",
+    "decade_vintage",
+    "shape_longballad",
+    "shape_epic",
+    "shape_quickie",
+    "shape_sprint",
+    "shape_title_am",
+    "shape_title_nz",
+    "shape_oneword",
+    "shape_love_title",
+    "shape_number_title",
+    "shape_question",
+    "shape_feat",
+    "shape_band",
+    "shape_bpm_fast",
+    "shape_bpm_slow",
+    "shape_fresh",
+    "shape_recent",
+    "shape_rating5",
+    "shape_diff_easy",
+    "shape_diff_hard",
+    "maestro_score",
+    "maestro_accuracy",
+    "maestro_combo",
+    "maestro_perfect",
+    "maestro_golden",
+    "virtuoso_score",
+    "virtuoso_accuracy",
+    "virtuoso_combo",
+    "virtuoso_perfect",
+    "virtuoso_golden",
+    "titan_notes",
+    "titan_tick",
+    "ghost_miss",
+    "ghost_score",
+    "ghost_combo",
+    "phoenix_accuracy",
+    "phoenix_score",
+    "phoenix_perfect",
+    "storm_notes",
+    "storm_tick",
+    "storm_score",
+    "prism_accuracy",
+    "prism_combo",
+    "prism_score",
+    "apex_score",
+    "apex_accuracy",
+    "apex_combo",
+    "apex_perfect",
+    "apex_golden",
+    "apex_notes",
+    "apex_tick",
+    "apex_clean",
+    "nova_score",
+    "nova_combo",
+    "nova_perfect",
+    "nova_golden",
+    "echo_score",
+    "echo_combo",
+    "echo_perfect",
+    "echo_golden",
+    "drift_accuracy",
+    "drift_combo",
+    "drift_score",
+    "drift_notes",
+    "pulse_tick",
+    "pulse_score",
+    "pulse_perfect",
+    "pulse_combo",
+    "lunar_accuracy",
+    "lunar_score",
+    "lunar_perfect",
+    "lunar_golden",
+    "solar_notes",
+    "solar_tick",
+    "solar_score",
+    "solar_combo"
+  ],
+  "types": [
+    {
+      "id": "score",
+      "metricKey": "score",
+      "direction": "max"
+    },
+    {
+      "id": "accuracy",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "combo",
+      "metricKey": "maxCombo",
+      "direction": "max"
+    },
+    {
+      "id": "perfect_notes",
+      "metricKey": "perfectNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "golden_notes",
+      "metricKey": "goldenNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "notes_hit",
+      "metricKey": "notesHit",
+      "direction": "max"
+    },
+    {
+      "id": "tick_accuracy",
+      "metricKey": "tickAccuracy",
+      "direction": "max"
+    },
+    {
+      "id": "clean_song",
+      "metricKey": "notesMissed",
+      "direction": "min"
+    },
+    {
+      "id": "comeback",
+      "metricKey": "maxCombo",
+      "direction": "max"
+    },
+    {
+      "id": "sharpshooter",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "combo_master",
+      "metricKey": "maxCombo",
+      "direction": "max"
+    },
+    {
+      "id": "perfect_storm",
+      "metricKey": "perfectNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "endurance",
+      "metricKey": "notesHit",
+      "direction": "max"
+    },
+    {
+      "id": "golden_groove",
+      "metricKey": "goldenNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "precision",
+      "metricKey": "tickAccuracy",
+      "direction": "max"
+    },
+    {
+      "id": "flawless_finale",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "score_sniper",
+      "metricKey": "score",
+      "direction": "max"
+    },
+    {
+      "id": "combo_race",
+      "metricKey": "maxCombo",
+      "direction": "max"
+    },
+    {
+      "id": "perfect_pitch",
+      "metricKey": "perfectNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "golden_fingers",
+      "metricKey": "goldenNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "steady_hand",
+      "metricKey": "notesMissed",
+      "direction": "min"
+    },
+    {
+      "id": "titan",
+      "metricKey": "score",
+      "direction": "max"
+    },
+    {
+      "id": "score_sprout",
+      "metricKey": "score",
+      "direction": "max"
+    },
+    {
+      "id": "score_sprinter",
+      "metricKey": "score",
+      "direction": "max"
+    },
+    {
+      "id": "score_slayer",
+      "metricKey": "score",
+      "direction": "max"
+    },
+    {
+      "id": "score_phantom",
+      "metricKey": "score",
+      "direction": "max"
+    },
+    {
+      "id": "score_boulder",
+      "metricKey": "score",
+      "direction": "max"
+    },
+    {
+      "id": "score_eclipse",
+      "metricKey": "score",
+      "direction": "max"
+    },
+    {
+      "id": "score_comet",
+      "metricKey": "score",
+      "direction": "max"
+    },
+    {
+      "id": "score_volcano",
+      "metricKey": "score",
+      "direction": "max"
+    },
+    {
+      "id": "accuracy_adept",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "accuracy_artisan",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "accuracy_archer",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "accuracy_navigator",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "accuracy_horizon",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "accuracy_zenith",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "accuracy_mirage",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "combo_spark",
+      "metricKey": "maxCombo",
+      "direction": "max"
+    },
+    {
+      "id": "combo_forge",
+      "metricKey": "maxCombo",
+      "direction": "max"
+    },
+    {
+      "id": "combo_tornado",
+      "metricKey": "maxCombo",
+      "direction": "max"
+    },
+    {
+      "id": "combo_glacier",
+      "metricKey": "maxCombo",
+      "direction": "max"
+    },
+    {
+      "id": "combo_phoenix",
+      "metricKey": "maxCombo",
+      "direction": "max"
+    },
+    {
+      "id": "combo_avalanche",
+      "metricKey": "maxCombo",
+      "direction": "max"
+    },
+    {
+      "id": "combo_tsunami",
+      "metricKey": "maxCombo",
+      "direction": "max"
+    },
+    {
+      "id": "perfect_dawn",
+      "metricKey": "perfectNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "perfect_bloom",
+      "metricKey": "perfectNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "perfect_cascade",
+      "metricKey": "perfectNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "perfect_summit",
+      "metricKey": "perfectNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "perfect_galaxy",
+      "metricKey": "perfectNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "perfect_aurora",
+      "metricKey": "perfectNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "golden_spark",
+      "metricKey": "goldenNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "golden_rush",
+      "metricKey": "goldenNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "golden_treasure",
+      "metricKey": "goldenNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "golden_eclipse",
+      "metricKey": "goldenNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "golden_legend",
+      "metricKey": "goldenNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "notes_river",
+      "metricKey": "notesHit",
+      "direction": "max"
+    },
+    {
+      "id": "notes_storm",
+      "metricKey": "notesHit",
+      "direction": "max"
+    },
+    {
+      "id": "notes_mountain",
+      "metricKey": "notesHit",
+      "direction": "max"
+    },
+    {
+      "id": "notes_odyssey",
+      "metricKey": "notesHit",
+      "direction": "max"
+    },
+    {
+      "id": "notes_horizon",
+      "metricKey": "notesHit",
+      "direction": "max"
+    },
+    {
+      "id": "miss_guard",
+      "metricKey": "notesMissed",
+      "direction": "min"
+    },
+    {
+      "id": "miss_anchor",
+      "metricKey": "notesMissed",
+      "direction": "min"
+    },
+    {
+      "id": "miss_diamond",
+      "metricKey": "notesMissed",
+      "direction": "min"
+    },
+    {
+      "id": "miss_bubble",
+      "metricKey": "notesMissed",
+      "direction": "min"
+    },
+    {
+      "id": "miss_zero",
+      "metricKey": "notesMissed",
+      "direction": "min"
+    },
+    {
+      "id": "tick_harmony",
+      "metricKey": "tickAccuracy",
+      "direction": "max"
+    },
+    {
+      "id": "tick_metro",
+      "metricKey": "tickAccuracy",
+      "direction": "max"
+    },
+    {
+      "id": "tick_quartz",
+      "metricKey": "tickAccuracy",
+      "direction": "max"
+    },
+    {
+      "id": "tick_symphony",
+      "metricKey": "tickAccuracy",
+      "direction": "max"
+    },
+    {
+      "id": "genre_pop",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "genre_rock",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "genre_metal",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "genre_punk",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "genre_rap",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "genre_rnb",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "genre_soul",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "genre_funk",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "duo_day",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "genre_blues",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "genre_folk",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "genre_country",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "genre_electronic",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "genre_reggae",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "genre_latin",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "genre_classical",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "genre_schlager",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "genre_volksmusik",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "genre_musical",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "genre_soundtrack",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "genre_disney",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "genre_childrens",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "genre_kpop",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "genre_jpop",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "lang_english",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "lang_german",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "lang_spanish",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "lang_french",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "lang_italian",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "lang_portuguese",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "lang_japanese",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "lang_korean",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "lang_chinese",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "lang_russian",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "lang_dutch",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "lang_polish",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "lang_turkish",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "lang_arabic",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "lang_swedish",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "lang_latin",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "lang_norwegian",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "lang_danish",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "lang_finnish",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "lang_hindi",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "lang_thai",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "lang_indonesian",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "lang_atypical",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "decade_1950",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "decade_1960",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "decade_1970",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "decade_1980",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "decade_1990",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "decade_2000",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "decade_2010",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "decade_2020",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "decade_vintage",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "shape_longballad",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "shape_epic",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "shape_quickie",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "shape_sprint",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "shape_title_am",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "shape_title_nz",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "shape_oneword",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "shape_love_title",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "shape_number_title",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "shape_question",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "shape_feat",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "shape_band",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "shape_bpm_fast",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "shape_bpm_slow",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "shape_fresh",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "shape_recent",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "shape_rating5",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "shape_diff_easy",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "shape_diff_hard",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "maestro_score",
+      "metricKey": "score",
+      "direction": "max"
+    },
+    {
+      "id": "maestro_accuracy",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "maestro_combo",
+      "metricKey": "maxCombo",
+      "direction": "max"
+    },
+    {
+      "id": "maestro_perfect",
+      "metricKey": "perfectNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "maestro_golden",
+      "metricKey": "goldenNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "virtuoso_score",
+      "metricKey": "score",
+      "direction": "max"
+    },
+    {
+      "id": "virtuoso_accuracy",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "virtuoso_combo",
+      "metricKey": "maxCombo",
+      "direction": "max"
+    },
+    {
+      "id": "virtuoso_perfect",
+      "metricKey": "perfectNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "virtuoso_golden",
+      "metricKey": "goldenNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "titan_notes",
+      "metricKey": "notesHit",
+      "direction": "max"
+    },
+    {
+      "id": "titan_tick",
+      "metricKey": "tickAccuracy",
+      "direction": "max"
+    },
+    {
+      "id": "ghost_miss",
+      "metricKey": "notesMissed",
+      "direction": "min"
+    },
+    {
+      "id": "ghost_score",
+      "metricKey": "score",
+      "direction": "max"
+    },
+    {
+      "id": "ghost_combo",
+      "metricKey": "maxCombo",
+      "direction": "max"
+    },
+    {
+      "id": "phoenix_accuracy",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "phoenix_score",
+      "metricKey": "score",
+      "direction": "max"
+    },
+    {
+      "id": "phoenix_perfect",
+      "metricKey": "perfectNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "storm_notes",
+      "metricKey": "notesHit",
+      "direction": "max"
+    },
+    {
+      "id": "storm_tick",
+      "metricKey": "tickAccuracy",
+      "direction": "max"
+    },
+    {
+      "id": "storm_score",
+      "metricKey": "score",
+      "direction": "max"
+    },
+    {
+      "id": "prism_accuracy",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "prism_combo",
+      "metricKey": "maxCombo",
+      "direction": "max"
+    },
+    {
+      "id": "prism_score",
+      "metricKey": "score",
+      "direction": "max"
+    },
+    {
+      "id": "apex_score",
+      "metricKey": "score",
+      "direction": "max"
+    },
+    {
+      "id": "apex_accuracy",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "apex_combo",
+      "metricKey": "maxCombo",
+      "direction": "max"
+    },
+    {
+      "id": "apex_perfect",
+      "metricKey": "perfectNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "apex_golden",
+      "metricKey": "goldenNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "apex_notes",
+      "metricKey": "notesHit",
+      "direction": "max"
+    },
+    {
+      "id": "apex_tick",
+      "metricKey": "tickAccuracy",
+      "direction": "max"
+    },
+    {
+      "id": "apex_clean",
+      "metricKey": "notesMissed",
+      "direction": "min"
+    },
+    {
+      "id": "nova_score",
+      "metricKey": "score",
+      "direction": "max"
+    },
+    {
+      "id": "nova_combo",
+      "metricKey": "maxCombo",
+      "direction": "max"
+    },
+    {
+      "id": "nova_perfect",
+      "metricKey": "perfectNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "nova_golden",
+      "metricKey": "goldenNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "echo_score",
+      "metricKey": "score",
+      "direction": "max"
+    },
+    {
+      "id": "echo_combo",
+      "metricKey": "maxCombo",
+      "direction": "max"
+    },
+    {
+      "id": "echo_perfect",
+      "metricKey": "perfectNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "echo_golden",
+      "metricKey": "goldenNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "drift_accuracy",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "drift_combo",
+      "metricKey": "maxCombo",
+      "direction": "max"
+    },
+    {
+      "id": "drift_score",
+      "metricKey": "score",
+      "direction": "max"
+    },
+    {
+      "id": "drift_notes",
+      "metricKey": "notesHit",
+      "direction": "max"
+    },
+    {
+      "id": "pulse_tick",
+      "metricKey": "tickAccuracy",
+      "direction": "max"
+    },
+    {
+      "id": "pulse_score",
+      "metricKey": "score",
+      "direction": "max"
+    },
+    {
+      "id": "pulse_perfect",
+      "metricKey": "perfectNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "pulse_combo",
+      "metricKey": "maxCombo",
+      "direction": "max"
+    },
+    {
+      "id": "lunar_accuracy",
+      "metricKey": "accuracy",
+      "direction": "max"
+    },
+    {
+      "id": "lunar_score",
+      "metricKey": "score",
+      "direction": "max"
+    },
+    {
+      "id": "lunar_perfect",
+      "metricKey": "perfectNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "lunar_golden",
+      "metricKey": "goldenNotesCount",
+      "direction": "max"
+    },
+    {
+      "id": "solar_notes",
+      "metricKey": "notesHit",
+      "direction": "max"
+    },
+    {
+      "id": "solar_tick",
+      "metricKey": "tickAccuracy",
+      "direction": "max"
+    },
+    {
+      "id": "solar_score",
+      "metricKey": "score",
+      "direction": "max"
+    },
+    {
+      "id": "solar_combo",
+      "metricKey": "maxCombo",
+      "direction": "max"
+    }
+  ]
+}

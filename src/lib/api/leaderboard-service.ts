@@ -12,7 +12,7 @@ import type {
   ProfileSyncDownload, ProfileSyncUpload,
   SubmitDailyResultPayload, OnlineDailyEntry,
   NoteProofEntry, ScoringMetaForProof,
-  CrownsResponse, OnlinePlayEntry, SubmitBrResultResult,
+  CrownsResponse, OnlinePlayEntry,
   BatchScoresResponse,
 } from '@/lib/leaderboard/types';
 import {
@@ -28,7 +28,7 @@ export const API_BASE = process.env.NEXT_PUBLIC_LEADERBOARD_URL || 'https://host
 // ── Internal helpers ────────────────────────────────────
 
 /** R72/A: fresh replay nonce (32 hex chars from crypto randomness). One
- *  per WIRE CALL — generated in submitScorePayload/submitBrResult so live
+ *  per WIRE CALL — generated in submitScorePayload so live
  *  uploads, outbox retries and consent-delayed uploads can never reuse a
  *  consumed nonce (the server answers 409 on duplicates). */
 function generateNonce(): string {
@@ -285,8 +285,13 @@ async function fetchSongLeaderboard(
   limit = 100,
   difficulty: 'all' | 'easy' | 'normal' | 'hard' = 'all',
 ): Promise<OnlineScoreEntry[]> {
+  // R81: keep the hash's ':' literal in the path segment — some servers
+  // never decode %3A in path segments (the v3.6 server rejected the request
+  // with "Invalid song_hash" for exactly this reason; v3.7 also decodes
+  // server-side, this keeps mixed-version setups working).
+  const hashInPath = encodeURIComponent(songHash).replace(/%3A/gi, ':');
   const result = await request<{ leaderboard: OnlineScoreEntry[] }>(
-    `/leaderboard/song/${encodeURIComponent(songHash)}?game_type=${gameType}&limit=${limit}&difficulty=${difficulty}`
+    `/leaderboard/song/${hashInPath}?game_type=${gameType}&limit=${limit}&difficulty=${difficulty}`
   );
   return result.leaderboard;
 }
@@ -347,11 +352,14 @@ async function fetchBatchScores(
   hashes: string[],
   gameType: LeaderboardGameType = 's',
   limit = 1000,
+  /** R81: server-side difficulty filter ('all' = each player's overall best,
+   *  server v3.7 dedupes per profile). */
+  difficulty: 'all' | 'easy' | 'normal' | 'hard' = 'all',
 ): Promise<BatchScoresResponse> {
   if (hashes.length === 0) return {};
   const joined = hashes.slice(0, 200).map(h => encodeURIComponent(h)).join(',');
   const result = await request<{ scores: BatchScoresResponse }>(
-    `/scores/batch?hashes=${joined}&game_type=${gameType}&limit=${limit}`
+    `/scores/batch?hashes=${joined}&game_type=${gameType}&limit=${limit}&difficulty=${difficulty}`
   );
   return result.scores;
 }
@@ -409,49 +417,12 @@ async function fetchDailyLeaderboard(date?: string): Promise<OnlineDailyEntry[]>
   return result.leaderboard;
 }
 
-// ── Battle Royale (R72/D: online win counter) ────────────
 
-/**
- * R72/D: submit a Battle-Royale result. Only wins are counted online
- * (br_wins counter; BR has no comparable score scale). The server requires
- * a fresh nonce per request (counter replay protection) and counts at most
- * one win per 120 s. Fire-and-forget by design — failures are swallowed by
- * the caller. Returns { sync_code } when a code had to be generated so the
- * caller can persist it on the profile (same pattern as submitDailyResult).
- */
-async function submitBrResult(params: {
-  profile: PlayerProfile;
-  won: boolean;
-}): Promise<{ ok: boolean; counted?: boolean; br_wins?: number; sync_code?: string } | null> {
-  const { profile, won } = params;
-  if (profile.storageMode === 'local') return null;
-  let syncCode = profile.syncCode;
-  if (!syncCode) {
-    // Register on the fly so the win has a home on the server
-    const registered = await registerProfile(profile).catch(() => null);
-    syncCode = registered?.sync_code;
-    if (!syncCode) return null;
-  }
-  try {
-    const result = await request<SubmitBrResultResult>('/br', {
-      method: 'POST',
-      body: JSON.stringify({
-        profile_uid: profile.syncUid || profile.id,
-        sync_code: syncCode,
-        won,
-        nonce: generateNonce(),
-      }),
-    });
-    return {
-      ok: result.ok,
-      counted: result.counted,
-      br_wins: result.br_wins,
-      sync_code: profile.syncCode ? undefined : syncCode,
-    };
-  } catch {
-    return null; // non-critical — the local hall of fame already has the win
-  }
-}
+// ── (R81) Battle-Royale online submissions REMOVED ───────
+// BR has no comparable score scale (2-player BR is easier than 25-player
+// BR) and win counters are trivially fakeable — the whole feature flew out
+// of the score system. The local hall of fame (battle-royale-hall-of-fame)
+// keeps working untouched.
 
 // ── Export singleton ────────────────────────────────────
 
@@ -684,8 +655,6 @@ export const leaderboardService = {
   // Daily challenge online board
   submitDailyResult,
   fetchDailyLeaderboard,
-  // R72: Battle-Royale online win counter
-  submitBrResult,
   // Backward-compatible aliases used by UI components
   getSongLeaderboard: fetchSongLeaderboard,
   getGlobalLeaderboard: fetchGlobalLeaderboard,
