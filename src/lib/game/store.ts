@@ -398,6 +398,10 @@ export const useGameStore = create<GameStore>()(
       deleteProfile: (id) =>
         set((state) => ({
           profiles: state.profiles.filter((p) => p.id !== id),
+          // R85: the profile's LOCAL highscores go with it — a profile removed
+          // from this device must not linger in the local boards (party
+          // sign-out privacy). Online scores are untouched (server-side).
+          highscores: state.highscores.filter((h) => h.playerId !== id),
           activeProfileId:
             state.activeProfileId === id ? null : state.activeProfileId,
         })),

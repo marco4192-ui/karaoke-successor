@@ -132,6 +132,17 @@ export function clearScoreOutboxForProfile(profileUid: string): void {
   } catch { /* non-critical */ }
 }
 
+/** R85: queued submission count for ONE profile — the sign-out dialog shows
+ *  this before removing a profile from the device (pending party scores
+ *  would be lost if we just dropped the queue). */
+export function scoreOutboxSizeForProfile(profileUid: string): number {
+  try {
+    return prune(readFile()).filter(e => e.payload.profile_uid === profileUid).length;
+  } catch {
+    return 0;
+  }
+}
+
 /** Current queue length (for UI/debugging). */
 export function scoreOutboxSize(): number {
   return prune(readFile()).length;

@@ -10,7 +10,7 @@
 
 import { getRankForXP } from './player-progression';
 import { PERFECT_ACCURACY } from './progression-levels';
-import { StorageKeys, getItem, getJson, setJson, setItem } from '@/lib/storage';
+import { StorageKeys, getItem, getJson, setJson, setItem, removeItem } from '@/lib/storage';
 import type { Language } from '@/lib/i18n/locales';
 import { t } from '@/lib/i18n/translations';
 import {
@@ -744,6 +744,75 @@ const QUEST_STATS_KEY = 'karaoke_quest_stats';
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * R85: wipe every local daily/weekly/quest trace of one player — used by the
+ * "sign out on this device" flow (party scenario: a guest's profile must not
+ * linger on the host's machine). Covers:
+ *
+ *  - per-profile suffixed keys (slot progress, weekly progress, daily stats,
+ *    quest progress, quest stats)
+ *  - the shared best-result map (playerId entry)
+ *  - every date-keyed daily slot score list + daily leaderboard (entries
+ *    filtered, ranks/totalParticipants recomputed lazily on next submit)
+ *  - every week-keyed weekly challenge store (entries filtered)
+ *
+ * The profile row itself and the store highscores live in the zustand store
+ * (deleteProfile) — this function only owns the localStorage side.
+ */
+export function removeDailyDataForPlayer(playerId: string): void {
+  try {
+    // 1. Per-profile suffixed keys
+    removeItem(`${DAILY_SLOT_PROGRESS_KEY}${playerId}`);
+    removeItem(`${WEEKLY_SLOT_PROGRESS_KEY}${playerId}`);
+    removeItem(`${PLAYER_DAILY_STATS_KEY}_${playerId}`);
+    removeItem(`${QUEST_PROGRESS_KEY}_${playerId}`);
+    removeItem(`${QUEST_STATS_KEY}_${playerId}`);
+
+    // 2. Shared best-result map (playerId → today's best)
+    const best = getJson<Record<string, PlayerBestResult & { date: string }>>(PLAYER_BEST_RESULTS_KEY, {});
+    if (best && best[playerId]) {
+      delete best[playerId];
+      setJson(PLAYER_BEST_RESULTS_KEY, best);
+    }
+
+    // 3. Keyed stores (by date / ISO week) — iterate localStorage and filter
+    if (typeof window === 'undefined') return;
+    const prefixes = [
+      DAILY_SLOT_SCORES_PREFIX,
+      `${DAILY_LEADERBOARD_KEY}_`,
+      WEEKLY_CHALLENGE_KEY_PREFIX,
+    ];
+    for (const key of Object.keys(window.localStorage)) {
+      if (!prefixes.some(p => key.startsWith(p))) continue;
+      let raw: string | null = null;
+      try { raw = window.localStorage.getItem(key); } catch { /* keep null */ }
+      if (!raw) continue;
+      try {
+        const parsed = JSON.parse(raw) as unknown;
+        if (Array.isArray(parsed)) {
+          // Daily slot scores: array of per-player entries
+          const kept = parsed.filter((e): e is Record<string, unknown> =>
+            !!e && typeof e === 'object' && (e as { playerId?: unknown }).playerId !== playerId);
+          if (kept.length !== parsed.length) {
+            window.localStorage.setItem(key, JSON.stringify(kept));
+          }
+        } else if (parsed && typeof parsed === 'object' && Array.isArray((parsed as { entries?: unknown[] }).entries)) {
+          // Daily/weekly challenge stores: { …, entries: […] }
+          const data = parsed as { entries: Array<{ playerId?: string }>; totalParticipants?: number };
+          const before = data.entries.length;
+          data.entries = data.entries.filter(e => e.playerId !== playerId);
+          if (data.entries.length !== before) {
+            if (typeof data.totalParticipants === 'number') {
+              data.totalParticipants = data.entries.length;
+            }
+            window.localStorage.setItem(key, JSON.stringify(data));
+          }
+        }
+      } catch { /* corrupt entry — leave it alone */ }
+    }
+  } catch { /* non-critical: best effort cleanup */ }
+}
 
 /** Returns yesterday's date as a locale-independent ISO string (YYYY-MM-DD). */
 function yesterdayISO(): string {

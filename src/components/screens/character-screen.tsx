@@ -14,12 +14,14 @@ import { CharacterSettingsCard } from './character/character-settings-card';
 import { OnlineLoginDialog } from './character/online-login-dialog';
 import { RecoveryCodeDialog } from './character/recovery-code-dialog';
 import { OnlineStatsCard } from './character/online-stats-card';
+import { RemoveProfileDialog } from './character/remove-profile-dialog';
+import type { PlayerProfile } from '@/types/game';
 
 export function CharacterScreen() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const {
-    profiles, createProfile, updateProfile, deleteProfile,
+    profiles, createProfile, updateProfile,
     activeProfileId, setActiveProfile,
     onlineEnabled, setOnlineEnabled,
     leaderboardType, setLeaderboardType,
@@ -28,6 +30,8 @@ export function CharacterScreen() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  /** R85: profile pending removal (sign-out on this device / local delete). */
+  const [removeProfile, setRemoveProfile] = useState<PlayerProfile | null>(null);
   /** R69: one-time recovery code issued at account registration. */
   const [registrationRecoveryCode, setRegistrationRecoveryCode] = useState<string | null>(null);
 
@@ -211,6 +215,16 @@ export function CharacterScreen() {
         onOpenChange={setShowLoginDialog}
       />
 
+      {/* R85: sign-out-on-this-device / final local delete — replaces the
+          old instant delete (one misclick used to remove a profile without
+          any warning or score-upload flush). */}
+      <RemoveProfileDialog
+        profile={removeProfile}
+        open={!!removeProfile}
+        onOpenChange={(next) => { if (!next) setRemoveProfile(null); }}
+        onRemoved={() => setSelectedProfileId(null)}
+      />
+
       {/* R69: one-time recovery code issued at account registration */}
       {registrationRecoveryCode && (
         <RecoveryCodeDialog
@@ -268,10 +282,7 @@ export function CharacterScreen() {
             profile={displayedProfile}
             testId="profile-settings-card"
             onlineEnabled={onlineEnabled}
-            onDelete={() => {
-              deleteProfile(displayedProfile.id);
-              setSelectedProfileId(null);
-            }}
+            onRemove={() => setRemoveProfile(displayedProfile)}
           />
         </div>
       )}

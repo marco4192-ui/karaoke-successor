@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GlobeIcon, CloudUploadIcon } from '@/components/icons';
+import { LogOutIcon, Trash2Icon } from 'lucide-react';
 import { useGameStore } from '@/lib/game/store';
 import { useTranslation } from '@/lib/i18n/translations';
 import { PlayerProfile } from '@/types/game';
@@ -18,7 +19,8 @@ import { QrWlanHint } from '@/components/qr-wlan-hint';
 interface CharacterSettingsCardProps {
   profile: PlayerProfile;
   onlineEnabled: boolean;
-  onDelete: () => void;
+  /** R85: opens the sign-out / delete dialog (no instant delete anymore). */
+  onRemove: () => void;
   /** Stable data-testid anchor for tours / E2E. */
   testId?: string;
 }
@@ -37,7 +39,7 @@ function syncOnlineProfileSettings(onlineProfile: PlayerProfile): void {
     .catch(() => { /* non-critical: not registered yet or offline */ });
 }
 
-export function CharacterSettingsCard({ profile, onlineEnabled, onDelete, testId }: CharacterSettingsCardProps) {
+export function CharacterSettingsCard({ profile, onlineEnabled, onRemove, testId }: CharacterSettingsCardProps) {
   const { t } = useTranslation();
   const { updateProfile } = useGameStore();
   const [isEditingCharacter, setIsEditingCharacter] = useState(false);
@@ -379,16 +381,34 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete, testId
           )}
         </div>
 
-        {/* Delete Button */}
+        {/* R85: profile removal — online-linked profiles are SIGNED OUT on
+            this device (online identity stays), local profiles are deleted
+            for good. The dialog explains the difference and guards pending
+            score uploads + the sync code before anything is wiped. */}
         <div className="pt-4 border-t border-white/10">
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-red-400 border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
-            onClick={onDelete}
-          >
-            {t('profile.delete')}
-          </Button>
+          {profile.syncCode ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-amber-300 border-amber-500/30 hover:bg-amber-500/10 hover:text-amber-200 gap-1.5"
+              onClick={onRemove}
+              data-testid="signout-button"
+            >
+              <LogOutIcon className="w-3.5 h-3.5" />
+              {t('profile.signOutButton')}
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-red-400 border-red-500/30 hover:bg-red-500/10 hover:text-red-300 gap-1.5"
+              onClick={onRemove}
+              data-testid="delete-profile-button"
+            >
+              <Trash2Icon className="w-3.5 h-3.5" />
+              {t('profile.delete')}
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
