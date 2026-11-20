@@ -2,8 +2,18 @@
 
 export const coreTranslations = {
 core: {
-  branding: 'Karaoke ZERO',
+  branding: 'AfterTen Karaoke',
 },
+splash: {
+  start: 'Начать',
+  hint: 'Нажмите Enter или щёлкните мышью',
+  soundOn: 'Музыка включена',
+  soundOff: 'Музыка выключена',
+  srOverlay: 'Стартовый экран — нажмите «Начать», чтобы войти в приложение',
+  audioBlockedHint: 'Звук включится после первого клика (правило автозапуска браузера)',
+  trackCredit: '♪ Under the Glare',
+},
+
 nav: {
   library: 'Библиотека',
   import: 'Импорт',
@@ -19,7 +29,7 @@ nav: {
   editor: 'Редактор',
 },
 home: {
-  title: 'Karaoke ZERO',
+  title: 'AfterTen Karaoke',
   subtitle: 'Непревзойдённый караоке-опыт. Пойте с определением тона в реальном времени, соревнуйтесь с друзьями и наслаждайтесь играми для вечеринок!',
   startSinging: 'Начать петь',
   partyMode: 'Режим вечеринки',
@@ -144,12 +154,12 @@ replayModal: {
   replay: 'Повтор',
 },
 scoreCardSocial: {
-  branding: 'Karaoke ZERO',
+  branding: 'AfterTen Karaoke',
   accuracyLabel: 'Точность:',
   maxComboLabel: 'Макс. комбо:',
   difficultyLabel: 'Сложность:',
   playerLabel: '🎤 {name}',
-  hashtags: '#KaraokeZERO #Караоке #Пение',
+  hashtags: '#AfterTenKaraoke #Караоке #Пение',
   shareTitle: 'Мой результат караоке!',
   shareText: 'Я набрал {n} очков на "{title}" от {artist}!',
   points: 'очков',

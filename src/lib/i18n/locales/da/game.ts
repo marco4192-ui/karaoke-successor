@@ -7,7 +7,7 @@ share: {
   maxCombo: 'Maks. Kombo',
   rating: 'Bedømmelse',
   playerLabel: 'Spiller: {name}',
-  shareTitle: 'Karaoke ZERO-score',
+  shareTitle: 'AfterTen Karaoke-score',
   mode: 'Tilstand',
   difficulty: 'Sværhedsgrad',
   scoredPoints: 'Jeg scorede lige {score} point på "{title}" af {artist}!',
@@ -338,7 +338,7 @@ common: {
   defaultPlayerName: 'Spiller',
 },
 page: {
-  loading: 'Indlæser Karaoke ZERO...',
+  loading: 'Indlæser AfterTen Karaoke...',
   reload: 'Genindlæs',
 },
 achievements: {

@@ -68,7 +68,7 @@ import { mottoParty } from '@/lib/game/motto-party';
 import { getJukeboxMirrorSnapshot } from '@/components/screens/jukebox/use-jukebox';
 
 // ===================== MAIN APP =====================
-export default function KaraokeZERO() {
+export default function AfterTenKaraoke() {
   // ── Store hooks (must be called before any conditional returns) ──
   const { gameState, setSong, setGameMode, setDifficulty, setChallengeMode, profiles, queue, resetGame, addPlayer, setResults, pauseGame, resumeGame } = useGameStore();
   const party = usePartyStore();

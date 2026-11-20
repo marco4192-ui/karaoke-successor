@@ -7,7 +7,7 @@ share: {
   maxCombo: 'Макс. комбо',
   rating: 'Рейтинг',
   playerLabel: 'Игрок: {name}',
-  shareTitle: 'Результат в Karaoke ZERO',
+  shareTitle: 'Результат в AfterTen Karaoke',
   mode: 'Режим',
   difficulty: 'Сложность',
   scoredPoints: 'Я набрал {score} очков за «{title}» — {artist}!',
@@ -338,7 +338,7 @@ common: {
   defaultPlayerName: 'Игрок',
 },
 page: {
-  loading: 'Загружаю Karaoke ZERO...',
+  loading: 'Загружаю AfterTen Karaoke...',
   reload: 'Обновить',
 },
 achievements: {

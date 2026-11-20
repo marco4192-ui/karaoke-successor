@@ -79,7 +79,7 @@ settings: {
   installAppDesc: '오프라인 액세스용 설치',
   appInstalled: '앱이 설치되어 있습니다',
   version: '버전',
-  aboutDesc: 'Karaoke ZERO는 실시간 음정 감지, 파티 모드 등을 갖춘 현대적인 노래방 애플리케이션입니다.',
+  aboutDesc: 'AfterTen Karaoke는 실시간 음정 감지, 파티 모드 등을 갖춘 현대적인 노래방 애플리케이션입니다.',
   feature1: 'YIN 알고리즘을 사용한 실시간 음정 감지',
   feature2: '다양한 파티 게임 모드',
   feature3: '리모컨 기능의 모바일 앱 연동',
@@ -432,7 +432,7 @@ settingsViralCharts: {
 settingsLibrary: {
   title: '곡 기본 폴더',
   desc: '모든 곡은 이 폴더에서 가져옵니다. 각 하위 폴더에는 곡 하나(시간 표기가 있는 .txt 텍스트와 오디오·영상·커버 파일)가 들어 있어요.',
-  placeholder: 'C:/Karaoke ZERO/Songs',
+  placeholder: 'C:/AfterTen Karaoke/Songs',
   scan: '스캔',
   browse: '찾아보기',
   help: '곡 폴더 경로를 입력하고 "스캔"을 클릭하여 가져오거나, "찾아보기"를 사용하여 폴더를 선택하세요.',

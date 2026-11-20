@@ -36,7 +36,13 @@
 import { StorageKeys } from '@/lib/storage';
 import { storeMedia, getAllMediaRecords } from '@/lib/db/media-db';
 
-export const BACKUP_FORMAT = 'karaoke-zero-backup';
+/** Format id written into NEW backups (R86 rebrand: AfterTen Karaoke). */
+export const BACKUP_FORMAT = 'afterten-karaoke-backup';
+/**
+ * Format id of backups written before the R86 rename — still accepted on
+ * import so pre-rebrand backups keep restoring. Never written again.
+ */
+export const LEGACY_BACKUP_FORMAT = 'karaoke-zero-backup';
 export const BACKUP_VERSION = 1;
 
 // ---------------------------------------------------------------------------
@@ -172,7 +178,9 @@ function mimeForType(type: BackupMediaEntry['type']): string {
 export function parseBackupFile(json: unknown): BackupFile | null {
   if (!json || typeof json !== 'object') return null;
   const candidate = json as Partial<BackupFile>;
-  if (candidate.format !== BACKUP_FORMAT) return null;
+  // R86: accept the current AND the pre-rebrand format id (legacy backups
+  // written as 'karaoke-zero-backup' must keep restoring).
+  if (candidate.format !== BACKUP_FORMAT && candidate.format !== LEGACY_BACKUP_FORMAT) return null;
   if (typeof candidate.version !== 'number' || candidate.version > BACKUP_VERSION) return null;
   if (!candidate.localStorage || typeof candidate.localStorage !== 'object') return null;
   return {
@@ -284,7 +292,7 @@ export function downloadBackup(backup: BackupFile): void {
   const ts = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
   const a = document.createElement('a');
   a.href = url;
-  a.download = `karaoke-zero-backup-${ts}.json`;
+  a.download = `afterten-karaoke-backup-${ts}.json`;
   document.body.appendChild(a);
   a.click();
   a.remove();

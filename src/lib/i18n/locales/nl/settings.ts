@@ -79,7 +79,7 @@ settings: {
   installAppDesc: 'Installeer voor offline toegang',
   appInstalled: 'App is geïnstalleerd',
   version: 'Versie',
-  aboutDesc: 'Karaoke ZERO is een moderne karaoke-applicatie met realtime toonherkenning, partymodi en meer.',
+  aboutDesc: 'AfterTen Karaoke is een moderne karaoke-applicatie met realtime toonherkenning, partymodi en meer.',
   feature1: 'Realtime toonherkenning met YIN-algoritme',
   feature2: 'Meerdere partygamemodi',
   feature3: 'Mobiele app-integratie voor afstandsbediening',
@@ -432,7 +432,7 @@ settingsViralCharts: {
 settingsLibrary: {
   title: 'Nummers basismap',
   desc: 'Alle nummers worden uit deze map geïmporteerd. Elke submap bevat één nummer: een .txt-tekstbestand met tijdcodes, plus audio-, video- en coverbestanden.',
-  placeholder: 'C:/Karaoke ZERO/Songs',
+  placeholder: 'C:/AfterTen Karaoke/Songs',
   scan: 'Scannen',
   browse: 'Bladeren',
   help: 'Voer het pad naar je nummersmap in en klik op "Scannen" om te importeren, of gebruik "Bladeren" om een map te selecteren.',

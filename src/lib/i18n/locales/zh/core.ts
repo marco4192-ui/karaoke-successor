@@ -2,8 +2,18 @@
 
 export const coreTranslations = {
 core: {
-  branding: 'Karaoke ZERO',
+  branding: 'AfterTen Karaoke',
 },
+splash: {
+  start: '开始',
+  hint: '按回车键或点击',
+  soundOn: '开启音乐',
+  soundOff: '关闭音乐',
+  srOverlay: '开始屏幕 — 点击“开始”进入应用',
+  audioBlockedHint: '首次点击后声音才会启动（浏览器自动播放策略）',
+  trackCredit: '♪ Under the Glare',
+},
+
 nav: {
   library: '曲库',
   import: '导入',
@@ -19,7 +29,7 @@ nav: {
   editor: '编辑器',
 },
 home: {
-  title: 'Karaoke ZERO',
+  title: 'AfterTen Karaoke',
   subtitle: '终极卡拉OK体验。实时音高检测，与朋友竞技，享受派对游戏！',
   startSinging: '开始唱歌',
   partyMode: '派对模式',
@@ -144,12 +154,12 @@ replayModal: {
   replay: '回放',
 },
 scoreCardSocial: {
-  branding: 'Karaoke ZERO',
+  branding: 'AfterTen Karaoke',
   accuracyLabel: '准确率：',
   maxComboLabel: '最大连击：',
   difficultyLabel: '难度：',
   playerLabel: '🎤 {name}',
-  hashtags: '#KaraokeZERO #Karaoke #唱歌',
+  hashtags: '#AfterTenKaraoke #Karaoke #唱歌',
   shareTitle: '我的卡拉OK分数！',
   shareText: '我在 {artist} 的《{title}》中获得了 {n} 分！',
   points: '分',

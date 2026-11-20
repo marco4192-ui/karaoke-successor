@@ -1141,7 +1141,7 @@ export const deltaTranslations = {
     testingConnection: "Testataan…",
   },
   settingsIntros: {
-    about: "Kaikki Karaoke ZEROsta: versio, alusta, osallistuvat projektit ja lisenssit — plus projektikuvaus ja tukilinkit.",
+    about: "Kaikki AfterTen Karaokesta: versio, alusta, osallistuvat projektit ja lisenssit — plus projektikuvaus ja tukilinkit.",
     appearance: "Tee siitä omasi: teemat, animoitu tausta tai oma taustavideosi, sanoitusten tyyli ja koko, nuottien näyttö sekä suoritustila heikommille koneille.",
     gameplay: "Hienosäädä pelituntumaa: pisteenäyttö, partikkelitehosteet osumista, toiston tallennus, automaattinen koko näyttö ja muut toimintakytkimet kierroksille ja tuloksille. Täydellinen juhlatunnelman ja suorituskyvyn tasapainottamiseen.",
     general: "Sovelluksen ydinasetukset: käyttöliittymän kieli, oletusvaikeustaso uusille kierroksille, verkkotoiminnot sekä luettelo kaikista pikanäppäimistä. Muutokset tulevat voimaan heti — osa (kuten kieli) ilman uudelleenkäynnistystä.",
@@ -1318,7 +1318,7 @@ export const deltaTranslations = {
     howTitle: "Näin laitteiden välinen siirto toimii",
     includeMedia: "Sisällytä kappaleiden media (ääni, video, kansikuvat)",
     includeMediaDesc: "Täysin itsenäinen varmuuskopiotiedosto — mutta huomattavasti suurempi.",
-    invalidFile: "Tämä tiedosto ei ole kelvollinen Karaoke ZERO -varmuuskopio.",
+    invalidFile: "Tämä tiedosto ei ole kelvollinen AfterTen Karaoke -varmuuskopio.",
     previewTitle: "Varmuuskopion sisältö:",
     reloadHint: "Lataa sivu uudelleen, jotta palautetut kappaleet ja media näkyvät.",
     restoreButton: "📥 Palauta",

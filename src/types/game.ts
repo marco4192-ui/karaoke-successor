@@ -1,4 +1,4 @@
-// Core game types for Karaoke ZERO
+// Core game types for AfterTen Karaoke
 
 import { t, type Language } from '@/lib/i18n/locales';
 // R42: rating scale widened to 8 levels — single source of truth in rating-utils

@@ -27,7 +27,7 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
   const handleSaveCodeFile = () => {
     if (!profile.syncCode) return;
     const content = [
-      'KARAOKE ZERO — SYNC-CODE',
+      'AFTERTEN KARAOKE — SYNC-CODE',
       '=========================',
       '',
       `Code:    ${profile.syncCode}`,
@@ -37,7 +37,7 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
       `⚠ ${t('profileSync.syncCodeWarning')}`,
       '',
     ].join('\n');
-    downloadTextFile(`karaoke-zero-sync-code-${profile.syncCode}.txt`, content);
+    downloadTextFile(`afterten-karaoke-sync-code-${profile.syncCode}.txt`, content);
   };
 
   const handleUploadProfile = async () => {

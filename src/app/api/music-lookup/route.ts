@@ -92,7 +92,7 @@ const ITUNES_SEARCH_URL = 'https://itunes.apple.com/search';
 const DEEZER_SEARCH_URL = 'https://api.deezer.com/search';
 const DEEZER_ALBUM_URL = 'https://api.deezer.com/album';
 const MUSICBRAINZ_URL = 'https://musicbrainz.org/ws/2/recording';
-const USER_AGENT = 'KaraokeZERO/1.0 (https://github.com/marco4192-ui/karaoke-successor)';
+const USER_AGENT = 'AfterTenKaraoke/1.0 (https://github.com/marco4192-ui/karaoke-successor)';
 
 const FETCH_TIMEOUT_MS = 8000;
 /** MusicBrainz asks anonymous clients for max ~1 request/second. */

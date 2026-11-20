@@ -433,10 +433,10 @@ export function HomeScreen({ onNavigate, onLaunchMode }: HomeScreenProps) {
         {/* Title — retro neon glow */}
         <h1 className="text-6xl font-black mb-3 tracking-tight">
           <span className="bg-gradient-to-r from-[#ff2d95] via-[#ff00ff] to-[#bf5af2] bg-clip-text text-transparent">
-            Karaoke
+            AfterTen
           </span>{' '}
           <span className="bg-gradient-to-r from-[#00e5ff] via-[#00ffff] to-[#00ff88] bg-clip-text text-transparent">
-            ZERO
+            Karaoke
           </span>
         </h1>
 

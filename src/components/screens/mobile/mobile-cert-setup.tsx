@@ -112,8 +112,8 @@ export function MobileCertSetup({ httpsPort, insecureContext, trustedDomain }: M
               {isIos ? (
                 <>
                   <li className="flex gap-2"><span className="shrink-0 font-bold text-cyan-300">1.</span><span>{tOr(t, 'mobile.certSetupIos1', 'Tippe unten auf „Zertifikat herunterladen“ — Safari meldet „Profil geladen“.')}</span></li>
-                  <li className="flex gap-2"><span className="shrink-0 font-bold text-cyan-300">2.</span><span>{tOr(t, 'mobile.certSetupIos2', 'Einstellungen → Allgemein → VPN & Geräteverwaltung → „Karaoke ZERO Local CA“ → Installieren (PIN eingeben).')}</span></li>
-                  <li className="flex gap-2"><span className="shrink-0 font-bold text-cyan-300">3.</span><span>{tOr(t, 'mobile.certSetupIos3', 'Einstellungen → Allgemein → Info → Zertifikats-Vertrauenseinstellungen → „Karaoke ZERO Local CA“ aktivieren.')}</span></li>
+                  <li className="flex gap-2"><span className="shrink-0 font-bold text-cyan-300">2.</span><span>{tOr(t, 'mobile.certSetupIos2', 'Einstellungen → Allgemein → VPN & Geräteverwaltung → „AfterTen Karaoke Local CA“ → Installieren (PIN eingeben).')}</span></li>
+                  <li className="flex gap-2"><span className="shrink-0 font-bold text-cyan-300">3.</span><span>{tOr(t, 'mobile.certSetupIos3', 'Einstellungen → Allgemein → Info → Zertifikats-Vertrauenseinstellungen → „AfterTen Karaoke Local CA“ aktivieren.')}</span></li>
                 </>
               ) : (
                 <>
@@ -128,7 +128,7 @@ export function MobileCertSetup({ httpsPort, insecureContext, trustedDomain }: M
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <a
               href="/api/mobile?action=ca-cert"
-              download="karaoke-zero-ca.crt"
+              download="afterten-karaoke-ca.crt"
               onClick={() => {
                 if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate(10);
               }}

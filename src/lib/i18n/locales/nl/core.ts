@@ -2,8 +2,18 @@
 
 export const coreTranslations = {
 core: {
-  branding: 'Karaoke ZERO',
+  branding: 'AfterTen Karaoke',
 },
+splash: {
+  start: 'Beginnen',
+  hint: 'Druk op Enter of klik',
+  soundOn: 'Muziek aan',
+  soundOff: 'Muziek uit',
+  srOverlay: 'Startscherm — klik op Beginnen om de app te openen',
+  audioBlockedHint: 'Geluid start bij je eerste klik (autoplay-regel van de browser)',
+  trackCredit: '♪ Under the Glare',
+},
+
 nav: {
   library: 'Bibliotheek',
   import: 'Importeren',
@@ -19,7 +29,7 @@ nav: {
   editor: 'Editor',
 },
 home: {
-  title: 'Karaoke ZERO',
+  title: 'AfterTen Karaoke',
   subtitle: 'De ultieme karaoke-ervaring. Zing je hart uit met realtime toonherkenning, wedijver met vrienden en geniet van partygames!',
   startSinging: 'Begin met zingen',
   partyMode: 'Party Modus',
@@ -144,12 +154,12 @@ replayModal: {
   replay: 'Opnieuw afspelen',
 },
 scoreCardSocial: {
-  branding: 'Karaoke ZERO',
+  branding: 'AfterTen Karaoke',
   accuracyLabel: 'Nauwkeurigheid:',
   maxComboLabel: 'Max Combo:',
   difficultyLabel: 'Moeilijkheid:',
   playerLabel: '🎤 {name}',
-  hashtags: '#KaraokeZERO #Karaoke #Zingen',
+  hashtags: '#AfterTenKaraoke #Karaoke #Zingen',
   shareTitle: 'Mijn karaokescore!',
   shareText: 'Ik scoorde {n} punten op "{title}" van {artist}!',
   points: 'punten',

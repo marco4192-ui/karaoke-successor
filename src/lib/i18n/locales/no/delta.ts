@@ -1142,7 +1142,7 @@ export const deltaTranslations = {
     testingConnection: "Tester…",
   },
   settingsIntros: {
-    about: "Alt om Karaoke ZERO: versjon, plattform, medvirkende prosjekter og lisenser — i tillegg prosjektbeskrivelsen og støttelenker.",
+    about: "Alt om AfterTen Karaoke: versjon, plattform, medvirkende prosjekter og lisenser — i tillegg prosjektbeskrivelsen og støttelenker.",
     appearance: "Gjør den til din: temaer, animert bakgrunn eller egen bakgrunnsvideo, tekststil og størrelse, notevisning og ytelsesmodus for svakere maskiner.",
     gameplay: "Finjuster spillefølelsen: poengvisning, partikkeleffekter ved treff, replay-opptak, automatisk fullskjerm og flere atferdsbrytere for runder og resultater. Perfekt for å balansere festfølelse mot ytelse.",
     general: "Grunnleggende appinnstillinger: grensesnittspråk, standardvanskelighetsgrad for nye runder, aktiviteter på nett og listen over alle tastatursnarveier. Endringer trer i kraft umiddelbart — noen (som språket) uten omstart.",
@@ -1319,7 +1319,7 @@ export const deltaTranslations = {
     howTitle: "Slik fungerer enhetsoverføringen",
     includeMedia: "Inkluder sangmedier (lyd, video, omslag)",
     includeMediaDesc: "Helt selvstendig sikkerhetskopifil — men betydelig større.",
-    invalidFile: "Denne filen er ikke en gyldig Karaoke ZERO-sikkerhetskopi.",
+    invalidFile: "Denne filen er ikke en gyldig AfterTen Karaoke-sikkerhetskopi.",
     previewTitle: "Sikkerhetskopiens innhold:",
     reloadHint: "Last inn siden på nytt slik at de gjenopprettede sangene og mediene vises.",
     restoreButton: "📥 Gjenopprett",

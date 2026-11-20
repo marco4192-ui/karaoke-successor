@@ -1141,7 +1141,7 @@ export const deltaTranslations = {
     testingConnection: "Testen…",
   },
   settingsIntros: {
-    about: "Alles over Karaoke ZERO: versie, platform, bijdragende projecten en licenties — plus de projectbeschrijving en ondersteuningslinks.",
+    about: "Alles over AfterTen Karaoke: versie, platform, bijdragende projecten en licenties — plus de projectbeschrijving en ondersteuningslinks.",
     appearance: "Maak het je eigen: thema's, geanimeerde achtergrond of je eigen achtergrondvideo, songtekststijl en -grootte, notenweergave en de prestatiemodus voor zwakkere machines.",
     gameplay: "Fine-tune het spelgevoel: scoreweergave, deeleffecten bij treffers, opname van herhalingen, automatisch volledig scherm en meer gedragsschakelaars voor rondes en resultaten. Perfect om partysfeer en prestaties in balans te houden.",
     general: "Kerninstellingen van de app: interfacetaal, standaardmoeilijkheid voor nieuwe rondes, online activiteiten en de lijst met alle sneltoetsen. Wijzigingen gelden direct — sommige (zoals de taal) zonder herstart.",
@@ -1318,7 +1318,7 @@ export const deltaTranslations = {
     howTitle: "Zo werkt de apparaatoverdracht",
     includeMedia: "Nummermedia opnemen (audio, video, covers)",
     includeMediaDesc: "Volledig zelfstandig back-upbestand — maar aanzienlijk groter.",
-    invalidFile: "Dit bestand is geen geldige Karaoke ZERO-back-up.",
+    invalidFile: "Dit bestand is geen geldige AfterTen Karaoke-back-up.",
     previewTitle: "Inhoud van de back-up:",
     reloadHint: "Herlaad de pagina zodat de teruggezette nummers en media verschijnen.",
     restoreButton: "📥 Terugzetten",

@@ -26,7 +26,7 @@ export const tutorialTranslations = {
     moreDetails: '更多信息',
     lessDetails: '收起',
     // First-launch offer
-    offerTitle: '欢迎来到 Karaoke ZERO！',
+    offerTitle: '欢迎来到 AfterTen Karaoke！',
     offerBody: '想快速过一遍基础功能吗？2 分钟后你就会了解每日挑战、演唱模式、曲库和派对游戏。',
     offerStart: '开始导览',
     offerLater: '以后再说',
@@ -301,7 +301,7 @@ export const tutorialTranslations = {
         },
         about: {
           title: '关于',
-          body: '版本、平台、许可证和贡献项目——Karaoke ZERO 的数字名片。',
+          body: '版本、平台、许可证和贡献项目——AfterTen Karaoke 的数字名片。',
           details: '你还能看到构建渠道（网页/桌面版）并检查更新。许可证列出了所用开源项目——感谢所有参与者！',
         },
         finish: {

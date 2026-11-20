@@ -7,7 +7,7 @@ share: {
   maxCombo: 'Beste Combo',
   rating: 'Bewertung',
   playerLabel: 'Spieler: {name}',
-  shareTitle: 'Karaoke ZERO Ergebnis',
+  shareTitle: 'AfterTen Karaoke Ergebnis',
   mode: 'Modus',
   difficulty: 'Schwierigkeit',
   scoredPoints: 'Ich habe gerade {score} Punkte bei "{title}" von {artist} erreicht!',
@@ -377,7 +377,7 @@ common: {
   defaultPlayerName: 'Spieler',
 },
 page: {
-  loading: 'Karaoke ZERO wird geladen...',
+  loading: 'AfterTen Karaoke wird geladen...',
   reload: 'Neu laden',
 },
 achievements: {

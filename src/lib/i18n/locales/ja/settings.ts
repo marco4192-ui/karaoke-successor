@@ -79,7 +79,7 @@ settings: {
   installAppDesc: 'オフラインアクセス用にインストール',
   appInstalled: 'アプリはインストール済みです',
   version: 'バージョン',
-  aboutDesc: 'Karaoke ZEROは、リアルタイム音程検出、パーティーモードなどを備えたモダンなカラオケアプリケーションです。',
+  aboutDesc: 'AfterTen Karaokeは、リアルタイム音程検出、パーティーモードなどを備えたモダンなカラオケアプリケーションです。',
   feature1: 'YINアルゴリズムによるリアルタイム音程検出',
   feature2: '複数のパーティゲームモード',
   feature3: 'リモコン機能のモバイルアプリ連携',
@@ -432,7 +432,7 @@ settingsViralCharts: {
 settingsLibrary: {
   title: '曲ベースフォルダー',
   desc: 'すべての曲はこのフォルダーからインポートされます。各サブフォルダーには1曲（時間マーカー付きの.txtテキストと、音声・動画・カバーの各ファイル）が含まれます。',
-  placeholder: 'C:/Karaoke ZERO/Songs',
+  placeholder: 'C:/AfterTen Karaoke/Songs',
   scan: 'スキャン',
   browse: '参照',
   help: '曲のフォルダーパスを入力して「スキャン」をクリックしてインポートするか、「参照」でフォルダーを選択してください。',

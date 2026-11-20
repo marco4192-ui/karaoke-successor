@@ -1142,7 +1142,7 @@ export const deltaTranslations = {
     testingConnection: "测试中…",
   },
   settingsIntros: {
-    about: "关于 Karaoke ZERO 的一切：版本、平台、贡献项目和许可证——还有项目介绍与支持链接。",
+    about: "关于 AfterTen Karaoke 的一切：版本、平台、贡献项目和许可证——还有项目介绍与支持链接。",
     appearance: "打造你的风格：主题、动态背景或自定义背景视频、歌词样式与大小、音符显示，以及为较弱机器准备的性能模式。",
     gameplay: "微调游戏手感：分数显示、命中粒子效果、回放录制、自动全屏，以及更多针对对局和结算的行为开关。在派对气氛与性能之间取得完美平衡。",
     general: "核心应用设置：界面语言、新对局的默认难度、在线活动以及完整的键盘快捷键列表。更改立即生效——部分（如语言）无需重启。",
@@ -1319,7 +1319,7 @@ export const deltaTranslations = {
     howTitle: "设备迁移的工作原理",
     includeMedia: "包含歌曲媒体（音频、视频、封面）",
     includeMediaDesc: "完全独立的备份文件——但体积会大不少。",
-    invalidFile: "这不是有效的 Karaoke ZERO 备份文件。",
+    invalidFile: "这不是有效的 AfterTen Karaoke 备份文件。",
     previewTitle: "备份内容：",
     reloadHint: "刷新页面，让恢复的歌曲和媒体显示出来。",
     restoreButton: "📥 恢复",

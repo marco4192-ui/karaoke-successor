@@ -1,6 +1,6 @@
 # Cross-Platform-Build: Windows, macOS & Linux
 
-Karaoke ZERO ist ab sofort auf **Windows, macOS und Linux** buildbar — mit einer
+AfterTen Karaoke ist ab sofort auf **Windows, macOS und Linux** buildbar — mit einer
 gemeinsamen Codebasis. Die Architektur ist auf allen Plattformen identisch:
 
 ```

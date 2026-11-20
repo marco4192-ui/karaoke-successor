@@ -143,7 +143,7 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
           success: true, 
           clientId: newClientId,
           connectionCode,
-          message: 'Connected to Karaoke ZERO',
+          message: 'Connected to AfterTen Karaoke',
           gameState: mutableState.gameState,
           profile: persistedProfile || undefined,
           ipReconnected: !!persistedProfile,
@@ -215,7 +215,7 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
             // application/x-x509-ca-cert: Android öffnet direkt den
             // Zertifikats-Installer, iOS zeigt „Profil geladen".
             'Content-Type': 'application/x-x509-ca-cert',
-            'Content-Disposition': 'attachment; filename="karaoke-zero-ca.crt"',
+            'Content-Disposition': 'attachment; filename="afterten-karaoke-ca.crt"',
             'Cache-Control': 'public, max-age=3600',
           },
         });
@@ -752,7 +752,7 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
     default:
       return Response.json({
         success: true,
-        message: 'Karaoke ZERO Mobile API',
+        message: 'AfterTen Karaoke Mobile API',
         endpoints: {
           connect: '/api/mobile?action=connect',
           status: '/api/mobile?action=status',

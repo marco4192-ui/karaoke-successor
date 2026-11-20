@@ -25,7 +25,7 @@ export const tutorialTranslations = {
     moreDetails: '詳しく見る',
     lessDetails: '折りたたむ',
     // First-launch offer
-    offerTitle: 'Karaoke ZERO へようこそ！',
+    offerTitle: 'AfterTen Karaoke へようこそ！',
     offerBody: '基本をさっとご紹介しましょうか？2分あれば、デイリーチャレンジ、歌唱モード、ライブラリ、パーティーゲームが分かるようになります。',
     offerStart: 'ツアーを開始',
     offerLater: 'あとで',
@@ -300,7 +300,7 @@ export const tutorialTranslations = {
         },
         about: {
           title: 'アプリについて',
-          body: 'バージョン、プラットフォーム、ライセンスと貢献プロジェクト — Karaoke ZEROのデジタルな顔。',
+          body: 'バージョン、プラットフォーム、ライセンスと貢献プロジェクト — AfterTen Karaokeのデジタルな顔。',
           details: 'ビルドチャネル（ウェブ/デスクトップ）の確認やアップデート確認も可能。ライセンスは使用オープンソースプロジェクトの一覧です — 関わったみなさんに感謝！',
         },
         finish: {

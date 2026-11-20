@@ -79,7 +79,7 @@ settings: {
   installAppDesc: 'Zainstaluj do pracy offline',
   appInstalled: 'Aplikacja jest zainstalowana',
   version: 'Wersja',
-  aboutDesc: 'Karaoke ZERO to nowoczesna aplikacja karaoke z detekcją wysokości dźwięku w czasie rzeczywistym, trybami imprezy i nie tylko.',
+  aboutDesc: 'AfterTen Karaoke to nowoczesna aplikacja karaoke z detekcją wysokości dźwięku w czasie rzeczywistym, trybami imprezy i nie tylko.',
   feature1: 'Detekcja wysokości dźwięku w czasie rzeczywistym z algorytmem YIN',
   feature2: 'Wiele trybów gier imprezowych',
   feature3: 'Integracja z aplikacją mobilną do zdalnego sterowania',
@@ -432,7 +432,7 @@ settingsViralCharts: {
 settingsLibrary: {
   title: 'Podstawowy folder piosenek',
   desc: 'Wszystkie piosenki są importowane z tego folderu. Każdy podfolder zawiera jedną piosenkę: plik tekstowy .txt ze znacznikami czasu oraz pliki audio, wideo i okładki.',
-  placeholder: 'C:/Karaoke ZERO/Songs',
+  placeholder: 'C:/AfterTen Karaoke/Songs',
   scan: 'Skanuj',
   browse: 'Przeglądaj',
   help: 'Wprowadź ścieżkę do folderu piosenek i kliknij "Skanuj", aby zaimportować, lub użyj "Przeglądaj", aby wybrać folder.',

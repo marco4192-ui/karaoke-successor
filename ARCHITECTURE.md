@@ -1,4 +1,4 @@
-# Karaoke ZERO — Architektur-Karte
+# AfterTen Karaoke — Architektur-Karte
 
 Eine Seite: welche Datei was tut, wie sie zusammenarbeiten, worauf aufgebaut wird.
 

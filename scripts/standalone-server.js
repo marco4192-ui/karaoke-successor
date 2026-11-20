@@ -149,7 +149,7 @@ async function main() {
   server.listen(currentPort, hostname, () => {
     console.log('');
     console.log('╔══════════════════════════════════════════════════╗');
-    console.log('║  🎤 Karaoke ZERO Server (standalone + Socket.IO) ║');
+    console.log('║  🎤 AfterTen Karaoke Server (standalone + Socket.IO) ║');
     console.log(`║  Next.js:   http://${hostname}:${currentPort}`);
     console.log(`║  Socket.IO: ws://${hostname}:${currentPort}/socket.io`);
     if (httpsServer) {
@@ -207,8 +207,8 @@ async function main() {
         ca.validity.notBefore = new Date(Date.now() - 24 * 60 * 60 * 1000);
         ca.validity.notAfter = new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000);
         const caAttrs = [
-          { name: 'commonName', value: 'Karaoke ZERO Local CA' },
-          { name: 'organizationName', value: 'Karaoke ZERO' },
+          { name: 'commonName', value: 'AfterTen Karaoke Local CA' },
+          { name: 'organizationName', value: 'AfterTen Karaoke' },
         ];
         ca.setSubject(caAttrs);
         ca.setIssuer(caAttrs);
@@ -261,8 +261,8 @@ async function main() {
         leaf.validity.notBefore = new Date(Date.now() - 24 * 60 * 60 * 1000);
         leaf.validity.notAfter = new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000);
         leaf.setSubject([
-          { name: 'commonName', value: 'Karaoke ZERO Companion' },
-          { name: 'organizationName', value: 'Karaoke ZERO' },
+          { name: 'commonName', value: 'AfterTen Karaoke Companion' },
+          { name: 'organizationName', value: 'AfterTen Karaoke' },
         ]);
         leaf.setIssuer(caCert.subject.attributes);
         leaf.setExtensions([

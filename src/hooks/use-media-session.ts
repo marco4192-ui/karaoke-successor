@@ -50,7 +50,7 @@ export function useMediaSession({
     const metadataInit: MediaMetadataInit = {
       title: `${song.title} — Karaoke`,
       artist: song.artist || 'Unknown Artist',
-      album: 'Karaoke ZERO',
+      album: 'AfterTen Karaoke',
       artwork: song.coverImage
         ? [
             { src: song.coverImage, sizes: '512x512', type: 'image/jpeg' },

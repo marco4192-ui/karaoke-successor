@@ -2,8 +2,18 @@
 
 export const coreTranslations = {
 core: {
-  branding: 'Karaoke ZERO',
+  branding: 'AfterTen Karaoke',
 },
+splash: {
+  start: '시작',
+  hint: 'Enter 키를 누르거나 클릭',
+  soundOn: '음악 켬',
+  soundOff: '음악 끔',
+  srOverlay: '시작 화면 — ‘시작’을 눌러 앱을 열어요',
+  audioBlockedHint: '첫 클릭 후 소리가 시작됩니다 (브라우저 자동재생 정책)',
+  trackCredit: '♪ Under the Glare',
+},
+
 nav: {
   library: '라이브러리',
   import: '가져오기',
@@ -19,7 +29,7 @@ nav: {
   editor: '에디터',
 },
 home: {
-  title: 'Karaoke ZERO',
+  title: 'AfterTen Karaoke',
   subtitle: '최고의 노래방 경험. 실시간 음정 감지로 노래하고 친구들과 경쟁하며 파티 게임을 즐기세요!',
   startSinging: '노래 시작',
   partyMode: '파티 모드',
@@ -144,12 +154,12 @@ replayModal: {
   replay: '리플레이',
 },
 scoreCardSocial: {
-  branding: 'Karaoke ZERO',
+  branding: 'AfterTen Karaoke',
   accuracyLabel: '정확도:',
   maxComboLabel: '최대 콤보:',
   difficultyLabel: '난이도:',
   playerLabel: '🎤 {name}',
-  hashtags: '#KaraokeZERO #Karaoke #노래',
+  hashtags: '#AfterTenKaraoke #Karaoke #노래',
   shareTitle: '나의 노래방 점수!',
   shareText: '{artist}의 "{title}"에서 {n}점을 획득했습니다!',
   points: '점',

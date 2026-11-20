@@ -1142,7 +1142,7 @@ export const deltaTranslations = {
     testingConnection: "테스트 중…",
   },
   settingsIntros: {
-    about: "Karaoke ZERO에 관한 모든 것: 버전, 플랫폼, 기여 프로젝트와 라이선스 — 프로젝트 소개와 지원 링크도 함께.",
+    about: "AfterTen Karaoke에 관한 모든 것: 버전, 플랫폼, 기여 프로젝트와 라이선스 — 프로젝트 소개와 지원 링크도 함께.",
     appearance: "나만의 스타일로: 테마, 애니메이션 배경 또는 직접 고른 배경 영상, 가사 스타일과 크기, 노트 표시, 저사양 기계용 성능 모드.",
     gameplay: "게임 감각 미세 조정: 점수 표시, 히트 시 파티클 효과, 리플레이 녹화, 자동 전체화면 등 라운드와 결과를 위한 동작 스위치. 파티 분위기와 성능 사이의 균형 잡기에 딱이에요.",
     general: "핵심 앱 설정: 인터페이스 언어, 새 라운드 기본 난이도, 온라인 활동, 전체 키보드 단축키 목록. 변경 사항은 즉시 적용되고 일부(언어 등)는 재시작 없이 반영돼요.",
@@ -1319,7 +1319,7 @@ export const deltaTranslations = {
     howTitle: "기기 간 이전 방식",
     includeMedia: "곡 미디어 포함 (오디오, 영상, 커버)",
     includeMediaDesc: "완전히 자립적인 백업 파일 — 다만 상당히 커져요.",
-    invalidFile: "이 파일은 유효한 Karaoke ZERO 백업이 아닙니다.",
+    invalidFile: "이 파일은 유효한 AfterTen Karaoke 백업이 아닙니다.",
     previewTitle: "백업 내용:",
     reloadHint: "복원된 곡과 미디어가 표시되도록 페이지를 새로 고쳐 주세요.",
     restoreButton: "📥 복원",

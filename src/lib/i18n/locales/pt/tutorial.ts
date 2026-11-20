@@ -29,7 +29,7 @@ export const tutorialTranslations = {
     moreDetails: 'Saiba mais',
     lessDetails: 'Mostrar menos',
     // Oferta no primeiro início
-    offerTitle: 'Bem-vindo ao Karaoke ZERO!',
+    offerTitle: 'Bem-vindo ao AfterTen Karaoke!',
     offerBody: 'Quer uma passada rápida pelo básico? Em 2 minutos você conhece os desafios diários, os modos de canto, a biblioteca e os jogos de festa.',
     offerStart: 'Iniciar tour',
     offerLater: 'Talvez depois',
@@ -304,7 +304,7 @@ export const tutorialTranslations = {
         },
         about: {
           title: 'Sobre',
-          body: 'Versão, plataforma, licenças e projetos contribuintes — a identidade digital do Karaoke ZERO.',
+          body: 'Versão, plataforma, licenças e projetos contribuintes — a identidade digital do AfterTen Karaoke.',
           details: 'Você também vê o canal da build (web/desktop) e pode verificar atualizações. As licenças listam os projetos de código aberto usados — obrigado a todos os envolvidos!',
         },
         finish: {

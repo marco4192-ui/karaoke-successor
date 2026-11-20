@@ -1142,7 +1142,7 @@ export const deltaTranslations = {
     testingConnection: "Testando…",
   },
   settingsIntros: {
-    about: "Tudo sobre o Karaoke ZERO: versão, plataforma, projetos contribuintes e licenças — além da descrição do projeto e dos links de apoio.",
+    about: "Tudo sobre o AfterTen Karaoke: versão, plataforma, projetos contribuintes e licenças — além da descrição do projeto e dos links de apoio.",
     appearance: "Deixe com a sua cara: temas, plano de fundo animado ou seu próprio vídeo de fundo, estilo e tamanho da letra, exibição das notas e o modo de desempenho para máquinas mais fracas.",
     gameplay: "Ajuste fino da jogabilidade: exibição de pontuação, efeitos de partículas nos acertos, gravação de replay, tela cheia automática e mais interruptores de comportamento para rodadas e resultados. Perfeito para equilibrar clima de festa e desempenho.",
     general: "Configurações principais do app: idioma da interface, dificuldade padrão para novas rodadas, atividades online e a lista completa de atalhos de teclado. As mudanças valem na hora — algumas (como o idioma) sem reiniciar.",
@@ -1319,7 +1319,7 @@ export const deltaTranslations = {
     howTitle: "Como funciona a transferência entre dispositivos",
     includeMedia: "Incluir mídias das músicas (áudio, vídeo, capas)",
     includeMediaDesc: "Arquivo de backup totalmente autossuficiente — mas bem maior.",
-    invalidFile: "Este arquivo não é um backup válido do Karaoke ZERO.",
+    invalidFile: "Este arquivo não é um backup válido do AfterTen Karaoke.",
     previewTitle: "Conteúdo do backup:",
     reloadHint: "Recarregue a página para as músicas e mídias restauradas aparecerem.",
     restoreButton: "📥 Restaurar",

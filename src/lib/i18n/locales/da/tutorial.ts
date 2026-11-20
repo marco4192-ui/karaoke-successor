@@ -27,7 +27,7 @@ export const tutorialTranslations = {
     moreDetails: 'Mere info',
     lessDetails: 'Vis mindre',
     // First-launch offer
-    offerTitle: 'Velkommen til Karaoke ZERO!',
+    offerTitle: 'Velkommen til AfterTen Karaoke!',
     offerBody: 'Vil du have en hurtig gennemgang af det grundlæggende? På 2 minutter kender du daglige udfordringer, sangtilstande, biblioteket og selskabslegene.',
     offerStart: 'Start rundtur',
     offerLater: 'Måske senere',
@@ -302,7 +302,7 @@ export const tutorialTranslations = {
         },
         about: {
           title: 'Om',
-          body: 'Version, platform, licenser og medvirkende projekter — Karaoke ZEROs digitale kolofon.',
+          body: 'Version, platform, licenser og medvirkende projekter — AfterTen Karaokes digitale kolofon.',
           details: 'Du ser også byggekanalen (web/desktop) og kan søge efter opdateringer. Licenserne oplister de anvendte open source-projekter — tak til alle involverede!',
         },
         finish: {

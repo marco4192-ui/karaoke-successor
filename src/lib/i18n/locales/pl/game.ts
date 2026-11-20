@@ -7,7 +7,7 @@ share: {
   maxCombo: 'Max Kombo',
   rating: 'Ocena',
   playerLabel: 'Gracz: {name}',
-  shareTitle: 'Wynik Karaoke ZERO',
+  shareTitle: 'Wynik AfterTen Karaoke',
   mode: 'Tryb',
   difficulty: 'Trudność',
   scoredPoints: 'Właśnie zdobyłem {score} punktów w "{title}" od {artist}!',
@@ -338,7 +338,7 @@ common: {
   defaultPlayerName: 'Gracz',
 },
 page: {
-  loading: 'Ładowanie Karaoke ZERO...',
+  loading: 'Ładowanie AfterTen Karaoke...',
   reload: 'Odśwież',
 },
 achievements: {

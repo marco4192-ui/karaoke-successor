@@ -270,8 +270,8 @@ jobs:
           New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
           # 1) Main executable
-          Copy-Item $exePath "$outDir\karaoke-zero.exe" -Force
-          Write-Host ("  karaoke-zero.exe ({0:N2} MB)" -f ((Get-Item $exePath).Length / 1MB))
+          Copy-Item $exePath "$outDir\afterten-karaoke.exe" -Force
+          Write-Host ("  afterten-karaoke.exe ({0:N2} MB)" -f ((Get-Item $exePath).Length / 1MB))
 
           # 2) Bundled resources (node, server, native DLLs)
           Copy-Item -Recurse "src-tauri\bundled" "$outDir\bundled" -Force
@@ -284,7 +284,7 @@ jobs:
 
           # 4) Verify critical files
           $critical = @(
-            "$outDir\karaoke-zero.exe",
+            "$outDir\afterten-karaoke.exe",
             "$outDir\bundled\node\node.exe",
             "$outDir\bundled\native\onnxruntime.dll",
             "$outDir\bundled\server\server.js"
@@ -302,7 +302,7 @@ jobs:
           }
 
           # 5) Compress
-          $zipName = "Karaoke-ZERO-Windows-x64.zip"
+          $zipName = "AfterTen-Karaoke-Windows-x64.zip"
           if (Test-Path $zipName) { Remove-Item $zipName -Force }
           Compress-Archive -Path "$outDir\*" -DestinationPath $zipName -Force
           $zipMB = (Get-Item $zipName).Length / 1MB
@@ -327,12 +327,12 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.version || github.ref_name }}
-          name: 'Karaoke ZERO ${{ github.event.inputs.version || github.ref_name }}'
+          name: 'AfterTen Karaoke ${{ github.event.inputs.version || github.ref_name }}'
           body: |
-            Portable Windows build — extract the ZIP and run `karaoke-zero.exe`.
+            Portable Windows build — extract the ZIP and run `afterten-karaoke.exe`.
             No installer, no admin rights needed. All dependencies bundled.
           draft: true
-          files: Karaoke-ZERO-Windows-x64.zip
+          files: AfterTen-Karaoke-Windows-x64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -340,7 +340,7 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: windows-portable
-          path: Karaoke-ZERO-Windows-x64.zip
+          path: AfterTen-Karaoke-Windows-x64.zip
           retention-days: 30
 
   # Build macOS

@@ -2,8 +2,18 @@
 
 export const coreTranslations = {
 core: {
-  branding: 'Karaoke ZERO',
+  branding: 'AfterTen Karaoke',
 },
+splash: {
+  start: 'Start',
+  hint: 'Tryk Enter eller klik',
+  soundOn: 'Musik til',
+  soundOff: 'Musik fra',
+  srOverlay: 'Startskærm — tryk Start for at åbne appen',
+  audioBlockedHint: 'Lyden starter ved dit første klik (browserens autoplay-regel)',
+  trackCredit: '♪ Under the Glare',
+},
+
 nav: {
   library: 'Bibliotek',
   import: 'Importér',
@@ -19,7 +29,7 @@ nav: {
   editor: 'Editor',
 },
 home: {
-  title: 'Karaoke ZERO',
+  title: 'AfterTen Karaoke',
   subtitle: 'Den ultimative karaokeoplevelse. Syng hjertet ud med realtids-tonegenkendelse, konkurrér med venner og nyd selskabslege!',
   startSinging: 'Start med at synge',
   partyMode: 'Festtilstand',
@@ -144,12 +154,12 @@ replayModal: {
   replay: 'Replay',
 },
 scoreCardSocial: {
-  branding: 'Karaoke ZERO',
+  branding: 'AfterTen Karaoke',
   accuracyLabel: 'Nøjagtighed:',
   maxComboLabel: 'Maks. Kombo:',
   difficultyLabel: 'Sværhedsgrad:',
   playerLabel: '🎤 {name}',
-  hashtags: '#KaraokeZERO #Karaoke #Sang',
+  hashtags: '#AfterTenKaraoke #Karaoke #Sang',
   shareTitle: 'Mit karaoke-resultat!',
   shareText: 'Jeg scorede {n} point på "{title}" af {artist}!',
   points: 'point',

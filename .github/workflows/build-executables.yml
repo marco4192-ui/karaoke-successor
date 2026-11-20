@@ -1,5 +1,5 @@
 # ════════════════════════════════════════════════════════════════════════
-#  Karaoke ZERO — 100 % Standalone-Builds (Windows · macOS · Linux)
+#  AfterTen Karaoke — 100 % Standalone-Builds (Windows · macOS · Linux)
 # ════════════════════════════════════════════════════════════════════════
 #  Ein einziger Workflow für alle drei Plattformen. Alle Builds laufen auf
 #  „nacken“ Systemen (frisches OS, kein Node.js, kein Browser, kein Internet
@@ -545,9 +545,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ env.RELEASE_VERSION }}
-          name: 'Karaoke ZERO ${{ env.RELEASE_VERSION }}'
+          name: 'AfterTen Karaoke ${{ env.RELEASE_VERSION }}'
           body: |
-            # 🎤 Karaoke ZERO ${{ env.RELEASE_VERSION }} — 100 % Standalone
+            # 🎤 AfterTen Karaoke ${{ env.RELEASE_VERSION }} — 100 % Standalone
 
             Diese Builds laufen auf **nackten Systemen**: kein installiertes Node.js,
             kein Browser, **keine Internetverbindung zur Installationszeit**
@@ -567,9 +567,9 @@ jobs:
 
             **Windows:** `*-setup.exe` ausführen — fertig.
 
-            **macOS:** DMG öffnen → „Karaoke ZERO“ in den Programme-Ordner ziehen.
+            **macOS:** DMG öffnen → „AfterTen Karaoke“ in den Programme-Ordner ziehen.
             > ⚠️ Unsignierter Build: beim ersten Start ggf. Rechtsklick → „Öffnen“
-            > (Gatekeeper) oder im Terminal: `xattr -cr "/Applications/Karaoke ZERO.app"`
+            > (Gatekeeper) oder im Terminal: `xattr -cr "/Applications/AfterTen Karaoke.app"`
 
             **Linux (AppImage):**
             ```bash

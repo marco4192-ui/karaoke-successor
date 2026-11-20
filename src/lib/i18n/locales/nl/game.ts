@@ -7,7 +7,7 @@ share: {
   maxCombo: 'Max Combo',
   rating: 'Beoordeling',
   playerLabel: 'Speler: {name}',
-  shareTitle: 'Karaoke ZERO Score',
+  shareTitle: 'AfterTen Karaoke Score',
   mode: 'Modus',
   difficulty: 'Moeilijkheidsgraad',
   scoredPoints: 'Ik heb zojuist {score} punten gescoord op "{title}" van {artist}!',
@@ -338,7 +338,7 @@ common: {
   defaultPlayerName: 'Speler',
 },
 page: {
-  loading: 'Karaoke ZERO laden...',
+  loading: 'AfterTen Karaoke laden...',
   reload: 'Opnieuw laden',
 },
 achievements: {

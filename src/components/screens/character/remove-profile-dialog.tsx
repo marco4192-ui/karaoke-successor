@@ -118,7 +118,7 @@ export function RemoveProfileDialog({ profile, open, onOpenChange, onRemoved }: 
   const handleSaveCodeFile = () => {
     if (!profile?.syncCode) return;
     const content = [
-      'KARAOKE ZERO — SYNC-CODE',
+      'AFTERTEN KARAOKE — SYNC-CODE',
       '=========================',
       '',
       `Code:    ${profile.syncCode}`,
@@ -128,7 +128,7 @@ export function RemoveProfileDialog({ profile, open, onOpenChange, onRemoved }: 
       `⚠ ${t('profileSync.syncCodeWarning')}`,
       '',
     ].join('\n');
-    downloadTextFile(`karaoke-zero-sync-code-${profile.syncCode}.txt`, content);
+    downloadTextFile(`afterten-karaoke-sync-code-${profile.syncCode}.txt`, content);
   };
 
   if (!profile) return null;

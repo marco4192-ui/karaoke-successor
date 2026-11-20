@@ -13,6 +13,12 @@ import { useState, useEffect, Suspense } from 'react';
  *   Loaded via a setTimeout(0) import AFTER the page has mounted,
  *   guaranteeing React's internal runtime is fully initialized
  *   before any heavy modules are evaluated.
+ *
+ * R86 title screen: the SplashScreen chunk loads in PARALLEL with the app
+ * and overlays it once both are ready. The app (incl. the R84 library
+ * preload) keeps booting behind the animated intro — clicking Start reveals
+ * a fully warmed-up app. If the splash chunk fails to load, the app still
+ * starts normally (splash is strictly optional).
  */
 
 function LoadingScreen() {
@@ -25,7 +31,7 @@ function LoadingScreen() {
     >
       <div className="text-center">
         <div className="text-5xl mb-4 animate-pulse">&#127925;</div>
-        <p className="text-[#ff2d95] text-sm font-bold tracking-widest uppercase">Loading Karaoke ZERO...</p>
+        <p className="text-[#ff2d95] text-sm font-bold tracking-widest uppercase">Loading AfterTen Karaoke...</p>
       </div>
     </div>
   );
@@ -33,6 +39,9 @@ function LoadingScreen() {
 
 export default function Page() {
   const [AppComponent, setAppComponent] = useState<React.ComponentType | null>(null);
+  const [SplashComponent, setSplashComponent] = useState<React.ComponentType<{ onEnter: () => void }> | null>(null);
+  const [splashUnavailable, setSplashUnavailable] = useState(false);
+  const [splashDone, setSplashDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -54,6 +63,16 @@ export default function Page() {
             console.error('[Page] Failed to load karaoke-app:', err);
             setError(err instanceof Error ? err.message : String(err));
           }
+        });
+
+      // R86: title screen — small chunk, loads in parallel with the app.
+      // A failure here must NEVER block the app (splashUnavailable flag).
+      import('@/components/splash/splash-screen')
+        .then((mod) => {
+          if (!cancelled) setSplashComponent(() => mod.SplashScreen);
+        })
+        .catch(() => {
+          if (!cancelled) setSplashUnavailable(true);
         });
     }, 0);
 
@@ -85,13 +104,19 @@ export default function Page() {
     );
   }
 
-  if (!AppComponent) {
+  // The loading screen stays up until the app AND the splash chunk are
+  // ready (or the splash is known-unavailable) — this way the animated
+  // title screen opens directly over the loader with no app flash-through.
+  if (!AppComponent || (!SplashComponent && !splashUnavailable)) {
     return <LoadingScreen />;
   }
 
   return (
     <Suspense fallback={<LoadingScreen />}>
       <AppComponent />
+      {!splashDone && SplashComponent && (
+        <SplashComponent onEnter={() => setSplashDone(true)} />
+      )}
     </Suspense>
   );
 }

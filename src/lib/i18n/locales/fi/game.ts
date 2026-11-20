@@ -7,7 +7,7 @@ share: {
   maxCombo: 'Max-kombo',
   rating: 'Arvosana',
   playerLabel: 'Pelaaja: {name}',
-  shareTitle: 'Karaoke ZERO -tulos',
+  shareTitle: 'AfterTen Karaoke -tulos',
   mode: 'Tila',
   difficulty: 'Vaikeustaso',
   scoredPoints: 'Sain juuri {score} pistettä kappaleesta "{title}" — {artist}!',
@@ -338,7 +338,7 @@ common: {
   defaultPlayerName: 'Pelaaja',
 },
 page: {
-  loading: 'Ladataan Karaoke ZERO…',
+  loading: 'Ladataan AfterTen Karaoke…',
   reload: 'Lataa uudelleen',
 },
 achievements: {

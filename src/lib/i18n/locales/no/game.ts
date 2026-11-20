@@ -7,7 +7,7 @@ share: {
   maxCombo: 'Maks kombo',
   rating: 'Karakter',
   playerLabel: 'Spiller: {name}',
-  shareTitle: 'Karaoke ZERO-poeng',
+  shareTitle: 'AfterTen Karaoke-poeng',
   mode: 'Modus',
   difficulty: 'Vanskelighetsgrad',
   scoredPoints: 'Jeg fikk akkurat {score} poeng på "{title}" av {artist}!',
@@ -338,7 +338,7 @@ common: {
   defaultPlayerName: 'Spiller',
 },
 page: {
-  loading: 'Laster Karaoke ZERO…',
+  loading: 'Laster AfterTen Karaoke…',
   reload: 'Last inn på nytt',
 },
 achievements: {

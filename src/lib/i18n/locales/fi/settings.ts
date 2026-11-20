@@ -79,7 +79,7 @@ settings: {
   installAppDesc: 'Asenna offline-käyttöä varten',
   appInstalled: 'Sovellus on asennettu',
   version: 'Versio',
-  aboutDesc: 'Karaoke ZERO on moderni karaoke-sovellus reaaliaikaisella sävelkorkeudentunnistuksella, juhlatiloilla ja paljon muuta.',
+  aboutDesc: 'AfterTen Karaoke on moderni karaoke-sovellus reaaliaikaisella sävelkorkeudentunnistuksella, juhlatiloilla ja paljon muuta.',
   feature1: 'Reaaliaikainen sävelkorkeudentunnistus YIN-algoritmilla',
   feature2: 'Useita juhlapelitiloja',
   feature3: 'Mobiilisovellusintegraatio etähallintaan',
@@ -432,7 +432,7 @@ settingsViralCharts: {
 settingsLibrary: {
   title: 'Kappaleiden peruskansio',
   desc: 'Kaikki kappaleet tuodaan tästä kansiosta. Jokainen alikansio sisältää yhden kappaleen: .txt-tekstitiedoston aikamerkkeineen sekä ääni-, video- ja kansikuvatiedostot.',
-  placeholder: 'C:/Karaoke ZERO/Kappaleet',
+  placeholder: 'C:/AfterTen Karaoke/Kappaleet',
   scan: 'Skannaa',
   browse: 'Selaa',
   help: 'Syötä polku kappalekansioosi ja napsauta "Skannaa" tuodaksesi, tai käytä "Selaa" valitaksesi kansion.',

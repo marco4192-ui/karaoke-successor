@@ -7,7 +7,7 @@ share: {
   maxCombo: 'Max-kombo',
   rating: 'Betyg',
   playerLabel: 'Spelare: {name}',
-  shareTitle: 'Karaoke ZERO-poäng',
+  shareTitle: 'AfterTen Karaoke-poäng',
   mode: 'Läge',
   difficulty: 'Svårighetsgrad',
   scoredPoints: 'Jag fick precis {score} poäng på "{title}" av {artist}!',
@@ -338,7 +338,7 @@ common: {
   defaultPlayerName: 'Spelare',
 },
 page: {
-  loading: 'Laddar Karaoke ZERO…',
+  loading: 'Laddar AfterTen Karaoke…',
   reload: 'Ladda om',
 },
 achievements: {

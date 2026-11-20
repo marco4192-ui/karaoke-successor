@@ -2,8 +2,18 @@
 
 export const coreTranslations = {
 core: {
-  branding: 'Karaoke ZERO',
+  branding: 'AfterTen Karaoke',
 },
+splash: {
+  start: 'Aloita',
+  hint: 'Paina Enter tai napsauta',
+  soundOn: 'Musiikki päällä',
+  soundOff: 'Musiikki pois',
+  srOverlay: 'Aloitusnäyttö — paina Aloita avataksesi sovelluksen',
+  audioBlockedHint: 'Ääni käynnistyy ensimmäisellä klikkauksella (selaimen autoplay-sääntö)',
+  trackCredit: '♪ Under the Glare',
+},
+
 nav: {
   library: 'Kirjasto',
   import: 'Tuo',
@@ -19,7 +29,7 @@ nav: {
   editor: 'Editori',
 },
 home: {
-  title: 'Karaoke ZERO',
+  title: 'AfterTen Karaoke',
   subtitle: 'Ultimatiivinen karaokekokemus. Laula sydämesi kyllyydestä reaaliaikaisella sävelkorkeudentunnistuksella, kilpaile ystävien kanssa ja nauti juhlapeleistä!',
   startSinging: 'Aloita laulaminen',
   partyMode: 'Juhlatila',
@@ -144,12 +154,12 @@ replayModal: {
   replay: 'Uusinta',
 },
 scoreCardSocial: {
-  branding: 'Karaoke ZERO',
+  branding: 'AfterTen Karaoke',
   accuracyLabel: 'Tarkkuus:',
   maxComboLabel: 'Max-kombo:',
   difficultyLabel: 'Vaikeustaso:',
   playerLabel: '🎤 {name}',
-  hashtags: '#KaraokeZERO #Karaoke #Laulu',
+  hashtags: '#AfterTenKaraoke #Karaoke #Laulu',
   shareTitle: 'Karaoke-tulokseni!',
   shareText: 'Sain {n} pistettä kappaleella "{title}" artistilta {artist}!',
   points: 'pistettä',

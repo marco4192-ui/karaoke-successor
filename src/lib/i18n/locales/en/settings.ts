@@ -81,7 +81,7 @@ export const settingsTranslations = {
     installAppDesc: 'Install for offline access',
     appInstalled: 'App is installed',
     version: 'Version',
-    aboutDesc: 'Karaoke ZERO is a modern karaoke application with real-time pitch detection, party modes, and more.',
+    aboutDesc: 'AfterTen Karaoke is a modern karaoke application with real-time pitch detection, party modes, and more.',
     feature1: 'Real-time pitch detection with YIN algorithm',
     feature2: 'Multiple party game modes',
     feature3: 'Mobile app integration for remote control',
@@ -134,7 +134,7 @@ export const settingsTranslations = {
     library: 'Manage your song library: set the songs folder and scan it (each subfolder = one song with a .txt lyrics file plus audio, video and cover files), reset the library or delete all data. Import formats from other karaoke providers are not supported for now.',
     viral: 'The Viral Charts: an automatically updating list of current hits. Control how many songs in your library get flagged as "viral" and filter by it — perfect for offering the latest songs at parties.',
     sync: 'Sync & Backup: synchronize profiles, highscores and settings between devices and create or restore backups. In the desktop build, player data is additionally mirrored permanently to the AppData folder.',
-    about: 'Everything about Karaoke ZERO: version, platform, contributing projects and licenses — plus the project description and support links.',
+    about: 'Everything about AfterTen Karaoke: version, platform, contributing projects and licenses — plus the project description and support links.',
   },
 
   settingsTaxonomy: {
@@ -583,7 +583,7 @@ export const settingsTranslations = {
   settingsLibrary: {
     title: 'Songs Base Folder',
     desc: 'All songs are imported from this folder. Each subfolder contains one song: a .txt lyrics file with timestamps plus audio, video and cover files.',
-    placeholder: 'C:/Karaoke ZERO/Songs',
+    placeholder: 'C:/AfterTen Karaoke/Songs',
     scan: 'Scan',
     browse: 'Browse',
     help: 'Enter the path to your songs folder and click "Scan" to import, or use "Browse" to select a folder.',
@@ -811,7 +811,7 @@ export const settingsTranslations = {
     restoreTitle: 'Restore Backup',
     restoreDesc: 'Pick a backup file from the other device, review its contents and merge it into this device. Existing progress is never lost — profiles, songs and the best highscores are merged.',
     chooseFile: 'Choose backup file…',
-    invalidFile: 'This file is not a valid Karaoke ZERO backup.',
+    invalidFile: 'This file is not a valid AfterTen Karaoke backup.',
     previewTitle: 'Backup contents:',
     restoreMediaToggle: 'Restore song media (IndexedDB)',
     restoreSettingsToggle: 'Also apply settings (theme, language, gameplay options)',

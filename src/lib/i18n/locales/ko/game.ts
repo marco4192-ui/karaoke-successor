@@ -7,7 +7,7 @@ share: {
   maxCombo: '최대 콤보',
   rating: '평점',
   playerLabel: '플레이어: {name}',
-  shareTitle: 'Karaoke ZERO 점수',
+  shareTitle: 'AfterTen Karaoke 점수',
   mode: '모드',
   difficulty: '난이도',
   scoredPoints: '{artist}의 "{title}"에서 {score}점을 기록했어요!',
@@ -338,7 +338,7 @@ common: {
   defaultPlayerName: '플레이어',
 },
 page: {
-  loading: 'Karaoke ZERO 로딩 중...',
+  loading: 'AfterTen Karaoke 로딩 중...',
   reload: '새로고침',
 },
 achievements: {

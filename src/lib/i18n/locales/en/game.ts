@@ -8,7 +8,7 @@ export const gameTranslations = {
     maxCombo: 'Max Combo',
     rating: 'Rating',
     playerLabel: 'Player: {name}',
-    shareTitle: 'Karaoke ZERO Score',
+    shareTitle: 'AfterTen Karaoke Score',
     mode: 'Mode',
     difficulty: 'Difficulty',
     scoredPoints: 'I just scored {score} points on "{title}" by {artist}!',
@@ -407,7 +407,7 @@ rivals: {
   },
 
   page: {
-    loading: 'Loading Karaoke ZERO...',
+    loading: 'Loading AfterTen Karaoke...',
     reload: 'Reload',
   },
 

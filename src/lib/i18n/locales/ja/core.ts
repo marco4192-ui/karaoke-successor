@@ -2,8 +2,18 @@
 
 export const coreTranslations = {
 core: {
-  branding: 'Karaoke ZERO',
+  branding: 'AfterTen Karaoke',
 },
+splash: {
+  start: 'スタート',
+  hint: 'Enterキーを押すかクリック',
+  soundOn: '音楽オン',
+  soundOff: '音楽オフ',
+  srOverlay: 'スタート画面 — 「スタート」を押してアプリを開く',
+  audioBlockedHint: '初回クリック後に音声が開始します（ブラウザの自動再生ポリシー）',
+  trackCredit: '♪ Under the Glare',
+},
+
 nav: {
   library: 'ライブラリ',
   import: 'インポート',
@@ -19,7 +29,7 @@ nav: {
   editor: 'エディター',
 },
 home: {
-  title: 'Karaoke ZERO',
+  title: 'AfterTen Karaoke',
   subtitle: '究極のカラオケ体験。リアルタイム音程検出で歌い、友人と競い、パーティーゲームを楽しもう！',
   startSinging: '歌い始める',
   partyMode: 'パーティーモード',
@@ -144,12 +154,12 @@ replayModal: {
   replay: 'リプレイ',
 },
 scoreCardSocial: {
-  branding: 'Karaoke ZERO',
+  branding: 'AfterTen Karaoke',
   accuracyLabel: '正確さ:',
   maxComboLabel: '最大コンボ:',
   difficultyLabel: '難易度:',
   playerLabel: '🎤 {name}',
-  hashtags: '#KaraokeZERO #Karaoke #歌唱',
+  hashtags: '#AfterTenKaraoke #Karaoke #歌唱',
   shareTitle: '私のカラオケスコア！',
   shareText: '私は{artist}の"{title}"で{n}ポイントを獲得しました！',
   points: 'ポイント',

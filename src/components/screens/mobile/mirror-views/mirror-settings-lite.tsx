@@ -865,7 +865,7 @@ function AboutSettings({ t }: { t: (_key: string) => string }) {
     <div className="flex flex-col gap-3">
       <div className="rounded-xl bg-white/5 border border-white/10 px-4 py-4 text-center">
         <span className="text-3xl">{'\u{1F3B6}'}</span>
-        <h3 className="text-lg font-bold text-white mt-2">Karaoke ZERO</h3>
+        <h3 className="text-lg font-bold text-white mt-2">AfterTen Karaoke</h3>
         <p className="text-xs text-white/30 mt-1">{tOr(t, 'about.version', 'Version')} 1.0.0</p>
       </div>
       <div className="rounded-xl bg-white/5 border border-white/10 px-4 py-3">

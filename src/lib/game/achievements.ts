@@ -1,4 +1,4 @@
-// Achievement System for Karaoke ZERO
+// Achievement System for AfterTen Karaoke
 
 import type { Language } from '@/lib/i18n/locales';
 import { t } from '@/lib/i18n/translations';

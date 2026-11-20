@@ -79,7 +79,7 @@ settings: {
   installAppDesc: 'Instalar para acceso sin conexión',
   appInstalled: 'App está instalada',
   version: 'Versión',
-  aboutDesc: 'Karaoke ZERO es una aplicación de karaoke moderna con detección de tono en tiempo real, modos de fiesta y más.',
+  aboutDesc: 'AfterTen Karaoke es una aplicación de karaoke moderna con detección de tono en tiempo real, modos de fiesta y más.',
   feature1: 'Detección de tono en tiempo real con algoritmo YIN',
   feature2: 'Múltiples modos de juegos de fiesta',
   feature3: 'Integración de app móvil para control remoto',
@@ -432,7 +432,7 @@ settingsViralCharts: {
 settingsLibrary: {
   title: 'Carpeta Base de Canciones',
   desc: 'Todas las canciones se importan desde esta carpeta. Cada subcarpeta contiene una canción: un archivo de texto .txt con marcas de tiempo más archivos de audio, vídeo y portada.',
-  placeholder: 'C:/Karaoke ZERO/Canciones',
+  placeholder: 'C:/AfterTen Karaoke/Canciones',
   scan: 'Escanear',
   browse: 'Explorar',
   help: 'Introduce la ruta a tu carpeta de canciones y haz clic en "Escanear" para importar, o usa "Explorar" para seleccionar una carpeta.',

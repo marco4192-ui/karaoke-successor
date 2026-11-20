@@ -79,7 +79,7 @@ settings: {
   installAppDesc: 'Installer for offline bruk',
   appInstalled: 'Appen er installert',
   version: 'Versjon',
-  aboutDesc: 'Karaoke ZERO er en moderne karaokeapplikasjon med sanntids tonegjenkjenning, festmoduser og mer.',
+  aboutDesc: 'AfterTen Karaoke er en moderne karaokeapplikasjon med sanntids tonegjenkjenning, festmoduser og mer.',
   feature1: 'Sanntids tonegjenkjenning med YIN-algoritme',
   feature2: 'Flere festspillmoduser',
   feature3: 'Mobilapp-integrasjon for fjernstyring',
@@ -432,7 +432,7 @@ settingsViralCharts: {
 settingsLibrary: {
   title: 'Sangbasemappe',
   desc: 'Alle sanger importeres fra denne mappen. Hver undermappe inneholder én sang: en .txt-tekstfil med tidsmerker, i tillegg til lyd-, video- og coverfiler.',
-  placeholder: 'C:/Karaoke ZERO/Sanger',
+  placeholder: 'C:/AfterTen Karaoke/Sanger',
   scan: 'Skann',
   browse: 'Bla gjennom',
   help: 'Skriv inn stien til sangmappen din og klikk «Skann» for å importere, eller bruk «Bla gjennom» for å velge en mappe.',

@@ -28,8 +28,8 @@ export function NavBar({ screen, setScreen, queueLength, isMounted, isFullscreen
             <MusicIcon className="w-6 h-6 text-white" />
           </div>
           <span className="text-xl font-black tracking-tight">
-            <span className="text-[#ff2d95]">Karaoke</span>{' '}
-            <span className="text-[#00e5ff]">ZERO</span>
+            <span className="text-[#ff2d95]">AfterTen</span>{' '}
+            <span className="text-[#00e5ff]">Karaoke</span>
           </span>
         </button>
 

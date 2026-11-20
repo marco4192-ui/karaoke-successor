@@ -7,7 +7,7 @@ share: {
   maxCombo: '最大コンボ',
   rating: '評価',
   playerLabel: 'プレイヤー: {name}',
-  shareTitle: 'Karaoke ZERO スコア',
+  shareTitle: 'AfterTen Karaoke スコア',
   mode: 'モード',
   difficulty: '難易度',
   scoredPoints: '「{title}」（{artist}）で{score}ポイント獲得しました！',
@@ -338,7 +338,7 @@ common: {
   defaultPlayerName: 'プレイヤー',
 },
 page: {
-  loading: 'Karaoke ZERO を読み込み中...',
+  loading: 'AfterTen Karaoke を読み込み中...',
   reload: '再読み込み',
 },
 achievements: {

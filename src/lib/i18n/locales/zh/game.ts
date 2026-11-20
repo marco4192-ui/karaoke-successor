@@ -7,7 +7,7 @@ share: {
   maxCombo: '最大连击',
   rating: '评级',
   playerLabel: '玩家：{name}',
-  shareTitle: 'Karaoke ZERO 成绩',
+  shareTitle: 'AfterTen Karaoke 成绩',
   mode: '模式',
   difficulty: '难度',
   scoredPoints: '我刚刚在 {artist} 的《{title}》中拿下了 {score} 分！',
@@ -338,7 +338,7 @@ common: {
   defaultPlayerName: '玩家',
 },
 page: {
-  loading: '正在加载 Karaoke ZERO...',
+  loading: '正在加载 AfterTen Karaoke...',
   reload: '重新加载',
 },
 achievements: {

@@ -45,7 +45,7 @@ export function RecoveryCodeDialog({ code, open, onOpenChange }: RecoveryCodeDia
   // own localized hint texts so the file matches what the user just read.
   const saveFile = () => {
     const content = [
-      'KARAOKE ZERO — RECOVERY-CODE',
+      'AFTERTEN KARAOKE — RECOVERY-CODE',
       '=============================',
       '',
       `Code: ${code}`,
@@ -56,7 +56,7 @@ export function RecoveryCodeDialog({ code, open, onOpenChange }: RecoveryCodeDia
       t('profileAuth.recoverySaveHint'),
       '',
     ].join('\n');
-    downloadTextFile('karaoke-zero-recovery-code.txt', content);
+    downloadTextFile('afterten-karaoke-recovery-code.txt', content);
   };
 
   return (

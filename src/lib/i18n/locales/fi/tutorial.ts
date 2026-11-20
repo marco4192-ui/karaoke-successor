@@ -27,7 +27,7 @@ export const tutorialTranslations = {
     moreDetails: 'Lisätietoja',
     lessDetails: 'Näytä vähemmän',
     // First-launch offer
-    offerTitle: 'Tervetuloa Karaoke ZERO:een!',
+    offerTitle: 'Tervetuloa AfterTen Karaoke:een!',
     offerBody: 'Haluatko nopean kierroksen perusteisiin? Kahdessa minuutissa tunnet päivittäishaasteet, laulutilat, kirjaston ja juhlapelit.',
     offerStart: 'Aloita kierros',
     offerLater: 'Ehkä myöhemmin',
@@ -302,7 +302,7 @@ export const tutorialTranslations = {
         },
         about: {
           title: 'Tietoja',
-          body: 'Versio, alusta, lisenssit ja osallistuvat projektit — Karaoke ZEROn digitaalinen impressum.',
+          body: 'Versio, alusta, lisenssit ja osallistuvat projektit — AfterTen Karaoken digitaalinen impressum.',
           details: 'Näet myös julkaisukanavan (web/desktop) ja voit tarkistaa päivitykset. Lisenssit listaavat käytetyt avoimen lähdekoodin projektit — kiitos kaikille mukana olleille!',
         },
         finish: {

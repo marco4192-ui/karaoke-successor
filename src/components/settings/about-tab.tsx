@@ -95,8 +95,8 @@ export function AboutTab({
             </div>
             <div>
               <div className="text-xl font-black">
-                <span className="text-[#ff2d95]">Karaoke</span>{' '}
-                <span className="text-[#00e5ff]">ZERO</span>
+                <span className="text-[#ff2d95]">AfterTen</span>{' '}
+                <span className="text-[#00e5ff]">Karaoke</span>
               </div>
               <div className="text-sm text-white/60">{tx('settings.version')} 1.0.0</div>
             </div>

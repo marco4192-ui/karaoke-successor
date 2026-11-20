@@ -146,8 +146,8 @@ async function ensureCertificates(): Promise<HttpsCertBundle | null> {
     ca.validity.notBefore = new Date(Date.now() - 24 * 60 * 60 * 1000); // 1 Tag Toleranz gegen Uhrabweichung
     ca.validity.notAfter = new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000); // 10 Jahre
     const caAttrs = [
-      { name: 'commonName', value: 'Karaoke ZERO Local CA' },
-      { name: 'organizationName', value: 'Karaoke ZERO' },
+      { name: 'commonName', value: 'AfterTen Karaoke Local CA' },
+      { name: 'organizationName', value: 'AfterTen Karaoke' },
     ];
     ca.setSubject(caAttrs);
     ca.setIssuer(caAttrs); // self-signed Root-CA
@@ -208,8 +208,8 @@ async function ensureCertificates(): Promise<HttpsCertBundle | null> {
   leaf.validity.notBefore = new Date(Date.now() - 24 * 60 * 60 * 1000);
   leaf.validity.notAfter = new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000);
   leaf.setSubject([
-    { name: 'commonName', value: 'Karaoke ZERO Companion' },
-    { name: 'organizationName', value: 'Karaoke ZERO' },
+    { name: 'commonName', value: 'AfterTen Karaoke Companion' },
+    { name: 'organizationName', value: 'AfterTen Karaoke' },
     { shortName: 'OU', value: 'Companion HTTPS' },
   ]);
   leaf.setIssuer(caCert.subject.attributes); // Von der Root-CA signiert
@@ -434,7 +434,7 @@ app.prepare().then(async () => {
     // eslint-disable-next-line no-console
     console.log(`
 ╔══════════════════════════════════════════════════╗
-║  🎤 Karaoke ZERO Server                          ║
+║  🎤 AfterTen Karaoke Server                          ║
 ║  Next.js:   http://${hostname}:${port}                    ║
 ║  Socket.IO: ws://${hostname}:${port}/socket.io          ║
 ║  Mode:      ${dev ? 'DEVELOPMENT' : 'PRODUCTION'}                         ║

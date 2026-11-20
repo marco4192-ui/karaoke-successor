@@ -2,8 +2,18 @@
 
 export const coreTranslations = {
 core: {
-  branding: 'Karaoke ZERO',
+  branding: 'AfterTen Karaoke',
 },
+splash: {
+  start: 'Avvia',
+  hint: 'Premi Invio o clicca',
+  soundOn: 'Musica attiva',
+  soundOff: 'Musica disattivata',
+  srOverlay: 'Schermata iniziale — premi Avvia per entrare nell\'app',
+  audioBlockedHint: 'L\'audio parte al primo clic (regola autoplay del browser)',
+  trackCredit: '♪ Under the Glare',
+},
+
 nav: {
   library: 'Libreria',
   import: 'Importa',
@@ -19,7 +29,7 @@ nav: {
   editor: 'Editor',
 },
 home: {
-  title: 'Karaoke ZERO',
+  title: 'AfterTen Karaoke',
   subtitle: 'L\'esperienza karaoke definitiva. Canta con rilevamento del tono in tempo reale, competi con gli amici e divertiti con i giochi di festa!',
   startSinging: 'Inizia a Cantare',
   partyMode: 'Modalità Festa',
@@ -144,12 +154,12 @@ replayModal: {
   replay: 'Replay',
 },
 scoreCardSocial: {
-  branding: 'Karaoke ZERO',
+  branding: 'AfterTen Karaoke',
   accuracyLabel: 'Precisione:',
   maxComboLabel: 'Combo Max:',
   difficultyLabel: 'Difficoltà:',
   playerLabel: '🎤 {name}',
-  hashtags: '#KaraokeZERO #Karaoke #Cantare',
+  hashtags: '#AfterTenKaraoke #Karaoke #Cantare',
   shareTitle: 'Il mio Punteggio Karaoke!',
   shareText: 'Ho ottenuto {n} punti su "{title}" di {artist}!',
   points: 'punti',
