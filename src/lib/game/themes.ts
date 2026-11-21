@@ -32,6 +32,37 @@ export interface Theme {
   mood?: 'energetic' | 'calm' | 'romantic' | 'intense' | 'party' | 'melancholic';
   particleEffect?: 'sparkle' | 'pulse' | 'wave' | 'rain' | 'fire' | 'snow' | 'none';
   backgroundAnimation?: 'gradient' | 'particles' | 'waves' | 'stars' | 'none';
+  // R92: themed brand assets (public paths). When absent the default
+  // cyan/navy assets are used — the hook use-theme-logo resolves this.
+  logoBadge?: string; // clock badge for navbar + settings about card
+  logoLockup?: string; // full lockup for the home hero
+}
+
+/**
+ * R92: default brand assets (official AfterTen cyan look, no suffix).
+ * Used by every theme that does not define its own logoBadge/logoLockup.
+ */
+export const DEFAULT_LOGO_ASSETS = {
+  badge: '/brand/logo-badge.png',
+  lockup: '/brand/logo-lockup.png',
+} as const;
+
+/** Resolves the logo asset paths for a theme (falls back to the defaults). */
+export function themeLogoAssets(theme: Theme | null | undefined): { badge: string; lockup: string } {
+  if (!theme) return { ...DEFAULT_LOGO_ASSETS };
+  return {
+    badge: theme.logoBadge || DEFAULT_LOGO_ASSETS.badge,
+    lockup: theme.logoLockup || DEFAULT_LOGO_ASSETS.lockup,
+  };
+}
+
+/** Converts #rrggbb + alpha to a CSS rgba() string (glow drop-shadows). */
+export function hexToRgba(hex: string, alpha: number): string {
+  const clean = hex.replace('#', '');
+  const r = parseInt(clean.substring(0, 2), 16);
+  const g = parseInt(clean.substring(2, 4), 16);
+  const b = parseInt(clean.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 export const THEMES: Theme[] = [
@@ -91,6 +122,8 @@ export const THEMES: Theme[] = [
       pitchIndicator: '#ff8a5c',
       combo: '#f0a63c',
     },
+    logoBadge: '/brand/logo-badge-red.png',
+    logoLockup: '/brand/logo-lockup-red.png',
     noteStyle: 'music-note',
     fontFamily: 'Inter, sans-serif',
     borderRadius: 14,
@@ -122,6 +155,8 @@ export const THEMES: Theme[] = [
       pitchIndicator: '#78f0c0',
       combo: '#e8c34a',
     },
+    logoBadge: '/brand/logo-badge-green.png',
+    logoLockup: '/brand/logo-lockup-green.png',
     noteStyle: 'music-note',
     fontFamily: 'Inter, sans-serif',
     borderRadius: 14,
@@ -153,6 +188,8 @@ export const THEMES: Theme[] = [
       pitchIndicator: '#d090f5',
       combo: '#5a2fc0',
     },
+    logoBadge: '/brand/logo-badge-purple.png',
+    logoLockup: '/brand/logo-lockup-purple.png',
     noteStyle: 'music-note',
     fontFamily: 'Inter, sans-serif',
     borderRadius: 14,
@@ -184,6 +221,8 @@ export const THEMES: Theme[] = [
       pitchIndicator: '#ff9455',
       combo: '#c84a10',
     },
+    logoBadge: '/brand/logo-badge-orange.png',
+    logoLockup: '/brand/logo-lockup-orange.png',
     noteStyle: 'music-note',
     fontFamily: 'Inter, sans-serif',
     borderRadius: 14,
@@ -215,6 +254,8 @@ export const THEMES: Theme[] = [
       pitchIndicator: '#4de8f4',
       combo: '#9b6dff',
     },
+    logoBadge: '/brand/logo-badge-pink.png',
+    logoLockup: '/brand/logo-lockup-pink.png',
     noteStyle: 'music-note',
     fontFamily: 'Inter, sans-serif',
     borderRadius: 14,

@@ -4,6 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/lib/i18n/translations';
 import { MusicIcon, LibraryIcon, PartyIcon, UserIcon, QueueIcon, StarIcon, TrophyIcon, SettingsIcon } from '@/components/icons';
 import { OPEN_HELP_EVENT } from '@/components/tutorial/help-menu';
+import { useThemeLogo } from '@/hooks/use-theme-logo';
+import { hexToRgba } from '@/lib/game/themes';
 import type { Screen } from '@/types/screens';
 
 
@@ -20,6 +22,8 @@ interface NavBarProps {
 // ===================== NAVIGATION BAR =====================
 export function NavBar({ screen, setScreen, queueLength, isMounted, isFullscreen, toggleFullscreen, onToggleChat }: NavBarProps) {
   const { t } = useTranslation();
+  // R92: theme-matched brand assets (e.g. AfterTen Green → green clock badge)
+  const { badge: badgeSrc, primary } = useThemeLogo();
   return (
     <nav className="sticky top-0 left-0 right-0 z-50 flex-shrink-0 bg-[#0a0a1a]/80 backdrop-blur-xl border-b border-[#4fc3f7]/20">
       {/* R90: Navbar nutzt die volle Fensterbreite (Content darunter bleibt max-w-7xl
@@ -35,13 +39,16 @@ export function NavBar({ screen, setScreen, queueLength, isMounted, isFullscreen
           className="flex flex-col items-center justify-center gap-0.5 shrink-0 hover:opacity-80 transition-opacity"
         >
           {/* R88: brand mark — neon clock badge from the official logo
-              (transparent PNG, blends over the navbar via alpha keying) */}
+              (transparent PNG, blends over the navbar via alpha keying).
+              R92: swaps with the active theme's color variant. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/brand/logo-badge.png"
+            src={badgeSrc}
             alt=""
             draggable={false}
-            className="h-7 w-auto select-none [filter:drop-shadow(0_0_8px_rgba(79,195,247,0.35))]"
+            data-testid="navbar-logo-badge"
+            className="h-7 w-auto select-none"
+            style={{ filter: `drop-shadow(0 0 8px ${hexToRgba(primary, 0.35)})` }}
           />
           <span className="text-xs font-black tracking-tight text-[#e8f0f7] whitespace-nowrap">
             AfterTen

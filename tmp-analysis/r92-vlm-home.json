@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "1. **Yes** — the hero shows a large logo lockup with a neon clock (with \"10\" and a microphone) plus the words \"AFTER TEN\" / \"KARAOKE\".\n\n2. **Green** (neon/mint green, with gold accents) — the clock and \"TEN\" text glow green.\n\n3. **Yes** — the navbar has a small circular clock badge next to the \"AfterTen\" text, also in green.\n\n4. **Partially** — the logo is green, but the UI accents are mixed: the \"START SINGING\" button and some highlights are cyan, while \"PARTY MODE\", \"CREATE PROFILE\", and the profile banner border are pink/magenta. So the green logo does **not** fully match the pink/cyan accent scheme.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1795271752,
+  "id": "20261121223547aa8c0cf62fcb4869",
+  "model": "glm-5.3-flash",
+  "object": "chat.completion",
+  "request_id": "20261121223547aa8c0cf62fcb4869",
+  "usage": {
+    "completion_tokens": 169,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1855,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2024
+  }
+}

@@ -22,6 +22,8 @@ import type { Screen } from '@/types/screens';
 import { detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
 import { useQRCode } from '@/hooks/use-qr-code';
 import { useCompanionHttpsInfo } from '@/hooks/use-companion-https-info';
+import { useThemeLogo } from '@/hooks/use-theme-logo';
+import { hexToRgba } from '@/lib/game/themes';
 import { QrWlanHint } from '@/components/qr-wlan-hint';
 import {
   getActiveDailySlot,
@@ -302,6 +304,8 @@ function SingModeLauncherCard({ t, onLaunchMode }: { t: Translate; onLaunchMode:
 export function HomeScreen({ onNavigate, onLaunchMode }: HomeScreenProps) {
   const { t } = useTranslation();
   const { profiles, activeProfileId } = useGameStore();
+  // R92: theme-matched brand assets (e.g. AfterTen Green → green lockup)
+  const { lockup: lockupSrc, primary } = useThemeLogo();
   // Track if component is mounted (to avoid hydration mismatch)
   const [isMounted, setIsMounted] = useState(false);
 
@@ -421,14 +425,16 @@ export function HomeScreen({ onNavigate, onLaunchMode }: HomeScreenProps) {
       <div className="relative text-center py-14 retro-scanlines">
         {/* R88: official logo lockup (neon clock + wordmark, transparent PNG
             keyed from the brand image). Replaces icon box + gradient title.
-            The h1 stays for semantics/screen readers (and the i18n title). */}
+            The h1 stays for semantics/screen readers (and the i18n title).
+            R92: swaps with the active theme's color variant. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/brand/logo-lockup.png"
+          src={lockupSrc}
           alt={t('home.title')}
           draggable={false}
           data-testid="home-logo-lockup"
-          className="mx-auto mb-8 w-[min(88vw,420px)] select-none [filter:drop-shadow(0_0_32px_rgba(79,195,247,0.30))]"
+          className="mx-auto mb-8 w-[min(88vw,420px)] select-none"
+          style={{ filter: `drop-shadow(0 0 32px ${hexToRgba(primary, 0.30)})` }}
         />
         <h1 className="sr-only">{t('home.title')}</h1>
 

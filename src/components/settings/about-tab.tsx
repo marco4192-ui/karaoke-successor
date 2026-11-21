@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
 import { useTranslation } from '@/lib/i18n/translations';
 import { SettingsIntroCard } from '@/components/settings/settings-intro-card';
+import { useThemeLogo } from '@/hooks/use-theme-logo';
+import { hexToRgba } from '@/lib/game/themes';
 import { Monitor, Cpu, PackageCheck, PackageX, Server } from 'lucide-react';
 
 interface AboutTabProps {
@@ -53,6 +55,8 @@ export function AboutTab({
   isTauriDetected,
 }: AboutTabProps) {
   const { t } = useTranslation();
+  // R92: theme-matched brand assets (e.g. AfterTen Green → green clock badge)
+  const { badge: badgeSrc, primary } = useThemeLogo();
   const [platform, setPlatform] = useState<PlatformInfo | null>(null);
   /** R9 (user request 5): live leaderboard connection status. */
   const [leaderboardStatus, setLeaderboardStatus] = useState<
@@ -89,13 +93,16 @@ export function AboutTab({
       <Card className="retro-gradient-card retro-border-pink rounded-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
-            {/* R88: official neon clock badge from the brand logo */}
+            {/* R88: official neon clock badge from the brand logo.
+                R92: swaps with the active theme's color variant. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/brand/logo-badge.png"
+              src={badgeSrc}
               alt=""
               draggable={false}
-              className="h-12 w-auto select-none [filter:drop-shadow(0_0_10px_rgba(79,195,247,0.35))]"
+              data-testid="about-logo-badge"
+              className="h-12 w-auto select-none"
+              style={{ filter: `drop-shadow(0 0 10px ${hexToRgba(primary, 0.35)})` }}
             />
             <div>
               <div className="text-xl font-black">

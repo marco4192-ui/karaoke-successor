@@ -3,7 +3,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Theme } from '@/lib/game/themes';
-import { THEMES } from '@/lib/game/themes';
+import { THEMES, themeLogoAssets } from '@/lib/game/themes';
 import {
   NoteDisplayMode,
   SEALED_HIT_COLOR_PRESETS,
@@ -295,7 +295,18 @@ export function AppearanceTab({
                       : 'border-white/10 bg-white/5 hover:border-white/30'
                   }`}
                 >
-                  <div className="w-full h-8 rounded-lg mb-2" style={{ background: `linear-gradient(135deg, ${theme.colors.primary}, ${theme.colors.secondary})` }} />
+                  {/* R92: themed clock badge + color gradient — shows which
+                      logo variant comes with each theme. */}
+                  <div className="flex items-center gap-2 mb-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={themeLogoAssets(theme).badge}
+                      alt=""
+                      draggable={false}
+                      className="h-9 w-auto shrink-0"
+                    />
+                    <div className="flex-1 h-8 rounded-lg" style={{ background: `linear-gradient(135deg, ${theme.colors.primary}, ${theme.colors.secondary})` }} />
+                  </div>
                   <span className="text-sm font-medium theme-adaptive-text">{theme.name}</span>
                   <p className="text-xs theme-adaptive-text-secondary truncate">{theme.description}</p>
                 </button>
