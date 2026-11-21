@@ -12,6 +12,8 @@ splash: {
   srOverlay: '开始屏幕 — 点击“开始”进入应用',
   audioBlockedHint: '首次点击后声音才会启动（浏览器自动播放策略）',
   trackCredit: '♪ Under the Glare',
+  libraryLoading: '正在加载音乐库…',
+  libraryReady: '音乐库已就绪',
 },
 
 nav: {

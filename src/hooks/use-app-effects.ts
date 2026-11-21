@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { loadCustomSongsFromStorage } from '@/lib/game/song-library';
 import { applyTheme, getStoredTheme } from '@/lib/game/themes';
+import { preloadLibrary } from '@/lib/game/library-preload';
 import { ensureMicDeviceWatch } from '@/lib/audio/mic-device-resolver';
 import { initCompanionHttpsInfo } from '@/lib/qr-code';
 
@@ -92,19 +92,12 @@ export function useAppEffects() {
   // the home screen. The R41 snapshot makes the later LibraryScreen mount
   // hit the fast path (instant board, covers already alive) instead of
   // loading on first visit.
+  // R87: funneled through the shared coordinator — the title screen triggers
+  // the SAME preload the moment it appears (user request: "load the library
+  // when the opener starts"), so both callers share one deduplicated run
+  // instead of racing the IndexedDB work twice.
   useEffect(() => {
-    let cancelled = false;
-    loadCustomSongsFromStorage()
-      .then(async () => {
-        if (cancelled) return;
-        const { getAllSongsAsync } = await import('@/lib/game/song-library');
-        await getAllSongsAsync();
-      })
-      .catch(err => {
-        // eslint-disable-next-line no-console
-        console.warn('[App] Library preload failed:', err);
-      });
-    return () => { cancelled = true; };
+    preloadLibrary().catch(() => { /* already warned inside the coordinator */ });
   }, []);
 
   // R41/P10: Central mic-device watcher — bind the devicechange listener

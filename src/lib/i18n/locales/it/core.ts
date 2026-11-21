@@ -12,6 +12,8 @@ splash: {
   srOverlay: 'Schermata iniziale — premi Avvia per entrare nell\'app',
   audioBlockedHint: 'L\'audio parte al primo clic (regola autoplay del browser)',
   trackCredit: '♪ Under the Glare',
+  libraryLoading: 'Caricamento libreria musicale…',
+  libraryReady: 'Libreria musicale pronta',
 },
 
 nav: {

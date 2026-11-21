@@ -12,6 +12,8 @@ splash: {
   srOverlay: 'スタート画面 — 「スタート」を押してアプリを開く',
   audioBlockedHint: '初回クリック後に音声が開始します（ブラウザの自動再生ポリシー）',
   trackCredit: '♪ Under the Glare',
+  libraryLoading: '音楽ライブラリを読み込み中…',
+  libraryReady: '音楽ライブラリの準備が完了',
 },
 
 nav: {

@@ -12,6 +12,8 @@ splash: {
   srOverlay: 'Aloitusnäyttö — paina Aloita avataksesi sovelluksen',
   audioBlockedHint: 'Ääni käynnistyy ensimmäisellä klikkauksella (selaimen autoplay-sääntö)',
   trackCredit: '♪ Under the Glare',
+  libraryLoading: 'Ladataan musiikkikirjastoa…',
+  libraryReady: 'Musiikkikirjasto valmis',
 },
 
 nav: {

@@ -14,6 +14,8 @@ export const coreTranslations = {
     srOverlay: 'Title screen — press Start to enter the app',
     audioBlockedHint: 'Sound starts with your first click (browser autoplay policy)',
     trackCredit: '♪ Under the Glare',
+    libraryLoading: 'Loading music library…',
+    libraryReady: 'Music library ready',
   },
 
   nav: {

@@ -12,6 +12,8 @@ splash: {
   srOverlay: 'Startbildschirm — drücke Starten, um die App zu betreten',
   audioBlockedHint: 'Ton startet mit dem ersten Klick (Browser-Autoplay-Regel)',
   trackCredit: '♪ Under the Glare',
+  libraryLoading: 'Musikbibliothek wird geladen…',
+  libraryReady: 'Musikbibliothek bereit',
 },
 
 nav: {

@@ -12,6 +12,8 @@ splash: {
   srOverlay: 'Écran d\'accueil — appuie sur Démarrer pour entrer dans l\'application',
   audioBlockedHint: 'Le son démarre dès ton premier clic (règle d\'autoplay du navigateur)',
   trackCredit: '♪ Under the Glare',
+  libraryLoading: 'Chargement de la bibliothèque musicale…',
+  libraryReady: 'Bibliothèque musicale prête',
 },
 
 nav: {

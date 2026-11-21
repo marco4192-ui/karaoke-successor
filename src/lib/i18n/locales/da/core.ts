@@ -12,6 +12,8 @@ splash: {
   srOverlay: 'Startskærm — tryk Start for at åbne appen',
   audioBlockedHint: 'Lyden starter ved dit første klik (browserens autoplay-regel)',
   trackCredit: '♪ Under the Glare',
+  libraryLoading: 'Indlæser musikbiblioteket…',
+  libraryReady: 'Musikbiblioteket klar',
 },
 
 nav: {

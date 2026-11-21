@@ -12,6 +12,8 @@ splash: {
   srOverlay: '시작 화면 — ‘시작’을 눌러 앱을 열어요',
   audioBlockedHint: '첫 클릭 후 소리가 시작됩니다 (브라우저 자동재생 정책)',
   trackCredit: '♪ Under the Glare',
+  libraryLoading: '음악 라이브러리 로드 중…',
+  libraryReady: '음악 라이브러리 준비 완료',
 },
 
 nav: {

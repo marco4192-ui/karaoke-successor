@@ -12,6 +12,8 @@ splash: {
   srOverlay: 'Ekran startowy — naciśnij Start, aby wejść do aplikacji',
   audioBlockedHint: 'Dźwięk wystartuje po pierwszym kliknięciu (zasada autoodtwarzania przeglądarki)',
   trackCredit: '♪ Under the Glare',
+  libraryLoading: 'Ładowanie biblioteki muzycznej…',
+  libraryReady: 'Biblioteka muzyczna gotowa',
 },
 
 nav: {
