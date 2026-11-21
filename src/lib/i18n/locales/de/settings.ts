@@ -729,12 +729,6 @@ webcamSettings: {
 },
 
 appearance: {
-  themeNeonNights: 'Neon Nächte',
-  themeRetroArcade: 'Retro Arcade',
-  themeSunsetVibes: 'Sonnenuntergangs-Vibes',
-  themeOceanDeep: 'Tiefer Ozean',
-  themeGalaxyPop: 'Galaxy Pop',
-  themeMinimalLight: 'Minimal Hell',
   animatedBg: 'Animierter Hintergrund',
   bgVideo: 'Hintergrund-Video',
   colorTheme: 'Farbschema',

@@ -584,20 +584,8 @@ webcamSettings: {
   enableMirrorTooltip: '미러 활성화 (셀카 모드)',
 
   appearance: {
-    themeNeonNights: '네온 나이트',
-    themeRetroArcade: '레트로 아케이드',
-    themeSunsetVibes: '선셋 비브스',
-    themeOceanDeep: '딥 오션',
-    themeGalaxyPop: '갤럭시 팝',
-    themeMinimalLight: '미니멀 라이트',
   },},
 appearance: {
-  themeNeonNights: '네온 나이츠',
-  themeRetroArcade: '레트로 아케이드',
-  themeSunsetVibes: '선셋 바이브',
-  themeOceanDeep: '딥 오션',
-  themeGalaxyPop: '갤럭시 팝',
-  themeMinimalLight: '미니멀 라이트',
   animatedBg: '애니메이션 배경',
   bgVideo: '배경 영상',
   colorTheme: '색상 테마',

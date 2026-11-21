@@ -584,20 +584,8 @@ webcamSettings: {
   enableMirrorTooltip: 'Ota peilaus käyttöön (selfie-tila)',
 
   appearance: {
-    themeNeonNights: 'Neon Yöt',
-    themeRetroArcade: 'Retro Arcad',
-    themeSunsetVibes: 'Auringonlasku Vibes',
-    themeOceanDeep: 'Syvä Meri',
-    themeGalaxyPop: 'Galaksi Pop',
-    themeMinimalLight: 'Minimaali Vaalea',
   },},
 appearance: {
-  themeNeonNights: 'Neonyöt',
-  themeRetroArcade: 'Retro Arcade',
-  themeSunsetVibes: 'Auringonlaskuvibet',
-  themeOceanDeep: 'Syvä meri',
-  themeGalaxyPop: 'Galaxy Pop',
-  themeMinimalLight: 'Minimaalinen vaalea',
   animatedBg: 'Animoidut taustat',
   bgVideo: 'Taustavideo',
   colorTheme: 'Väriteema',

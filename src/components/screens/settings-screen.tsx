@@ -53,7 +53,7 @@ function SettingsScreen() {
   const [previewVolume, setPreviewVolume] = useState(30);
   const [micSensitivity, setMicSensitivity] = useState(50);
   const [defaultDifficulty, setDefaultDifficulty] = useState<Difficulty>('medium');
-  const [currentThemeId, setCurrentThemeId] = useState<string>('neon-nights');
+  const [currentThemeId, setCurrentThemeId] = useState<string>('afterten');
   const [lyricsStyle, setLyricsStyle] = useState<string>('classic');
   const [lyricsSize, setLyricsSize] = useState<string>('medium');
   const [bgVideo, setBgVideo] = useState<boolean>(true);

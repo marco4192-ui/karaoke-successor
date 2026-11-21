@@ -9,6 +9,7 @@ import { useCompanionHttpsInfo } from '@/hooks/use-companion-https-info';
 import { QrWlanHint } from '@/components/qr-wlan-hint';
 import { StorageKeys } from '@/lib/storage';
 import { SEALED_HIT_COLOR_PRESETS, DEFAULT_SEALED_HIT_COLOR, SEALED_GOLD_COLOR, EXACT_NOTE_COLORS } from '@/lib/game/note-color-profiles';
+import { THEMES } from '@/lib/game/themes';
 
 // ===================== Props =====================
 
@@ -102,7 +103,7 @@ const DEFAULTS: Record<string, string | boolean | number> = {
   [SK.PERFORMANCE_MODE]: 'full',
   [SK.LYRICS_STYLE]: 'classic',
   [SK.LYRICS_SIZE]: 'medium',
-  [SK.THEME]: 'neon-nights',
+  [SK.THEME]: 'afterten',
   [SK.NOTE_DISPLAY_MODE]: 'sealed',
   [SK.NOTE_SEALED_HIT_COLOR]: DEFAULT_SEALED_HIT_COLOR,
   [SK.MASTER_VOLUME]: 100,
@@ -177,15 +178,10 @@ function lyricsStyles(t: (_key: string) => string) {
   ];
 }
 
-function themes(t: (_key: string) => string) {
-  return [
-    { value: 'neon-nights', label: tOr(t, 'appearance.themeNeonNights', 'Neon Nights'), color: '#00ffff' },
-    { value: 'retro-arcade', label: tOr(t, 'appearance.themeRetroArcade', 'Retro Arcade'), color: '#ff6600' },
-    { value: 'sunset-vibes', label: tOr(t, 'appearance.themeSunsetVibes', 'Sunset Vibes'), color: '#ff4488' },
-    { value: 'ocean-deep', label: tOr(t, 'appearance.themeOceanDeep', 'Ocean Deep'), color: '#0088ff' },
-    { value: 'galaxy-pop', label: tOr(t, 'appearance.themeGalaxyPop', 'Galaxy Pop'), color: '#aa44ff' },
-    { value: 'minimal-light', label: tOr(t, 'appearance.themeMinimalLight', 'Minimal Light'), color: '#888888' },
-  ];
+// R91: Theme-Liste direkt aus der zentralen Registry (themes.ts) — Desktop-
+// Picker und Mirror zeigen damit immer dieselben 6 AfterTen-Marken-Themes.
+function themes(_t: (_key: string) => string) {
+  return THEMES.map((th) => ({ value: th.id, label: th.name, color: th.colors.primary }));
 }
 
 function ytQuality(t: (_key: string) => string) {
@@ -518,7 +514,7 @@ function AppearanceSettings({ settings, sendSetting, t }: {
         <span className="text-sm font-medium text-white">{tOr(t, 'appearance.colorTheme', 'Farbschema')}</span>
         <div className="grid grid-cols-2 gap-2 mt-2">
           {themes(t).map((th) => {
-            const isActive = asStr(settings[SK.THEME], 'neon-nights') === th.value;
+            const isActive = asStr(settings[SK.THEME], 'afterten') === th.value;
             return (
               <button
                 key={th.value}

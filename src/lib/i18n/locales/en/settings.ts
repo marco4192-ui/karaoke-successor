@@ -750,12 +750,6 @@ export const settingsTranslations = {
   },
 
   appearance: {
-    themeNeonNights: 'Neon Nights',
-    themeRetroArcade: 'Retro Arcade',
-    themeSunsetVibes: 'Sunset Vibes',
-    themeOceanDeep: 'Ocean Deep',
-    themeGalaxyPop: 'Galaxy Pop',
-    themeMinimalLight: 'Minimal Light',
     animatedBg: 'Animated Background',
     bgVideo: 'Background Video',
     colorTheme: 'Color Theme',

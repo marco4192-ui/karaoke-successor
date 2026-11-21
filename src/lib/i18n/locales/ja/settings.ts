@@ -584,20 +584,8 @@ webcamSettings: {
   enableMirrorTooltip: 'ミラーを有効化（セルフィーモード）',
 
   appearance: {
-    themeNeonNights: 'ネオンナイツ',
-    themeRetroArcade: 'レトロアーケード',
-    themeSunsetVibes: 'サンセットバイブス',
-    themeOceanDeep: 'ディープオーシャン',
-    themeGalaxyPop: 'ギャラクシーポップ',
-    themeMinimalLight: 'ミニマルライト',
   },},
 appearance: {
-  themeNeonNights: 'ネオン・ナイト',
-  themeRetroArcade: 'レトロアーケード',
-  themeSunsetVibes: 'サンセット・バイブス',
-  themeOceanDeep: 'ディープオーシャン',
-  themeGalaxyPop: 'ギャラクシー・ポップ',
-  themeMinimalLight: 'ミニマル・ライト',
   animatedBg: 'アニメ背景',
   bgVideo: '背景動画',
   colorTheme: 'カラーテーマ',

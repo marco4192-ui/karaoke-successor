@@ -584,20 +584,8 @@ webcamSettings: {
   enableMirrorTooltip: 'Activar Espejo (Modo Selfie)',
 
   appearance: {
-    themeNeonNights: 'Noches de Neón',
-    themeRetroArcade: 'Arcade Retro',
-    themeSunsetVibes: 'Vibras de Atardecer',
-    themeOceanDeep: 'Océano Profundo',
-    themeGalaxyPop: 'Galaxia Pop',
-    themeMinimalLight: 'Mínimo Claro',
   },},
 appearance: {
-  themeNeonNights: 'Noches Neón',
-  themeRetroArcade: 'Arcade Retro',
-  themeSunsetVibes: 'Vibras de Atardecer',
-  themeOceanDeep: 'Océano Profundo',
-  themeGalaxyPop: 'Galaxy Pop',
-  themeMinimalLight: 'Minimal Claro',
   animatedBg: 'Fondo animado',
   bgVideo: 'Vídeo de fondo',
   colorTheme: 'Esquema de color',

@@ -584,20 +584,8 @@ webcamSettings: {
   enableMirrorTooltip: 'Включить зеркало (режим селфи)',
 
   appearance: {
-    themeNeonNights: 'Неоновые Ночи',
-    themeRetroArcade: 'Ретро Аркада',
-    themeSunsetVibes: 'Закатные Вайбы',
-    themeOceanDeep: 'Глубокий Океан',
-    themeGalaxyPop: 'Галактика Поп',
-    themeMinimalLight: 'Минимал Светлый',
   },},
 appearance: {
-  themeNeonNights: 'Неоновые ночи',
-  themeRetroArcade: 'Ретро-аркада',
-  themeSunsetVibes: 'Закатные вайбы',
-  themeOceanDeep: 'Глубины океана',
-  themeGalaxyPop: 'Galaxy Pop',
-  themeMinimalLight: 'Минимал лайт',
   animatedBg: 'Анимированный фон',
   bgVideo: 'Фоновое видео',
   colorTheme: 'Цветовая тема',

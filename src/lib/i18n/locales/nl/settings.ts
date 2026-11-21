@@ -584,20 +584,8 @@ webcamSettings: {
   enableMirrorTooltip: 'Spiegelen inschakelen (Selfiemodus)',
 
   appearance: {
-    themeNeonNights: 'Neon Nachten',
-    themeRetroArcade: 'Retro Arcade',
-    themeSunsetVibes: 'Zonsondergang Vibes',
-    themeOceanDeep: 'Diepe Oceaan',
-    themeGalaxyPop: 'Galaxy Pop',
-    themeMinimalLight: 'Minimaal Licht',
   },},
 appearance: {
-  themeNeonNights: 'Neon Nachten',
-  themeRetroArcade: 'Retro Arcade',
-  themeSunsetVibes: 'Zonsondergang Vibes',
-  themeOceanDeep: 'Diepe Oceaan',
-  themeGalaxyPop: 'Galaxy Pop',
-  themeMinimalLight: 'Minimaal Licht',
   animatedBg: 'Geanimeerde achtergrond',
   bgVideo: 'Achtergrondvideo',
   colorTheme: 'Kleurenthema',

@@ -584,20 +584,8 @@ webcamSettings: {
   enableMirrorTooltip: 'Włącz lustro (tryb selfie)',
 
   appearance: {
-    themeNeonNights: 'Neonowe Noce',
-    themeRetroArcade: 'Retro Arcade',
-    themeSunsetVibes: 'Zachód Słońca',
-    themeOceanDeep: 'Głęboki Ocean',
-    themeGalaxyPop: 'Galaktyka Pop',
-    themeMinimalLight: 'Minimalny Jasny',
   },},
 appearance: {
-  themeNeonNights: 'Neonowe Noce',
-  themeRetroArcade: 'Retro Arcade',
-  themeSunsetVibes: 'Klimat Zachodu Słońca',
-  themeOceanDeep: 'Głęboki Ocean',
-  themeGalaxyPop: 'Galaxy Pop',
-  themeMinimalLight: 'Minimalny Jasny',
   animatedBg: 'Animowane tło',
   bgVideo: 'Wideo w tle',
   colorTheme: 'Schemat kolorów',

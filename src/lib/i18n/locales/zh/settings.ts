@@ -584,20 +584,8 @@ webcamSettings: {
   enableMirrorTooltip: '启用镜像（自拍模式）',
 
   appearance: {
-    themeNeonNights: '霓虹夜景',
-    themeRetroArcade: '复古街机',
-    themeSunsetVibes: '日落氛围',
-    themeOceanDeep: '深海',
-    themeGalaxyPop: '银河流行',
-    themeMinimalLight: '极简明亮',
   },},
 appearance: {
-  themeNeonNights: '霓虹之夜',
-  themeRetroArcade: '复古街机',
-  themeSunsetVibes: '日落氛围',
-  themeOceanDeep: '深海',
-  themeGalaxyPop: '银河流行',
-  themeMinimalLight: '极简亮色',
   animatedBg: '动态背景',
   bgVideo: '背景视频',
   colorTheme: '配色主题',

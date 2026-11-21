@@ -584,20 +584,8 @@ webcamSettings: {
   enableMirrorTooltip: 'Aktivera Spegel (Selfie-läge)',
 
   appearance: {
-    themeNeonNights: 'Neon Nätter',
-    themeRetroArcade: 'Retro Arkad',
-    themeSunsetVibes: 'Solnedgång Vibes',
-    themeOceanDeep: 'Djuphavet',
-    themeGalaxyPop: 'Galax Pop',
-    themeMinimalLight: 'Minimal Ljus',
   },},
 appearance: {
-  themeNeonNights: 'Neonnätter',
-  themeRetroArcade: 'Retro Arcade',
-  themeSunsetVibes: 'Solnedgångsvibbar',
-  themeOceanDeep: 'Djuphavet',
-  themeGalaxyPop: 'Galaxy Pop',
-  themeMinimalLight: 'Minimalistiskt ljus',
   animatedBg: 'Animerad bakgrund',
   bgVideo: 'Bakgrundsvideo',
   colorTheme: 'Färgtema',
