@@ -154,7 +154,7 @@ jobs:
         run: |
           Write-Host "Building Tauri app (portable — no installer)..."
           cargo build --release --no-default-features --features crepe 2>&1 | ForEach-Object { Write-Host $_ }
-          $exePath = "target\release\karaoke-successor.exe"
+          $exePath = "target\release\afterten-karaoke.exe"
           if (-not (Test-Path $exePath)) {
             Write-Error "Build failed — exe not found at $exePath"
             exit 1
@@ -259,7 +259,7 @@ jobs:
         shell: pwsh
         run: |
           Write-Host "=== Creating portable Windows ZIP ==="
-          $exePath = "src-tauri\target\release\karaoke-successor.exe"
+          $exePath = "src-tauri\target\release\afterten-karaoke.exe"
           if (-not (Test-Path $exePath)) {
             Write-Error "EXE not found at $exePath — build failed?"
             exit 1
@@ -433,7 +433,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.event.inputs.version || github.ref_name }}
-          releaseName: 'Karaoke Successor ${{ github.event.inputs.version || github.ref_name }}'
+          releaseName: 'AfterTen Karaoke ${{ github.event.inputs.version || github.ref_name }}'
           releaseBody: 'Automated release'
           releaseDraft: true
           prerelease: false
@@ -547,7 +547,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.event.inputs.version || github.ref_name }}
-          releaseName: 'Karaoke Successor ${{ github.event.inputs.version || github.ref_name }}'
+          releaseName: 'AfterTen Karaoke ${{ github.event.inputs.version || github.ref_name }}'
           releaseBody: 'Automated release'
           releaseDraft: true
           prerelease: false

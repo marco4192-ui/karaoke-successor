@@ -74,7 +74,7 @@ pub async fn fetch_apple_music_charts(
 
     let resp = HTTP_CLIENT
         .get(&url)
-        .header("User-Agent", "KaraokeSuccessor/1.0")
+        .header("User-Agent", "AfterTenKaraoke/1.0")
         .send()
         .await
         .map_err(|e| format!("Apple Music request failed: {}", e))?;
@@ -163,7 +163,7 @@ pub async fn fetch_deezer_charts(
 
     let resp = HTTP_CLIENT
         .get(&url)
-        .header("User-Agent", "KaraokeSuccessor/1.0")
+        .header("User-Agent", "AfterTenKaraoke/1.0")
         .send()
         .await
         .map_err(|e| format!("Deezer request failed: {}", e))?;
@@ -238,7 +238,7 @@ pub async fn fetch_itunes_top_songs(
 
     let resp = HTTP_CLIENT
         .get(&url)
-        .header("User-Agent", "KaraokeSuccessor/1.0")
+        .header("User-Agent", "AfterTenKaraoke/1.0")
         .send()
         .await
         .map_err(|e| format!("iTunes request failed: {}", e))?;

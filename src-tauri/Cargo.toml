@@ -1,12 +1,12 @@
 [package]
-name = "karaoke-successor"
+name = "afterten-karaoke"
 version = "1.0.0"
-description = "Karaoke Successor - The ultimate karaoke experience"
-authors = ["Karaoke Successor Team"]
+description = "AfterTen Karaoke - The ultimate karaoke experience"
+authors = ["AfterTen Karaoke Team"]
 edition = "2021"
 
 [lib]
-name = "karaoke_successor_lib"
+name = "afterten_karaoke_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

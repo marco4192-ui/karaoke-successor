@@ -1,5 +1,5 @@
 /**
- * Standalone Server Wrapper for Karaoke Successor
+ * Standalone Server Wrapper for AfterTen Karaoke
  * This script starts the Next.js standalone server with proper configuration
  */
 
@@ -18,7 +18,7 @@ const isBundled = process.env.TAURI_BUNDLED === 'true' ||
                   !process.cwd().includes('node_modules');
 
 console.log('='.repeat(50));
-console.log('🎤 Karaoke Successor - Standalone Server');
+console.log('🎤 AfterTen Karaoke - Standalone Server');
 console.log('='.repeat(50));
 console.log(`Server directory: ${serverDir}`);
 console.log(`Port: ${PORT}`);

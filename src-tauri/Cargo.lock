@@ -2213,7 +2213,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "karaoke-successor"
+name = "afterten-karaoke"
 version = "1.0.0"
 dependencies = [
  "base64 0.22.1",

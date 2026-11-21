@@ -1,6 +1,6 @@
 {
-  "name": "Karaoke Successor",
-  "short_name": "Karaoke",
+  "name": "AfterTen Karaoke",
+  "short_name": "AfterTen",
   "description": "The ultimate karaoke experience with real-time pitch detection",
   "start_url": "/",
   "display": "standalone",

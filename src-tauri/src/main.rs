@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    karaoke_successor_lib::run()
+    afterten_karaoke_lib::run()
 }
