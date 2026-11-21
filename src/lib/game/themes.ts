@@ -36,6 +36,38 @@ export interface Theme {
 
 export const THEMES: Theme[] = [
   {
+    // R88: the official AfterTen Karaoke look — derived from the brand logo
+    // (neon clock: cyan ring #4fc3f7, glow #7dd8f5, purple face accents
+    // #7c4dc4, deep night navy backdrop #0d1b2e, silver-white lettering).
+    id: 'afterten',
+    name: 'AfterTen',
+    description: 'Official brand look — neon cyan & purple on deep night navy',
+    colors: {
+      primary: '#4fc3f7',
+      secondary: '#7c4dc4',
+      accent: '#7dd8f5',
+      background: '#0d1b2e',
+      backgroundSecondary: '#16263f',
+      text: '#f2f6fa',
+      textSecondary: '#8fa8c4',
+      success: '#3ddc97',
+      warning: '#ffc857',
+      error: '#ff5c7a',
+      noteDefault: '#4fc3f7',
+      noteGolden: '#ffd700',
+      noteBonus: '#9b6bff',
+      pitchIndicator: '#7dd8f5',
+      combo: '#7c4dc4',
+    },
+    noteStyle: 'music-note',
+    fontFamily: 'Inter, sans-serif',
+    borderRadius: 14,
+    genres: ['pop', 'electronic', 'disco', 'rock'],
+    mood: 'party',
+    particleEffect: 'sparkle',
+    backgroundAnimation: 'stars',
+  },
+  {
     id: 'neon-nights',
     name: 'Neon Nights',
     description: 'Vibrant neon colors on dark background',
@@ -217,13 +249,34 @@ export const THEMES: Theme[] = [
   },
 ];
 
+/**
+ * R88: the default theme applied when the user has no stored preference —
+ * the official AfterTen brand look (index 0 of THEMES).
+ */
+export const DEFAULT_THEME: Theme = THEMES[0];
+
+/**
+ * Idempotence guard: the theme id applied last in this session.
+ * applyTheme() dispatches the `themeChanged` event, and use-app-effects
+ * listens to it by re-applying the stored theme — without this guard that
+ * echo caused infinite recursion (applyTheme → event → applyTheme → …)
+ * as soon as a theme was picked in the settings while the listener was
+ * active. Re-applying the SAME id is always a no-op instead.
+ */
+let lastAppliedThemeId: string | null = null;
+
 export function applyTheme(theme: Theme): void {
   // Safety check - ensure theme is defined
   if (!theme || !theme.colors) {
     // eslint-disable-next-line no-console
     console.warn('[applyTheme] Invalid theme provided, using default');
-    theme = THEMES[0]; // Fallback to default theme
+    theme = DEFAULT_THEME; // Fallback to default theme
   }
+
+  // Idempotence: same id already active → nothing to do (and no event —
+  // this is what terminates the themeChanged echo loop).
+  if (theme.id === lastAppliedThemeId) return;
+  lastAppliedThemeId = theme.id;
   
   const root = document.documentElement;
   

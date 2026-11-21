@@ -21,15 +21,21 @@ interface NavBarProps {
 export function NavBar({ screen, setScreen, queueLength, isMounted, isFullscreen, toggleFullscreen, onToggleChat }: NavBarProps) {
   const { t } = useTranslation();
   return (
-    <nav className="sticky top-0 left-0 right-0 z-50 flex-shrink-0 bg-[#0a0a1a]/80 backdrop-blur-xl border-b border-[#ff2d95]/20">
+    <nav className="sticky top-0 left-0 right-0 z-50 flex-shrink-0 bg-[#0a0a1a]/80 backdrop-blur-xl border-b border-[#4fc3f7]/20">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-        <button onClick={() => setScreen('home')} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#ff2d95] via-[#bf5af2] to-[#00e5ff] flex items-center justify-center retro-box-glow-pink">
-            <MusicIcon className="w-6 h-6 text-white" />
-          </div>
+        <button onClick={() => setScreen('home')} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+          {/* R88: brand mark — neon clock badge from the official logo
+              (transparent PNG, blends over the navbar via alpha keying) */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/logo-badge.png"
+            alt=""
+            draggable={false}
+            className="h-10 w-auto select-none [filter:drop-shadow(0_0_10px_rgba(79,195,247,0.35))]"
+          />
           <span className="text-xl font-black tracking-tight">
-            <span className="text-[#ff2d95]">AfterTen</span>{' '}
-            <span className="text-[#00e5ff]">Karaoke</span>
+            <span className="text-[#e8f0f7]">AfterTen</span>{' '}
+            <span className="text-[#7dd8f5]">Karaoke</span>
           </span>
         </button>
 

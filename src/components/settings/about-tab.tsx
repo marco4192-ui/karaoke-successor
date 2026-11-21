@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
-import { MusicIcon } from '@/components/settings/settings-icons';
 import { useTranslation } from '@/lib/i18n/translations';
 import { SettingsIntroCard } from '@/components/settings/settings-intro-card';
 import { Monitor, Cpu, PackageCheck, PackageX, Server } from 'lucide-react';
@@ -90,13 +89,18 @@ export function AboutTab({
       <Card className="retro-gradient-card retro-border-pink rounded-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#ff2d95] via-[#bf5af2] to-[#00e5ff] flex items-center justify-center retro-box-glow-pink">
-              <MusicIcon className="w-7 h-7 text-white" />
-            </div>
+            {/* R88: official neon clock badge from the brand logo */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/logo-badge.png"
+              alt=""
+              draggable={false}
+              className="h-12 w-auto select-none [filter:drop-shadow(0_0_10px_rgba(79,195,247,0.35))]"
+            />
             <div>
               <div className="text-xl font-black">
-                <span className="text-[#ff2d95]">AfterTen</span>{' '}
-                <span className="text-[#00e5ff]">Karaoke</span>
+                <span className="text-[#e8f0f7]">AfterTen</span>{' '}
+                <span className="text-[#7dd8f5]">Karaoke</span>
               </div>
               <div className="text-sm text-white/60">{tx('settings.version')} 1.0.0</div>
             </div>

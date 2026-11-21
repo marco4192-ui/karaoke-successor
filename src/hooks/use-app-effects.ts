@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { applyTheme, getStoredTheme } from '@/lib/game/themes';
+import { applyTheme, getStoredTheme, DEFAULT_THEME } from '@/lib/game/themes';
 import { preloadLibrary } from '@/lib/game/library-preload';
 import { ensureMicDeviceWatch } from '@/lib/audio/mic-device-resolver';
 import { initCompanionHttpsInfo } from '@/lib/qr-code';
@@ -109,12 +109,12 @@ export function useAppEffects() {
     ensureMicDeviceWatch();
   }, []);
 
-  // Apply stored theme on app start + listen for runtime changes
+  // Apply stored theme on app start + listen for runtime changes.
+  // R88: without a stored preference the official AfterTen brand theme is
+  // applied as the default (applyTheme then persists that choice, so the
+  // settings picker stays the single source of truth from here on).
   useEffect(() => {
-    const storedTheme = getStoredTheme();
-    if (storedTheme) {
-      applyTheme(storedTheme);
-    }
+    applyTheme(getStoredTheme() ?? DEFAULT_THEME);
 
     const handleThemeChange = () => {
       const theme = getStoredTheme();

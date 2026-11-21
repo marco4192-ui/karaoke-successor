@@ -417,31 +417,20 @@ export function HomeScreen({ onNavigate, onLaunchMode }: HomeScreenProps) {
 
   return (
     <div className="w-full max-w-[1600px] mx-auto px-4 md:px-6 lg:px-8">
-      {/* ═══ HERO SECTION — Retro Karaoke Vibe ═══ */}
-      <div className="relative text-center py-16 retro-scanlines">
-        {/* Animated rainbow bar behind title */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-1 retro-gradient-rainbow rounded-full" />
-
-        {/* Logo icon — neon pink glow ring */}
-        <div className="inline-flex items-center justify-center w-28 h-28 rounded-2xl bg-gradient-to-br from-[#ff2d95] via-[#bf5af2] to-[#00e5ff] mb-6 retro-box-glow-pink relative">
-          <MusicIcon className="w-16 h-16 text-white drop-shadow-lg" />
-          {/* Corner sparkles */}
-          <span className="absolute -top-2 -right-2 text-[#ffd60a] text-xs animate-pulse">&#10022;</span>
-          <span className="absolute -bottom-2 -left-2 text-[#00e5ff] text-xs animate-pulse" style={{ animationDelay: '0.5s' }}>&#10022;</span>
-        </div>
-
-        {/* Title — retro neon glow */}
-        <h1 className="text-6xl font-black mb-3 tracking-tight">
-          <span className="bg-gradient-to-r from-[#ff2d95] via-[#ff00ff] to-[#bf5af2] bg-clip-text text-transparent">
-            AfterTen
-          </span>{' '}
-          <span className="bg-gradient-to-r from-[#00e5ff] via-[#00ffff] to-[#00ff88] bg-clip-text text-transparent">
-            Karaoke
-          </span>
-        </h1>
-
-        {/* Rainbow divider line */}
-        <div className="mx-auto w-48 h-0.5 retro-gradient-rainbow rounded-full mb-4" />
+      {/* ═══ HERO SECTION — AfterTen Karaoke brand lockup ═══ */}
+      <div className="relative text-center py-14 retro-scanlines">
+        {/* R88: official logo lockup (neon clock + wordmark, transparent PNG
+            keyed from the brand image). Replaces icon box + gradient title.
+            The h1 stays for semantics/screen readers (and the i18n title). */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/brand/logo-lockup.png"
+          alt={t('home.title')}
+          draggable={false}
+          data-testid="home-logo-lockup"
+          className="mx-auto mb-8 w-[min(88vw,420px)] select-none [filter:drop-shadow(0_0_32px_rgba(79,195,247,0.30))]"
+        />
+        <h1 className="sr-only">{t('home.title')}</h1>
 
         <p className="text-lg text-[#b8b8d0] mb-10 max-w-2xl mx-auto leading-relaxed">
           {t('home.subtitle')}
