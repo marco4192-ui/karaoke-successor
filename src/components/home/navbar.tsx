@@ -22,8 +22,18 @@ export function NavBar({ screen, setScreen, queueLength, isMounted, isFullscreen
   const { t } = useTranslation();
   return (
     <nav className="sticky top-0 left-0 right-0 z-50 flex-shrink-0 bg-[#0a0a1a]/80 backdrop-blur-xl border-b border-[#4fc3f7]/20">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-        <button onClick={() => setScreen('home')} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+      {/* R90: Navbar nutzt die volle Fensterbreite (Content darunter bleibt max-w-7xl
+          zentriert) — zusammen mit dem kompakten vertikalen Brands bleibt die Leiste
+          so bei 1080p in jeder Sprache einzeilig, ohne horizontales Scrolling. */}
+      <div className="w-full px-4 2xl:px-6 py-3 flex items-center justify-between gap-3">
+        {/* R90: Brand vertikal gestapelt (Logo über "AfterTen", ohne "Karaoke") statt
+            horizontal — spart ~160px Breite, damit die Navbar bei 1080p einzeilig bleibt
+            (vorher: Brand 227px + Buttons 1021px > verfügbar 1216px → 2 Zeilen). */}
+        <button
+          onClick={() => setScreen('home')}
+          aria-label="AfterTen Karaoke"
+          className="flex flex-col items-center justify-center gap-0.5 shrink-0 hover:opacity-80 transition-opacity"
+        >
           {/* R88: brand mark — neon clock badge from the official logo
               (transparent PNG, blends over the navbar via alpha keying) */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -31,15 +41,14 @@ export function NavBar({ screen, setScreen, queueLength, isMounted, isFullscreen
             src="/brand/logo-badge.png"
             alt=""
             draggable={false}
-            className="h-10 w-auto select-none [filter:drop-shadow(0_0_10px_rgba(79,195,247,0.35))]"
+            className="h-7 w-auto select-none [filter:drop-shadow(0_0_8px_rgba(79,195,247,0.35))]"
           />
-          <span className="text-xl font-black tracking-tight">
-            <span className="text-[#e8f0f7]">AfterTen</span>{' '}
-            <span className="text-[#7dd8f5]">Karaoke</span>
+          <span className="text-xs font-black tracking-tight text-[#e8f0f7] whitespace-nowrap">
+            AfterTen
           </span>
         </button>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <NavButton active={screen === 'library'} onClick={() => setScreen('library')} testId="navbar-library">
             <LibraryIcon className="w-5 h-5" /> {t('nav.library')}
           </NavButton>
@@ -140,7 +149,7 @@ function NavButton({ children, active, onClick, testId }: { children: React.Reac
     <button
       onClick={onClick}
       data-testid={testId}
-      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+      className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
         active
           ? 'bg-[#ff2d95]/20 text-[#ff2d95] retro-box-glow-pink'
           : 'text-[#b8b8d0] hover:text-[#00e5ff] hover:bg-white/10'
