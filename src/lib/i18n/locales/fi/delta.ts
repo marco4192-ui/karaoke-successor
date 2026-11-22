@@ -1070,6 +1070,7 @@ export const deltaTranslations = {
     forgotPassword: "Unohditko salasanan?",
     newEmail: "Uusi sähköpostiosoite",
     recoverButton: "Palauta salasana",
+    recoverDesc: "Anna sähköpostiosoitteesi, kertakäyttöinen palautuskoodi ja uusi salasana. Onnistuessa palvelin antaa UUDEN palautuskoodin — säilytä se turvallisesti, se näytetään vain kerran.",
     recoverFailed: "Palautus epäonnistui — tarkista sähköposti ja palautuskoodi",
     recoverRelinkHint: "Ei palautuskoodia? Profiilin sisältävällä laitteella voit sen sijaan liittää tilin uudelleen synkkoodillasi.",
     recoverTitle: "Palauta salasana",

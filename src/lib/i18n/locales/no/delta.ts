@@ -1071,6 +1071,7 @@ export const deltaTranslations = {
     forgotPassword: "Glemt passord?",
     newEmail: "Ny e-postadresse",
     recoverButton: "Tilbakestill passord",
+    recoverDesc: "Skriv inn e-postadressen din, den engangsgyldige gjenopprettingskoden og et nytt passord. Ved vellykket tilbakestilling utsteder serveren en NY gjenopprettingskode — oppbevar den trygt, den vises bare én gang.",
     recoverFailed: "Tilbakestilling mislyktes — vennligst kontroller e-posten og gjenopprettingskoden",
     recoverRelinkHint: "Ingen gjenopprettingskode? På en enhet med profilen din kan du i stedet koble kontoen til igjen med synkkoden din.",
     recoverTitle: "Tilbakestill passord",

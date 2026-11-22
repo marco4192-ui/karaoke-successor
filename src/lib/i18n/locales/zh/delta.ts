@@ -1071,6 +1071,7 @@ export const deltaTranslations = {
     forgotPassword: "忘记密码？",
     newEmail: "新电子邮箱地址",
     recoverButton: "重置密码",
+    recoverDesc: "输入你的电子邮箱地址、一次性恢复码和新密码。成功后服务器会签发新的恢复码——请妥善保存，仅显示一次。",
     recoverFailed: "重置失败——请检查电子邮箱和恢复码",
     recoverRelinkHint: "没有恢复码？你也可以在存有该档案的设备上，改用同步码重新关联账户。",
     recoverTitle: "重置密码",

@@ -1,15 +1,6 @@
 // NL translations — library
 
 export const libraryTranslations = {
-ai: {
-  metadataEnrich: {
-    serverError: 'Serverfout ({status})',
-    networkError: 'Kan AI-service niet bereiken',
-  },
-  lyricsAssistant: {
-    analyzeFailed: 'Tekstanalyse mislukt',
-  },
-},
 library: {
   song: {
     preview: 'Voorbeeld',
@@ -235,15 +226,6 @@ addToPlaylist: {
   createFirst: 'Maak je eerste afspeellijst aan',
   cancel: 'Annuleren',
   newPlaylist: 'Nieuwe afspeellijst',
-},
-importScreen: {
-  ultrastarImport: 'UltraStar-import',
-  folderScan: 'Mapscan',
-  moreFormats: 'Meer formaten',
-  processing: 'Verwerken...',
-  process: 'Verwerken',
-  importSongs: '{n} nummers importeren',
-  addToLibrary: 'Toevoegen aan bibliotheek',
 },
 importUltrastar: {
   fileTitle: 'UltraStar-bestand *',

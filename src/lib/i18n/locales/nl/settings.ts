@@ -441,8 +441,6 @@ settingsLibrary: {
   noBaseFolder: 'Geen basismap ingesteld. Selecteer een nummersmap om nummers te importeren.',
   scanning: 'Scannen...',
   songsProcessed: 'nummers verwerkt',
-  importSongs: 'Nummers importeren',
-  importSongsDesc: 'Importeer nieuwe nummers in je bibliotheek',
   cannotUndo: 'Deze acties kunnen niet eenvoudig worden ongedaan gemaakt',
   resetSuccess: 'Bibliotheek succesvol gereset!',
   additionalSources: 'Aanvullende bibliotheekbronnen',

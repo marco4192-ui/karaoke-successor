@@ -1070,6 +1070,7 @@ export const deltaTranslations = {
     forgotPassword: "Nie pamiętasz hasła?",
     newEmail: "Nowy adres e-mail",
     recoverButton: "Zresetuj hasło",
+    recoverDesc: "Podaj swój adres e-mail, jednorazowy kod odzyskiwania i nowe hasło. Po udanej operacji serwer wydaje NOWY kod odzyskiwania — zapisz go w bezpiecznym miejscu, zostanie wyświetlony tylko raz.",
     recoverFailed: "Nie udało się zresetować — sprawdź adres e-mail i kod odzyskiwania",
     recoverRelinkHint: "Nie masz kodu odzyskiwania? Na urządzeniu z Twoim profilem możesz zamiast tego ponownie podłączyć konto kodem synchronizacji.",
     recoverTitle: "Zresetuj hasło",

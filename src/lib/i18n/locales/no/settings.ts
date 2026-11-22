@@ -441,8 +441,6 @@ settingsLibrary: {
   noBaseFolder: 'Ingen basemappe satt. Velg en sangmappe for å importere sanger.',
   scanning: 'Skanner...',
   songsProcessed: 'sanger behandlet',
-  importSongs: 'Importer sanger',
-  importSongsDesc: 'Importer nye sanger til biblioteket ditt',
   cannotUndo: 'Disse handlingene kan ikke angres lett',
   resetSuccess: 'Biblioteket er tilbakestilt!',
   additionalSources: 'Tilleggsbibliotek-kilder',

@@ -280,6 +280,7 @@ highscoreScreen: {
   rateLimited: 'Zu viele Anfragen — bitte kurz warten und erneut versuchen.',
   switchToLocal: 'Zur Lokalen wechseln',
   noGlobal: 'Noch keine Online-Scores. Spiel einen Song!',
+  noMine: 'Du hast noch keine Scores gesetzt!',
   noAll: 'Noch keine Highscores. Sei der Erste, der singt!',
   accuracyLabel: '{n}% Genauigkeit',
   maxComboLabel: '{n}x beste Combo',

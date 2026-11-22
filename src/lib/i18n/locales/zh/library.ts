@@ -1,15 +1,6 @@
 // ZH translations — library
 
 export const libraryTranslations = {
-ai: {
-  metadataEnrich: {
-    serverError: '服务器错误 ({status})',
-    networkError: '无法连接 AI 服务',
-  },
-  lyricsAssistant: {
-    analyzeFailed: '歌词分析失败',
-  },
-},
 library: {
   song: {
     preview: '预览',
@@ -235,15 +226,6 @@ addToPlaylist: {
   createFirst: '创建你的第一个播放列表',
   cancel: '取消',
   newPlaylist: '新建播放列表',
-},
-importScreen: {
-  ultrastarImport: 'UltraStar导入',
-  folderScan: '文件夹扫描',
-  moreFormats: '更多格式',
-  processing: '处理中...',
-  process: '处理',
-  importSongs: '导入{n}首歌曲',
-  addToLibrary: '添加到曲库',
 },
 importUltrastar: {
   fileTitle: 'UltraStar文件 *',

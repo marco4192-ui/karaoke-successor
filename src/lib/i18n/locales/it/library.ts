@@ -1,15 +1,6 @@
 // IT translations — library
 
 export const libraryTranslations = {
-ai: {
-  metadataEnrich: {
-    serverError: 'Errore del server ({status})',
-    networkError: 'Impossibile contattare il servizio AI',
-  },
-  lyricsAssistant: {
-    analyzeFailed: 'Analisi del testo fallita',
-  },
-},
 library: {
   song: {
     preview: 'Anteprima',
@@ -235,15 +226,6 @@ addToPlaylist: {
   createFirst: 'Crea la tua Prima Playlist',
   cancel: 'Annulla',
   newPlaylist: 'Nuova Playlist',
-},
-importScreen: {
-  ultrastarImport: 'Importazione UltraStar',
-  folderScan: 'Scansione Cartella',
-  moreFormats: 'Altri Formati',
-  processing: 'Elaborazione...',
-  process: 'Elabora',
-  importSongs: 'Importa {n} Canzoni',
-  addToLibrary: 'Aggiungi alla Libreria',
 },
 importUltrastar: {
   fileTitle: 'File UltraStar *',

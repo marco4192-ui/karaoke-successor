@@ -1,15 +1,6 @@
 // JA translations — library
 
 export const libraryTranslations = {
-ai: {
-  metadataEnrich: {
-    serverError: 'サーバーエラー（{status}）',
-    networkError: 'AIサービスに接続できません',
-  },
-  lyricsAssistant: {
-    analyzeFailed: '歌詞の分析に失敗しました',
-  },
-},
 library: {
   song: {
     preview: 'プレビュー',
@@ -235,15 +226,6 @@ addToPlaylist: {
   createFirst: '最初のプレイリストを作成',
   cancel: 'キャンセル',
   newPlaylist: '新しいプレイリスト',
-},
-importScreen: {
-  ultrastarImport: 'UltraStar インポート',
-  folderScan: 'フォルダスキャン',
-  moreFormats: 'その他のフォーマット',
-  processing: '処理中...',
-  process: '処理',
-  importSongs: '{n}曲をインポート',
-  addToLibrary: 'ライブラリに追加',
 },
 importUltrastar: {
   fileTitle: 'UltraStar ファイル *',

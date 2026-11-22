@@ -1070,6 +1070,7 @@ export const deltaTranslations = {
     forgotPassword: "Glemt adgangskode?",
     newEmail: "Ny e-mailadresse",
     recoverButton: "Nulstil adgangskode",
+    recoverDesc: "Indtast din e-mailadresse, den engangsgyldige gendannelseskode og en ny adgangskode. Ved succes udsteder serveren en NY gendannelseskode — gem den sikkert, den vises kun én gang.",
     recoverFailed: "Nulstilling mislykkedes — tjek venligst din e-mail og gendannelseskoden",
     recoverRelinkHint: "Ingen gendannelseskode? På en enhed med din profil kan du i stedet tilknytte kontoen igen med din synkkode.",
     recoverTitle: "Nulstil adgangskode",

@@ -1070,6 +1070,7 @@ export const deltaTranslations = {
     forgotPassword: "Wachtwoord vergeten?",
     newEmail: "Nieuw e-mailadres",
     recoverButton: "Wachtwoord opnieuw instellen",
+    recoverDesc: "Voer je e-mailadres, de eenmalige herstelcode en een nieuw wachtwoord in. Bij succes geeft de server een NIEUWE herstelcode af — bewaar deze veilig, hij wordt maar één keer getoond.",
     recoverFailed: "Opnieuw instellen mislukt — controleer je e-mailadres en de herstelcode",
     recoverRelinkHint: "Geen herstelcode? Op een apparaat met je profiel kun je het account in plaats daarvan opnieuw koppelen met je sync-code.",
     recoverTitle: "Wachtwoord opnieuw instellen",

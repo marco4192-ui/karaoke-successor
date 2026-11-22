@@ -441,8 +441,6 @@ settingsLibrary: {
   noBaseFolder: '기본 폴더가 설정되지 않았습니다. 곡을 가져오려면 곡 폴더를 선택하세요.',
   scanning: '스캔 중...',
   songsProcessed: '곡 처리됨',
-  importSongs: '곡 가져오기',
-  importSongsDesc: '라이브러리에 새 곡을 가져옵니다',
   cannotUndo: '이 작업은 쉽게 되돌릴 수 없습니다',
   resetSuccess: '라이브러리가 성공적으로 초기화되었습니다!',
   additionalSources: '추가 라이브러리 소스',

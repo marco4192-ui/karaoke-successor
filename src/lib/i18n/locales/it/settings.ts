@@ -441,8 +441,6 @@ settingsLibrary: {
   noBaseFolder: 'Nessuna cartella base impostata. Seleziona una cartella per importare canzoni.',
   scanning: 'Scansione...',
   songsProcessed: 'canzoni elaborate',
-  importSongs: 'Importa Canzoni',
-  importSongsDesc: 'Importa nuove canzoni nella tua libreria',
   cannotUndo: 'Queste azioni non possono essere annullate facilmente',
   resetSuccess: 'La libreria è stata reimpostata con successo!',
   additionalSources: 'Fonti Aggiuntive della Libreria',

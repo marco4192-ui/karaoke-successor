@@ -1071,6 +1071,7 @@ export const deltaTranslations = {
     forgotPassword: "비밀번호를 잊으셨나요?",
     newEmail: "새 이메일 주소",
     recoverButton: "비밀번호 재설정",
+    recoverDesc: "이메일 주소와 일회용 복구 코드, 새 비밀번호를 입력하세요. 성공하면 서버가 새 복구 코드를 발급합니다 — 안전하게 보관하세요, 한 번만 표시됩니다.",
     recoverFailed: "재설정에 실패했습니다 — 이메일과 복구 코드를 확인해 주세요",
     recoverRelinkHint: "복구 코드가 없나요? 프로필이 있는 기기에서 대신 동기화 코드로 계정을 다시 연결할 수 있습니다.",
     recoverTitle: "비밀번호 재설정",

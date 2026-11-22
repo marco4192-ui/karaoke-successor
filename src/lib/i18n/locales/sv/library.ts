@@ -1,15 +1,6 @@
 // SV translations — library
 
 export const libraryTranslations = {
-ai: {
-  metadataEnrich: {
-    serverError: 'Serverfel ({status})',
-    networkError: 'Kunde inte nå AI-tjänsten',
-  },
-  lyricsAssistant: {
-    analyzeFailed: 'Kunde inte analysera texten',
-  },
-},
 library: {
   song: {
     preview: 'Förhandsvisning',
@@ -235,15 +226,6 @@ addToPlaylist: {
   createFirst: 'Skapa Din Första Spellista',
   cancel: 'Avbryt',
   newPlaylist: 'Ny Spellista',
-},
-importScreen: {
-  ultrastarImport: 'UltraStar-import',
-  folderScan: 'Mappskanning',
-  moreFormats: 'Fler Format',
-  processing: 'Bearbetar...',
-  process: 'Bearbeta',
-  importSongs: 'Importera {n} Låtar',
-  addToLibrary: 'Lägg till i Bibliotek',
 },
 importUltrastar: {
   fileTitle: 'UltraStar-fil *',

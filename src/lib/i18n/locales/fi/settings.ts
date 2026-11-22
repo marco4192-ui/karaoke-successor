@@ -441,8 +441,6 @@ settingsLibrary: {
   noBaseFolder: 'Peruskansiota ei ole asetettu. Valitse kappalekansio tuodaksesi kappaleita.',
   scanning: 'Skannataan...',
   songsProcessed: 'kappaletta käsitelty',
-  importSongs: 'Tuo kappaleita',
-  importSongsDesc: 'Tuo uusia kappaleita kirjastoosi',
   cannotUndo: 'Näitä toimintoja ei voi helposti perua',
   resetSuccess: 'Kirjasto nollattu!',
   additionalSources: 'Lisäkappalelähteet',

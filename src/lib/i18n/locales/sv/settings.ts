@@ -441,8 +441,6 @@ settingsLibrary: {
   noBaseFolder: 'Ingen bas-mapp vald. Vänligen välj en låtmapp för att importera låtar.',
   scanning: 'Skannar...',
   songsProcessed: 'låtar bearbetade',
-  importSongs: 'Importera Låtar',
-  importSongsDesc: 'Importera nya låtar till ditt bibliotek',
   cannotUndo: 'Dessa åtgärder kan inte ångras enkelt',
   resetSuccess: 'Biblioteket har återställts framgångsrikt!',
   additionalSources: 'Ytterligare bibliotekskällor',

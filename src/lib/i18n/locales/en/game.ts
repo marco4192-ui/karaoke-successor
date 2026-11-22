@@ -297,6 +297,7 @@ export const gameTranslations = {
     rateLimited: 'Too many requests — please wait a moment and try again.',
     switchToLocal: 'Switch to Local',
     noGlobal: 'No online scores yet. Play a song!',
+    noMine: 'You have not set any scores yet!',
     noAll: 'No highscores yet. Be the first to sing!',
     accuracyLabel: '{n}% accuracy',
     maxComboLabel: '{n}x max combo',

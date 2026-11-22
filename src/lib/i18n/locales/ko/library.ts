@@ -1,15 +1,6 @@
 // KO translations — library
 
 export const libraryTranslations = {
-ai: {
-  metadataEnrich: {
-    serverError: '서버 오류 ({status})',
-    networkError: 'AI 서비스에 연결할 수 없어요',
-  },
-  lyricsAssistant: {
-    analyzeFailed: '가사 분석에 실패했어요',
-  },
-},
 library: {
   song: {
     preview: '미리보기',
@@ -235,15 +226,6 @@ addToPlaylist: {
   createFirst: '첫 플레이리스트 만들기',
   cancel: '취소',
   newPlaylist: '새 플레이리스트',
-},
-importScreen: {
-  ultrastarImport: 'UltraStar 가져오기',
-  folderScan: '폴더 스캔',
-  moreFormats: '더 많은 형식',
-  processing: '처리 중...',
-  process: '처리',
-  importSongs: '{n}곡 가져오기',
-  addToLibrary: '라이브러리에 추가',
 },
 importUltrastar: {
   fileTitle: 'UltraStar 파일 *',

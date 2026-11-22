@@ -1,15 +1,6 @@
 // FI translations — library
 
 export const libraryTranslations = {
-ai: {
-  metadataEnrich: {
-    serverError: 'Palvelinvirhe ({status})',
-    networkError: 'AI-palveluun ei saatu yhteyttä',
-  },
-  lyricsAssistant: {
-    analyzeFailed: 'Sanoitusten analysointi epäonnistui',
-  },
-},
 library: {
   song: {
     preview: 'Esikatselu',
@@ -235,15 +226,6 @@ addToPlaylist: {
   createFirst: 'Luo ensimmäinen soittolistasi',
   cancel: 'Peruuta',
   newPlaylist: 'Uusi soittolista',
-},
-importScreen: {
-  ultrastarImport: 'UltraStar-tuonti',
-  folderScan: 'Kansioskannaus',
-  moreFormats: 'Lisää formaatteja',
-  processing: 'Käsitellään...',
-  process: 'Käsittele',
-  importSongs: 'Tuo {n} kappaletta',
-  addToLibrary: 'Lisää kirjastoon',
 },
 importUltrastar: {
   fileTitle: 'UltraStar-tiedosto *',

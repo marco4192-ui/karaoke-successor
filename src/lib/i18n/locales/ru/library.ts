@@ -1,15 +1,6 @@
 // RU translations — library
 
 export const libraryTranslations = {
-ai: {
-  metadataEnrich: {
-    serverError: 'Ошибка сервера ({status})',
-    networkError: 'Не удалось подключиться к ИИ-сервису',
-  },
-  lyricsAssistant: {
-    analyzeFailed: 'Не удалось проанализировать текст',
-  },
-},
 library: {
   song: {
     preview: 'Предпросмотр',
@@ -235,15 +226,6 @@ addToPlaylist: {
   createFirst: 'Создайте первый плейлист',
   cancel: 'Отмена',
   newPlaylist: 'Новый плейлист',
-},
-importScreen: {
-  ultrastarImport: 'Импорт UltraStar',
-  folderScan: 'Сканирование папки',
-  moreFormats: 'Другие форматы',
-  processing: 'Обработка...',
-  process: 'Обработать',
-  importSongs: 'Импортировать {n} песен',
-  addToLibrary: 'Добавить в библиотеку',
 },
 importUltrastar: {
   fileTitle: 'Файл UltraStar *',

@@ -1071,6 +1071,7 @@ export const deltaTranslations = {
     forgotPassword: "Glömt lösenordet?",
     newEmail: "Ny e-postadress",
     recoverButton: "Återställ lösenord",
+    recoverDesc: "Ange din e-postadress, den engångiga återställningskoden och ett nytt lösenord. Vid lyckad återställning utfärdar servern en NY återställningskod — förvara den säkert, den visas endast en gång.",
     recoverFailed: "Återställningen misslyckades — kontrollera din e-post och återställningskoden",
     recoverRelinkHint: "Ingen återställningskod? På en enhet med din profil kan du istället koppla kontot till din synkkod igen.",
     recoverTitle: "Återställ lösenord",

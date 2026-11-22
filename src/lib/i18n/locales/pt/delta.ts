@@ -1071,6 +1071,7 @@ export const deltaTranslations = {
     forgotPassword: "Esqueceste-te da palavra-passe?",
     newEmail: "Novo endereço de e-mail",
     recoverButton: "Repor palavra-passe",
+    recoverDesc: "Introduz o teu e-mail, o código de recuperação de utilização única e uma nova palavra-passe. Se a reposição for bem-sucedida, o servidor emite um NOVO código de recuperação — guarda-o em segurança, é mostrado apenas uma vez.",
     recoverFailed: "Falha na reposição — verifica o teu e-mail e o código de recuperação",
     recoverRelinkHint: "Não tens um código de recuperação? Num dispositivo com o teu perfil podes, em vez disso, vincular novamente a conta com o teu código de sincronização.",
     recoverTitle: "Repor palavra-passe",

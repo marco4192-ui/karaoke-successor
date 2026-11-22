@@ -1,15 +1,6 @@
 // DA translations — library
 
 export const libraryTranslations = {
-ai: {
-  metadataEnrich: {
-    serverError: 'Serverfejl ({status})',
-    networkError: 'Kunne ikke nå AI-tjenesten',
-  },
-  lyricsAssistant: {
-    analyzeFailed: 'Kunne ikke analysere sangteksten',
-  },
-},
 library: {
   song: {
     preview: 'Eksempel',
@@ -235,15 +226,6 @@ addToPlaylist: {
   createFirst: 'Opret din første spilleliste',
   cancel: 'Annuller',
   newPlaylist: 'Ny spilleliste',
-},
-importScreen: {
-  ultrastarImport: 'UltraStar-import',
-  folderScan: 'Mappe-scan',
-  moreFormats: 'Flere formater',
-  processing: 'Behandler...',
-  process: 'Behandle',
-  importSongs: 'Importér {n} sange',
-  addToLibrary: 'Tilføj til bibliotek',
 },
 importUltrastar: {
   fileTitle: 'UltraStar-fil *',

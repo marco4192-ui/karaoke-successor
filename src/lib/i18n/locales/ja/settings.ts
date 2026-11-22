@@ -441,8 +441,6 @@ settingsLibrary: {
   noBaseFolder: 'ベースフォルダーが設定されていません。曲をインポートするには曲フォルダーを選択してください。',
   scanning: 'スキャン中...',
   songsProcessed: '曲が処理されました',
-  importSongs: '曲をインポート',
-  importSongsDesc: '新しい曲をライブラリにインポート',
   cannotUndo: 'これらの操作は簡単には元に戻せません',
   resetSuccess: 'ライブラリが正常にリセットされました！',
   additionalSources: '追加のライブラリソース',

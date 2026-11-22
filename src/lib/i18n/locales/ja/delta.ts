@@ -1071,6 +1071,7 @@ export const deltaTranslations = {
     forgotPassword: "パスワードをお忘れですか？",
     newEmail: "新しいメールアドレス",
     recoverButton: "パスワードを再設定",
+    recoverDesc: "メールアドレスと、一度きりのリカバリーコード、新しいパスワードを入力してください。成功するとサーバーは新しいリカバリーコードを発行します。安全に保管してください。表示は一度だけです。",
     recoverFailed: "再設定に失敗しました。メールアドレスとリカバリーコードをご確認ください",
     recoverRelinkHint: "リカバリーコードがない場合は、プロフィールがあるデバイスで同期コードを使ってアカウントを再連携できます。",
     recoverTitle: "パスワードを再設定",

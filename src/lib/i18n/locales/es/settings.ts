@@ -441,8 +441,6 @@ settingsLibrary: {
   noBaseFolder: 'No se ha establecido carpeta base. Selecciona una carpeta de canciones para importar.',
   scanning: 'Escaneando...',
   songsProcessed: 'canciones procesadas',
-  importSongs: 'Importar Canciones',
-  importSongsDesc: 'Importar nuevas canciones a tu biblioteca',
   cannotUndo: 'Estas acciones no se pueden deshacer fácilmente',
   resetSuccess: '¡La biblioteca se ha reiniciado correctamente!',
   additionalSources: 'Fuentes adicionales de la biblioteca',

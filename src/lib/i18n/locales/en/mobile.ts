@@ -232,6 +232,8 @@ export const mobileTranslations = {
     mirrorJukeboxNoLibrary: 'Loading library…',
     mirrorJukeboxStateChipPool: 'Pool',
     mirrorJukeboxPoolAll: 'All songs',
+    mirrorJukeboxPoolPanel: 'Song pool',
+    mirrorJukeboxPlaylistsPanel: 'Playlists',
     mirrorJukeboxPlaylistsTitle: 'Playlists & pool',
     mirrorJukeboxPlaylistSongs: '{n} songs',
     mirrorJukeboxSystemBadge: 'System',

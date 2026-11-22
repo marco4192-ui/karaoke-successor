@@ -441,8 +441,6 @@ settingsLibrary: {
   noBaseFolder: 'Nie ustawiono folderu bazowego. Wybierz folder piosenek, aby je zaimportować.',
   scanning: 'Skanowanie...',
   songsProcessed: 'przetworzonych piosenek',
-  importSongs: 'Importuj piosenki',
-  importSongsDesc: 'Importuj nowe piosenki do biblioteki',
   cannotUndo: 'Tej operacji nie można łatwo cofnąć',
   resetSuccess: 'Biblioteka została pomyślnie zresetowana!',
   additionalSources: 'Dodatkowe źródła biblioteki',

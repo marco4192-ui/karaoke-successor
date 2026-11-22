@@ -441,8 +441,6 @@ settingsLibrary: {
   noBaseFolder: 'Nenhuma pasta base definida. Por favor, selecione uma pasta de músicas para importar músicas.',
   scanning: 'Escaneando...',
   songsProcessed: 'músicas processadas',
-  importSongs: 'Importar Músicas',
-  importSongsDesc: 'Importar novas músicas para sua biblioteca',
   cannotUndo: 'Essas ações não podem ser desfeitas facilmente',
   resetSuccess: 'Biblioteca redefinida com sucesso!',
   additionalSources: 'Fontes Adicionais da Biblioteca',

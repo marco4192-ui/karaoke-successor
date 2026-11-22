@@ -441,8 +441,6 @@ settingsLibrary: {
   noBaseFolder: 'Aucun dossier de base défini. Veuillez sélectionner un dossier.',
   scanning: 'Analyse...',
   songsProcessed: 'chansons traitées',
-  importSongs: 'Importer des Chansons',
-  importSongsDesc: 'Importer de nouvelles chansons dans votre bibliothèque',
   cannotUndo: 'Ces actions ne peuvent pas être facilement annulées',
   resetSuccess: 'La bibliothèque a été réinitialisée avec succès !',
   additionalSources: 'Sources Supplémentaires',

@@ -441,8 +441,6 @@ settingsLibrary: {
   noBaseFolder: '未设置基础文件夹。请选择歌曲文件夹以导入歌曲。',
   scanning: '扫描中...',
   songsProcessed: '首歌曲已处理',
-  importSongs: '导入歌曲',
-  importSongsDesc: '导入新歌曲到曲库',
   cannotUndo: '这些操作无法轻易撤销',
   resetSuccess: '曲库重置成功！',
   additionalSources: '额外曲库来源',
