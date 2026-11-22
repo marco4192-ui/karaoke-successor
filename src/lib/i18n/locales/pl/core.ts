@@ -141,6 +141,9 @@ shareSection: {
   downloadCard: '📥 Pobierz kartę',
   shareScore: '📤 Udostępnij wynik',
   noAudioNote: '🔇 Krótkie wideo są tworzone bez dźwięku, aby chronić przed naruszeniami praw autorskich. Muzykę możesz dodać ponownie w aplikacji społecznościowej.',
+  rivalCard: "⚔️ Karta pojedynku",
+  companionHint: "{name} jest połączony przez aplikację towarzyszącą — jego karta wyników jest tam dostępna.",
+  winner: "Zwycięzca",
 },
 replayModal: {
   copyrightNotice: 'Uwaga: Ze względu na prawa autorskie, oryginalne audio lub wokale nie mogą być dołączone do eksportowanych powtórek. Zostanie użyte tylko nagranie z mikrofonu.',

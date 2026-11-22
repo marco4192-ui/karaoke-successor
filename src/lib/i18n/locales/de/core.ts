@@ -179,6 +179,9 @@ shareSection: {
   shareScore: '📤 Ergebnis teilen',
   accentColor: 'Akzentfarbe',
   noAudioNote: '🔇 Video-Shorts werden zum Schutz vor Urheberrechtsverletzungen ohne Sound erstellt. Musik kannst du in der Social-Media-App wieder hinzufügen.',
+  rivalCard: "⚔️ Duell-Karte",
+  companionHint: "{name} ist über die Companion-App verbunden — die Scorecard ist dort verfügbar.",
+  winner: "Gewinner",
 },
 replayModal: {
   copyrightNotice: 'Hinweis: Aus Urheberrechtsgründen dürfen in exportierten Replays kein originales Audio oder Gesang enthalten sein. Es wird nur deine Mikrofon-Aufnahme verwendet.',

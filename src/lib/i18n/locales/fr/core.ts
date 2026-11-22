@@ -141,6 +141,9 @@ shareSection: {
   downloadCard: '📥 Télécharger la Carte',
   shareScore: '📤 Partager le Score',
   noAudioNote: '🔇 Les vidéos courtes sont créées sans son pour éviter toute violation des droits d\'auteur. Vous pouvez remettre la musique dans votre application de réseaux sociaux.',
+  rivalCard: "⚔️ Carte de duel",
+  companionHint: "{name} est connecté via l’app compagnon — sa carte de score y est disponible.",
+  winner: "Gagnant",
 },
 replayModal: {
   copyrightNotice: 'Note : Pour des raisons de droits d\'auteur, aucun audio original ne peut être inclus dans les replays exportés. Seul l\'enregistrement du microphone sera utilisé.',

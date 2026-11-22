@@ -5,12 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GlobeIcon, CloudUploadIcon } from '@/components/icons';
-import { LogOutIcon, Trash2Icon } from 'lucide-react';
+import { LogOutIcon, Trash2Icon, MailIcon, KeyRoundIcon } from 'lucide-react';
 import { useGameStore } from '@/lib/game/store';
 import { useTranslation } from '@/lib/i18n/translations';
 import { PlayerProfile } from '@/types/game';
 import { CountryPicker } from './country-picker';
 import { ProfileSyncSection } from './profile-sync-section';
+import { OnlineLoginDialog } from './online-login-dialog';
 import { detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
 import { useQRCode } from '@/hooks/use-qr-code';
 import { useCompanionHttpsInfo } from '@/hooks/use-companion-https-info';
@@ -41,7 +42,7 @@ function syncOnlineProfileSettings(onlineProfile: PlayerProfile): void {
 
 export function CharacterSettingsCard({ profile, onlineEnabled, onRemove, testId }: CharacterSettingsCardProps) {
   const { t } = useTranslation();
-  const { updateProfile } = useGameStore();
+  const { updateProfile, setOnlineEnabled } = useGameStore();
   const [isEditingCharacter, setIsEditingCharacter] = useState(false);
   const [editName, setEditName] = useState('');
   const [editAvatarUrl, setEditAvatarUrl] = useState('');
@@ -49,6 +50,62 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onRemove, testId
   const editFileInputRef = useRef<HTMLInputElement>(null);
   const [localIP, setLocalIP] = useState('');
   const [showQR, setShowQR] = useState(false);
+
+  // ── R93: online account linking (e-mail + password) directly in the
+  //    profile settings — previously the ONLY entry points were the create
+  //    form (online storage mode) and the login dialog, both effectively
+  //    invisible with online features off. This section makes the input
+  //    discoverable exactly where users look for profile fields. ──
+  const [linkEmail, setLinkEmail] = useState('');
+  const [linkPw, setLinkPw] = useState('');
+  const [linkPwRepeat, setLinkPwRepeat] = useState('');
+  const [isLinking, setIsLinking] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
+  const [linkRecoveryCode, setLinkRecoveryCode] = useState<string | null>(null);
+  const [loginOpen, setLoginOpen] = useState(false);
+
+  const linkEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(linkEmail.trim());
+  const linkPwValid = linkPw.length >= 8;
+  const linkValid = linkEmailValid && linkPwValid && linkPw === linkPwRepeat;
+
+  const resetLinkForm = () => {
+    setLinkEmail('');
+    setLinkPw('');
+    setLinkPwRepeat('');
+    setLinkError(null);
+  };
+
+  const handleLinkAccount = async () => {
+    if (!linkValid || isLinking) return;
+    setIsLinking(true);
+    setLinkError(null);
+    try {
+      const { leaderboardService } = await import('@/lib/api/leaderboard-service');
+      const result = await leaderboardService.registerAccount({
+        profile,
+        email: linkEmail.trim(),
+        password: linkPw,
+      });
+      if (result.ok) {
+        updateProfile(profile.id, {
+          ...(result.sync_code ? { syncCode: result.sync_code } : {}),
+          authEmail: linkEmail.trim(),
+        });
+        if (result.recovery_code) setLinkRecoveryCode(result.recovery_code);
+        resetLinkForm();
+      } else {
+        setLinkError(
+          /already registered/i.test(result.error || '')
+            ? t('profileAuth.emailTaken')
+            : t('profileAuth.registerFailed'),
+        );
+      }
+    } catch {
+      setLinkError(t('profileAuth.registerFailed'));
+    } finally {
+      setIsLinking(false);
+    }
+  };
 
   useEffect(() => {
     detectLocalIP().then(ip => { if (ip) setLocalIP(ip); });
@@ -265,6 +322,111 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onRemove, testId
           )}
         </div>
 
+        {/* ── R93: Online account (e-mail + password) — ALWAYS visible so the
+            input is discoverable. Three states: online features off → enable
+            hint; on + unlinked → link form (register) + login for existing
+            accounts; on + linked → the linked address (+ change password via
+            the sync section below). ── */}
+        <div className="pt-3 border-t border-white/10" data-testid="online-account-section">
+          <h4 className="text-sm font-medium text-white/60 mb-3 flex items-center gap-2">
+            <KeyRoundIcon className="w-4 h-4" /> {t('profileAuth.accountTitle')}
+          </h4>
+
+          {!onlineEnabled ? (
+            <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-3 space-y-2">
+              <p className="text-xs text-white/50 leading-relaxed">{t('profileAuth.accountDesc')}</p>
+              <Button
+                size="sm"
+                onClick={() => setOnlineEnabled(true)}
+                className="h-7 text-xs bg-gradient-to-r from-cyan-500 to-purple-500"
+                data-testid="enable-online-button"
+              >
+                🌐 {t('characterScreen.onlineLeaderboard')}
+              </Button>
+            </div>
+          ) : profile.authEmail ? (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs bg-green-500/10 border border-green-500/30 text-green-300">
+                <MailIcon className="w-3.5 h-3.5" /> {profile.authEmail}
+              </span>
+              <span className="text-xs text-white/40">{t('profileAuth.hasAccount')}</span>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-3 space-y-2">
+              <p className="text-xs text-white/40">{t('profileAuth.accountDesc')}</p>
+              <div className="grid sm:grid-cols-3 gap-2">
+                <Input
+                  type="email"
+                  autoComplete="email"
+                  placeholder={t('profileAuth.emailPlaceholder')}
+                  value={linkEmail}
+                  onChange={(e) => setLinkEmail(e.target.value)}
+                  aria-label={t('profileAuth.email')}
+                  className="bg-white/5 border-white/10 text-white"
+                  data-testid="link-email-input"
+                />
+                <Input
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder={t('profileAuth.passwordPlaceholder')}
+                  value={linkPw}
+                  onChange={(e) => setLinkPw(e.target.value)}
+                  aria-label={t('profileAuth.password')}
+                  className="bg-white/5 border-white/10 text-white"
+                  data-testid="link-password-input"
+                />
+                <Input
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder={t('profileAuth.passwordRepeat')}
+                  value={linkPwRepeat}
+                  onChange={(e) => setLinkPwRepeat(e.target.value)}
+                  aria-label={t('profileAuth.passwordRepeat')}
+                  className="bg-white/5 border-white/10 text-white"
+                  data-testid="link-password-repeat-input"
+                />
+              </div>
+              {(linkEmail.trim().length > 3 || linkPw.length > 0) && !linkValid && (
+                <div className="text-xs text-red-400 space-y-0.5">
+                  {!linkEmailValid && <div>{t('profileAuth.emailInvalid')}</div>}
+                  {!linkPwValid && <div>{t('profileAuth.passwordTooShort')}</div>}
+                  {linkPwValid && linkPw !== linkPwRepeat && <div>{t('profileAuth.passwordsDontMatch')}</div>}
+                </div>
+              )}
+              {linkError && (
+                <div className="text-xs text-red-400" data-testid="link-error">⚠️ {linkError}</div>
+              )}
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button
+                  size="sm"
+                  onClick={handleLinkAccount}
+                  disabled={!linkValid || isLinking}
+                  className="h-7 text-xs bg-gradient-to-r from-cyan-500 to-purple-500"
+                  data-testid="link-account-button"
+                >
+                  {isLinking ? '…' : `🔐 ${t('common.save')}`}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setLoginOpen(true)}
+                  className="h-7 text-xs border-white/20 text-white/70 hover:bg-white/10"
+                >
+                  {t('profileAuth.loginTitle')}
+                </Button>
+              </div>
+              <p className="text-[11px] text-white/30">{t('profileAuth.emailNote')}</p>
+              {linkRecoveryCode && (
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 space-y-1">
+                  <div className="text-xs font-semibold text-amber-300">🔑 {t('profileAuth.recoveryTitle')}</div>
+                  <p className="text-[11px] text-white/50 leading-relaxed">{t('profileAuth.recoveryDesc')}</p>
+                  <code className="block text-sm font-mono text-amber-200 select-all">{linkRecoveryCode}</code>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* ── Profile storage mode: Online or Local (switchable later) ── */}
         {onlineEnabled && (
           <div className="pt-3 border-t border-white/10">
@@ -341,8 +503,10 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onRemove, testId
           </div>
         )}
 
-        {/* Profile Sync Section — only for online profiles */}
-        {onlineEnabled && (profile.storageMode ?? 'online') !== 'local' && (
+        {/* Profile Sync Section — for online profiles AND any profile with a
+            linked online account (R93: the change-password UI must not depend
+            on the storage mode; authEmail is the truth for account linking). */}
+        {onlineEnabled && ((profile.storageMode ?? 'online') !== 'local' || !!profile.authEmail) && (
           <div className="pt-3 border-t border-white/10">
             <h4 className="text-sm font-medium text-white/60 mb-3 flex items-center gap-2">
               <CloudUploadIcon className="w-4 h-4" /> {t('profileSync.title')}
@@ -350,6 +514,9 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onRemove, testId
             <ProfileSyncSection profile={profile} />
           </div>
         )}
+
+        {/* R93: login dialog for existing online accounts ("Load online profile") */}
+        <OnlineLoginDialog open={loginOpen} onOpenChange={setLoginOpen} />
 
         {/* Companion App QR Code */}
         <div className="pt-4 border-t border-white/10">

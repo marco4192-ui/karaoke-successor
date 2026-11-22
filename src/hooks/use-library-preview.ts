@@ -97,6 +97,7 @@ export function useLibraryPreview() {
 
       const startTime = getPreviewStartTime(songToPlay);
       const duration = getPreviewDuration(songToPlay);
+      const videoSrc = songToPlay.videoUrl || songToPlay.videoBackground;
 
       // Create new audio for preview and track it
       if (songToPlay.audioUrl) {
@@ -117,6 +118,38 @@ export function useLibraryPreview() {
         audio.src = songToPlay.audioUrl;
         activeAudioRef.current = audio;
 
+        // R93 single-source rule: the MUSIC FILE has priority — the preview
+        // video must stay silent while the audio element plays. This is
+        // enforced imperatively here because (a) the card may have mounted
+        // BEFORE audioUrl was restored (folder songs only carry
+        // relativeAudioPath at mount → the video element rendered unmuted)
+        // and (b) React never updates the `muted` property after mount.
+        const videoElForMute = previewVideoRefs.current.get(songToPlay.id);
+        if (videoElForMute) videoElForMute.muted = true;
+
+        /**
+         * R93 priority-2 fallback: when the music file turns out to be
+         * unplayable (error event / rejected play()), hand the sound over
+         * to the video element — unmute it and give it the same
+         * preview-volume + 89 dB treatment the audio path gets.
+         */
+        const fallbackToVideoSound = () => {
+          if (generation !== previewGenerationRef.current) return;
+          if (audio !== activeAudioRef.current) return;
+          const videoEl = previewVideoRefs.current.get(songToPlay.id);
+          if (!videoEl) return;
+          videoEl.muted = false;
+          applyPreviewVolume(
+            videoEl,
+            songToPlay.id,
+            videoSrc,
+            () => generation === previewGenerationRef.current,
+            createSongMediaFallback(songToPlay, 'video'),
+          );
+          videoEl.play().catch(() => {});
+        };
+        audio.addEventListener('error', fallbackToVideoSound);
+
         let hasStartedPlayback = false;
 
         const tryPlay = () => {
@@ -131,7 +164,11 @@ export function useLibraryPreview() {
           if (startTime > 0 && audio.duration >= startTime) {
             audio.currentTime = startTime;
           }
-          audio.play().catch(() => {});
+          // R93: a rejected play() means the music file cannot be played
+          // (dead or unsupported source) — fall back to the video's sound.
+          // Rejections caused by our own stop are filtered by the guards
+          // inside fallbackToVideoSound (generation + activeAudioRef).
+          audio.play().catch(fallbackToVideoSound);
         };
 
         audio.addEventListener('loadedmetadata', tryPlay, { once: true });
@@ -141,7 +178,6 @@ export function useLibraryPreview() {
       }
 
       // Start video preview
-      const videoSrc = songToPlay.videoUrl || songToPlay.videoBackground;
       if (videoSrc) {
         const videoEl = previewVideoRefs.current.get(songToPlay.id);
         if (videoEl) {
@@ -149,13 +185,14 @@ export function useLibraryPreview() {
             videoEl.src = videoSrc;
           }
 
-          // R49: when the VIDEO element carries the sound (embedded audio or
-          // no separate audioUrl → SongCard leaves it unmuted), it gets the
-          // same preview-volume + 89 dB treatment. Muted videos ignore
-          // element.volume — applying is harmless either way, but the loudness
-          // analysis only runs for the element that is actually audible so we
-          // don't decode media twice per preview.
-          if (songToPlay.hasEmbeddedAudio || !songToPlay.audioUrl) {
+          // R93: the video element only carries sound when there is no
+          // separate music file (priority 2). When audioUrl exists, the
+          // audio branch muted the video above and its error handler will
+          // hand the sound over if the music file proves unplayable. The
+          // old `hasEmbeddedAudio || !audioUrl` condition left the video
+          // unmuted for embedded-audio songs WITH an audioUrl → video sound
+          // AND music file played simultaneously (the R93 double-audio bug).
+          if (!songToPlay.audioUrl) {
             applyPreviewVolume(
               videoEl,
               songToPlay.id,
@@ -163,6 +200,10 @@ export function useLibraryPreview() {
               () => generation === previewGenerationRef.current,
               createSongMediaFallback(songToPlay, 'video'),
             );
+          } else {
+            // Redundant safety net: never let a muted-by-rule video blare
+            // while the music file is supposed to be the sound source.
+            videoEl.muted = true;
           }
 
           videoEl.addEventListener('loadedmetadata', () => {

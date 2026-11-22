@@ -141,6 +141,9 @@ shareSection: {
   downloadCard: '📥 Descargar Tarjeta',
   shareScore: '📤 Compartir Puntuación',
   noAudioNote: '🔇 Los vídeos cortos se crean sin sonido para proteger frente a infracciones de derechos de autor. Puedes volver a añadir la música en tu app de redes sociales.',
+  rivalCard: "⚔️ Tarjeta de duelo",
+  companionHint: "{name} está conectado mediante la app complementaria — su tarjeta de puntuación está disponible allí.",
+  winner: "Ganador",
 },
 replayModal: {
   copyrightNotice: 'Nota: Por razones de copyright, no se puede incluir audio o vocales originales en las repeticiones exportadas. Solo se usará tu grabación de micrófono.',

@@ -188,8 +188,11 @@ export const coreTranslations = {
     downloadCard: '📥 Download Card',
     shareScore: '📤 Share Score',
     accentColor: 'Accent color',
-    noAudioNote: '🔇 Video shorts are created without sound to protect against copyright violations. You can add the music back in your social media app.'
-  },
+    noAudioNote: '🔇 Video shorts are created without sound to protect against copyright violations. You can add the music back in your social media app.',
+    rivalCard: "⚔️ Rivalry Card",
+    companionHint: "{name} is connected via the companion app — their scorecard is available there.",
+    winner: "Winner",
+},
 
   replayModal: {
     copyrightNotice: 'Note: For copyright reasons, no original audio or vocals can be included in exported replays. Only your microphone recording will be used.',

@@ -92,13 +92,35 @@ export function useGameResults(options: UseGameResultsOptions) {
     // gameMode) für die Companion-Share-Features (📸 ScoreCard + 🎬
     // Video-Short direkt auf dem Handy). Alle Felder sind optional im
     // GameResults-Typ → ältere Clients/Server bleiben kompatibel.
+    // R93 — bei Multiplayer-Songs (Duell/Duett) läuft zusätzlich ein
+    // `players`-Array mit: jedes Companion wählt seinen EIGENEN Eintrag
+    // (Match per Profil-Id) — P2 sieht jetzt seine persönliche Scorecard
+    // statt der von P1.
     const activePlayer = playersRef.current[0];
     const p1Accuracy = results.players[0]?.accuracy ?? 0;
     // Spielerprofil (Name/Farbe/Avatar) + Schwierigkeit aus dem Store — die
     // Scoring-Snapshots hier tragen keine Profil-Daten. getState() reicht:
     // generateResults läuft exakt einmal am Song-Ende (vor resetGame).
-    const storePlayers = useGameStore.getState().gameState.players;
+    const storeState = useGameStore.getState().gameState;
+    const storePlayers = storeState.players;
     const p1Profile = storePlayers.find((p) => p.id === activePlayer?.id) ?? storePlayers[0];
+    // R93: identity map für alle Result-Spieler (deckt auch Companion-Spieler
+    // ab, die kein Desktop-Profil haben).
+    const multiplayerEntries = results.players.length > 1
+      ? results.players.map((rp) => {
+        const identity = storePlayers.find((p) => p.id === rp.playerId);
+        return {
+          playerId: rp.playerId,
+          playerName: identity?.name,
+          playerColor: identity?.color,
+          playerAvatar: identity?.avatar,
+          score: rp.score,
+          accuracy: rp.accuracy,
+          maxCombo: rp.maxCombo,
+          rating: rp.rating,
+        };
+      })
+      : undefined;
     fetch('/api/mobile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -119,6 +141,8 @@ export function useGameResults(options: UseGameResultsOptions) {
           playerAvatar: p1Profile?.avatar,
           difficulty: useGameStore.getState().gameState.difficulty,
           gameMode,
+          // R93: Per-Player-Ergebnisse für Duell/Duett-Companions
+          players: multiplayerEntries,
         },
       }),
     }).catch(() => {});

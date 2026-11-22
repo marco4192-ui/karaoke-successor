@@ -141,6 +141,9 @@ shareSection: {
   downloadCard: '📥 Kaart downloaden',
   shareScore: '📤 Score delen',
   noAudioNote: '🔇 Korte video\'s worden zonder geluid gemaakt om inbreuk op het auteursrecht te voorkomen. Je kunt de muziek opnieuw toevoegen in je socialmedia-app.',
+  rivalCard: "⚔️ Duelkaart",
+  companionHint: "{name} is verbonden via de companion-app — de scorekaart is daar beschikbaar.",
+  winner: "Winnaar",
 },
 replayModal: {
   copyrightNotice: 'Let op: Om redenen van auteursrecht kunnen geen originele audio of vocalen worden opgenomen in geëxporteerde herhalingen. Alleen je microfoonopname wordt gebruikt.',

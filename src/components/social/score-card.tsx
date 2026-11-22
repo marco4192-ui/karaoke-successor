@@ -1,10 +1,16 @@
 'use client';
 
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { RATING_HEX_COLORS } from '@/lib/game/rating-utils';
 import { useTranslation } from '@/lib/i18n/translations';
-import { renderScoreCardCanvas, createShareableCard } from '@/lib/game/share-results';
+import {
+  renderScoreCardCanvas,
+  renderRivalScoreCardCanvas,
+  createShareableCard,
+  preloadShareAvatar,
+  type RivalCardOptions,
+} from '@/lib/game/share-results';
 import type { HighscoreEntry, Song } from '@/types/game';
 
 interface ScoreCardProps {
@@ -23,6 +29,18 @@ interface ScoreCardProps {
 export function ScoreCard({ song, score, playerName, playerAvatar, compact }: ScoreCardProps) {
   const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  // R93: avatar images decode asynchronously — bump a counter when the cached
+  // avatar is ready so the WYSIWYG preview re-renders with the real photo.
+  const [avatarReadyTick, setAvatarReadyTick] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    if (playerAvatar) {
+      void preloadShareAvatar(playerAvatar).then(() => {
+        if (!cancelled) setAvatarReadyTick((n) => n + 1);
+      });
+    }
+    return () => { cancelled = true; };
+  }, [playerAvatar]);
 
   // R42: preview shows EXACTLY the image that download/copy/share produce
   // (unified renderScoreCardCanvas) — WYSIWYG instead of a DOM approximation.
@@ -34,7 +52,7 @@ export function ScoreCard({ song, score, playerName, playerAvatar, compact }: Sc
     } catch {
       return null;
     }
-  }, [score]);
+  }, [score, avatarReadyTick]);
 
   const generateCard = useCallback((): string | null => {
     const canvas = canvasRef.current;
@@ -113,26 +131,47 @@ export function ScoreCard({ song, score, playerName, playerAvatar, compact }: Sc
           />
         </div>
       ) : (
-        /* Fallback: DOM approximation (e.g. canvas blocked) */
-        <div className={`relative aspect-[1200/630] w-full ${compact ? 'max-h-full' : 'max-w-md'} mx-auto rounded-xl overflow-hidden bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] border border-white/10`}>
-          <div className="relative p-4 h-full flex flex-col">
-            <div className="text-white/60 text-[10px] font-medium">{t('scoreCardSocial.branding')}</div>
-            <div className="mt-2 flex-1 min-w-0">
+        /* Fallback: DOM approximation (e.g. canvas blocked) — R93 restyled to
+           match the new canvas design (dark navy + rating stripe + progress). */
+        <div className={`relative aspect-[1200/630] w-full ${compact ? 'max-h-full' : 'max-w-md'} mx-auto rounded-xl overflow-hidden bg-gradient-to-b from-[#0b1220] to-[#0d1b2e] border border-white/10`}>
+          <div className="absolute inset-0 p-4 h-full flex flex-col">
+            <div className="flex items-center justify-between">
+              <span className="text-theme-accent/80 text-[10px] font-semibold tracking-widest">{t('scoreCardSocial.branding')}</span>
+              <span className="text-[10px] font-semibold text-yellow-400">{score.rankTitle}</span>
+            </div>
+            <div className="mt-1 min-w-0">
               <div className="text-white text-base font-bold truncate">{song.title}</div>
-              <div className="text-white/60 text-xs truncate">{song.artist}</div>
-              <div className="mt-2 bg-white/10 rounded-lg p-2 text-center">
-                <div className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
+              <div className="text-white/55 text-xs truncate">{song.artist}</div>
+            </div>
+            <div className="relative mt-2 rounded-xl bg-white/5 border-l-4 p-2 overflow-hidden" style={{ borderColor: ratingColor }}>
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-cyan-300 tabular-nums">
                   {score.score.toLocaleString()}
                 </div>
-                <div className="text-white/60 text-[10px] mt-0.5">{t('scoreCardSocial.points')}</div>
+                <div className="text-sm font-black uppercase px-2 py-0.5 rounded-full" style={{ backgroundColor: ratingColor, color: '#0b1220' }}>
+                  {ratingText}!
+                </div>
               </div>
-              <div className="mt-2 flex justify-between text-[10px] text-white/80">
-                <span>🎯 {score.accuracy.toFixed(1)}%</span>
-                <span>⚡ {score.maxCombo}x</span>
-                <span>📊 {score.difficulty}</span>
+              <div className="mt-1.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                <div className="h-full rounded-full" style={{ width: `${Math.min(100, (score.score / 10000) * 100)}%`, background: `linear-gradient(90deg, #4fc3f7, ${ratingColor})` }} />
+              </div>
+              <div className="text-white/50 text-[10px] mt-1">{t('scoreCardSocial.points')}</div>
+            </div>
+            <div className="mt-2 grid grid-cols-3 gap-1.5 text-center">
+              <div className="rounded-lg bg-white/5 py-1">
+                <div className="text-white text-xs font-bold">🎯 {score.accuracy.toFixed(1)}%</div>
+                <div className="text-white/45 text-[9px]">{t('share.accuracy')}</div>
+              </div>
+              <div className="rounded-lg bg-white/5 py-1">
+                <div className="text-white text-xs font-bold">⚡ {score.maxCombo}x</div>
+                <div className="text-white/45 text-[9px]">{t('share.maxCombo')}</div>
+              </div>
+              <div className="rounded-lg bg-white/5 py-1">
+                <div className="text-white text-xs font-bold">📊 {score.difficulty}</div>
+                <div className="text-white/45 text-[9px]">{t('share.difficulty')}</div>
               </div>
             </div>
-            <div className="mt-2 flex items-center justify-between">
+            <div className="mt-auto flex items-center justify-between">
               <div className="flex items-center gap-1.5 min-w-0">
                 {playerAvatar ? (
                   <img src={playerAvatar} alt={playerName} className="w-6 h-6 rounded-full object-cover" />
@@ -143,7 +182,7 @@ export function ScoreCard({ song, score, playerName, playerAvatar, compact }: Sc
                 )}
                 <span className="text-white font-medium text-xs truncate">{playerName}</span>
               </div>
-              <div className="text-sm font-bold uppercase" style={{ color: ratingColor }}>{ratingText}!</div>
+              <div className="text-white/35 text-[10px]">{t('scoreCardSocial.hashtags')}</div>
             </div>
           </div>
         </div>
@@ -160,6 +199,69 @@ export function ScoreCard({ song, score, playerName, playerAvatar, compact }: Sc
           </Button>
         </div>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// R93 — RivalScoreCard: both players on ONE card, winner highlighted
+// ---------------------------------------------------------------------------
+
+interface RivalScoreCardProps {
+  song: Song;
+  /** Player 1's entry (may carry accentColor — unused here, theme wins). */
+  scoreA: HighscoreEntry;
+  scoreB: HighscoreEntry;
+  options: RivalCardOptions;
+  compact?: boolean;
+}
+
+export function RivalScoreCard({ song, scoreA, scoreB, options, compact }: RivalScoreCardProps) {
+  const { t } = useTranslation();
+  // Both avatars must be in the decode cache before the canvas renders them
+  const [avatarReadyTick, setAvatarReadyTick] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      preloadShareAvatar(scoreA.playerAvatar),
+      preloadShareAvatar(scoreB.playerAvatar),
+    ]).then(() => {
+      if (!cancelled) setAvatarReadyTick((n) => n + 1);
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- entries change identity per results screen mount
+  }, [scoreA.playerAvatar, scoreB.playerAvatar]);
+
+  const previewUrl = useMemo<string | null>(() => {
+    try {
+      const canvas = renderRivalScoreCardCanvas(createShareableCard(scoreA), createShareableCard(scoreB), options);
+      return canvas.toDataURL('image/png');
+    } catch {
+      return null;
+    }
+  }, [scoreA, scoreB, options, avatarReadyTick]);
+
+  const wrapperClass = compact ? 'flex-1 min-h-0 flex items-center justify-center' : 'max-w-2xl mx-auto';
+  const imgClass = compact
+    ? 'max-h-full max-w-full object-contain rounded-xl border border-white/10 shadow-lg'
+    : 'w-full rounded-xl border border-white/10 shadow-lg';
+
+  if (!previewUrl) {
+    return (
+      <div className="flex-1 min-h-0 flex items-center justify-center text-white/40 text-sm p-6 text-center">
+        {t('shareSection.rivalCard')}
+      </div>
+    );
+  }
+
+  return (
+    <div className={wrapperClass}>
+      <img
+        src={previewUrl}
+        alt={`${t('shareSection.rivalCard')} — ${song.title}`}
+        className={imgClass}
+        data-testid="rival-scorecard-preview"
+      />
     </div>
   );
 }

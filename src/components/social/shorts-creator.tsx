@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useTranslation } from '@/lib/i18n/translations';
 import type { Song, HighscoreEntry } from '@/types/game';
 import type { VideoStyle, CameraPosition } from './shorts-types';
-import { useCanvasRenderer, ShortsCanvas } from './shorts-canvas';
+import { useCanvasRenderer, ShortsCanvas, type RivalVideoOptions } from './shorts-canvas';
 import {
   CameraControls,
   StyleSelector,
@@ -29,9 +29,12 @@ interface ShortsCreatorProps {
    *  meaningless ON the companion itself; its local camera is the „Use
    *  Device Camera” button). Desktop default: shown. */
   hideMobileCameraOption?: boolean;
+  /** R93: rivalry mode (duel/duet) — the video shows BOTH players with their
+   *  scores, winner highlighted + VS badge. Null = classic single score. */
+  rival?: RivalVideoOptions | null;
 }
 
-export function ShortsCreator({ song, score, compact, hideMobileCameraOption }: ShortsCreatorProps) {
+export function ShortsCreator({ song, score, compact, hideMobileCameraOption, rival }: ShortsCreatorProps) {
   const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -77,6 +80,7 @@ export function ShortsCreator({ song, score, compact, hideMobileCameraOption }: 
     duration,
     recordingStartTime,
     onProgress: setProgress,
+    rival,
   });
 
   // -----------------------------------------------------------------------
@@ -240,9 +244,12 @@ export function ShortsCreator({ song, score, compact, hideMobileCameraOption }: 
 
     if (navigator.share && navigator.canShare({ files: [file] })) {
       try {
+        const shareText = rival
+          ? `${score.playerName}: ${score.score.toLocaleString()} — ${rival.opponent.playerName}: ${rival.opponent.score.toLocaleString()} (${song.title})`
+          : `I scored ${score.score.toLocaleString()} points on "${song.title}"!`;
         await navigator.share({
           title: t('scoreCardSocial.shareTitle'),
-          text: `I scored ${score.score.toLocaleString()} points on "${song.title}"!`,
+          text: shareText,
           files: [file],
         });
       } catch (error) {
@@ -252,7 +259,7 @@ export function ShortsCreator({ song, score, compact, hideMobileCameraOption }: 
     } else {
       downloadVideo();
     }
-  }, [recordedBlob, score.score, song.title, downloadVideo, t]);
+  }, [recordedBlob, score.score, score.playerName, song.title, downloadVideo, t, rival]);
 
   // Reset
   const resetRecording = useCallback(() => {

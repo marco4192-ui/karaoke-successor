@@ -141,6 +141,9 @@ shareSection: {
   downloadCard: '📥 Scarica Scheda',
   shareScore: '📤 Condividi Punteggio',
   noAudioNote: '🔇 I video brevi vengono creati senza audio per evitare violazioni del diritto d\'autore. Puoi aggiungere di nuovo la musica nella tua app social.',
+  rivalCard: "⚔️ Carta duello",
+  companionHint: "{name} è connesso tramite l’app companion — la sua scorecard è disponibile lì.",
+  winner: "Vincitore",
 },
 replayModal: {
   copyrightNotice: 'Nota: Per ragioni di copyright, nessun audio o voce originale può essere incluso nei replay esportati. Verrà usata solo la tua registrazione dal microfono.',

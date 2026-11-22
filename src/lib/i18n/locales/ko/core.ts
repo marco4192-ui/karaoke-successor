@@ -141,6 +141,9 @@ shareSection: {
   downloadCard: '📥 카드 다운로드',
   shareScore: '📤 점수 공유',
   noAudioNote: '🔇 저작권 침해를 방지하기 위해 숏 영상은 소리 없이 만들어집니다. 음악은 SNS 앱에서 다시 추가할 수 있습니다.',
+  rivalCard: "⚔️ 듀얼 카드",
+  companionHint: "{name}님이 컴패니언 앱에 연결되어 있습니다 — 점수 카드는 해당 앱에서 볼 수 있습니다.",
+  winner: "승자",
 },
 replayModal: {
   copyrightNotice: '참고: 저작권 문제로 인해 내보낸 리플레이에 원본 오디오나 보컬을 포함할 수 없습니다. 마이크 녹음만 사용됩니다.',

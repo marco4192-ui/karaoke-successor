@@ -141,6 +141,9 @@ shareSection: {
   downloadCard: '📥 Download kort',
   shareScore: '📤 Del resultat',
   noAudioNote: '🔇 Video-shorts oprettes uden lyd for at beskytte mod ophavsretskrænkelser. Du kan tilføje musikken igen i din app til sociale medier.',
+  rivalCard: "⚔️ Duelkort",
+  companionHint: "{name} er forbundet via companion-appen — scorekortet er tilgængeligt der.",
+  winner: "Vinder",
 },
 replayModal: {
   copyrightNotice: 'Bemærk: Af ophavsretsgrunde kan ingen original lyd eller vokaler inkluderes i eksporterede replays. Kun din mikrofonoptagelse vil blive brugt.',

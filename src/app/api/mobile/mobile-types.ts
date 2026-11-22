@@ -163,6 +163,24 @@ export interface GameResults {
   playerAvatar?: string;
   difficulty?: 'easy' | 'medium' | 'hard';
   gameMode?: string;
+  /** R93: PER-PLAYER results for multiplayer songs (duel/duet). The legacy
+   *  single-player fields above always carry PLAYER 1's data — a companion
+   *  phone picks its OWN entry from this list (matched via profile id) so
+   *  every duelist sees their personal scorecard. Absent for solo songs and
+   *  from older desktops (fully backward compatible). */
+  players?: GameResultsPlayer[];
+}
+
+/** R93: one player's result inside GameResults.players. */
+export interface GameResultsPlayer {
+  playerId: string;
+  playerName?: string;
+  playerColor?: string;
+  playerAvatar?: string;
+  score: number;
+  accuracy: number;
+  maxCombo: number;
+  rating: string;
 }
 
 export interface SongSummary {

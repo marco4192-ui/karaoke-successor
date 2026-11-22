@@ -141,6 +141,9 @@ shareSection: {
   downloadCard: '📥 カードをダウンロード',
   shareScore: '📤 スコアをシェア',
   noAudioNote: '🔇 著作権侵害を防ぐため、ショート動画は音声なしで作成されます。音楽はSNSアプリで後から追加できます。',
+  rivalCard: "⚔️ デュエルカード",
+  companionHint: "{name} はコンパニオンアプリ経由で接続中 — スコアカードはそちらで確認できます。",
+  winner: "勝者",
 },
 replayModal: {
   copyrightNotice: '注意：著作権の理由により、エクスポートされたリプレイには元の音声やボーカルを含めることはできません。マイクの録音のみが使用されます。',

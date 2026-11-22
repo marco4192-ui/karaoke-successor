@@ -243,7 +243,16 @@ export function SongCard({
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
               isPreviewing ? 'opacity-100' : 'opacity-0'
             }`}
-            muted={!song.hasEmbeddedAudio && !!song.audioUrl}
+            // R93 single-source rule: mute the preview video whenever a
+            // music file exists (resolved audioUrl OR a pending
+            // relativeAudioPath that the preview hook will restore). The
+            // old expression evaluated to `unmuted` for folder songs
+            // because song.audioUrl is undefined at mount time — and
+            // React never re-applies `muted` after mount, so the video
+            // kept playing sound alongside the music-file preview. The
+            // hook mutates `muted` imperatively as the authority; this is
+            // the safe initial value.
+            muted={!!(effectiveSong.audioUrl || effectiveSong.relativeAudioPath)}
             playsInline
             preload="metadata"
             onLoadedData={(e) => {

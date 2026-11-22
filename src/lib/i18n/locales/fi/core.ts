@@ -141,6 +141,9 @@ shareSection: {
   downloadCard: '📥 Lataa kortti',
   shareScore: '📤 Jaa tulos',
   noAudioNote: '🔇 Videoshortit luodaan ilman ääntä, jotta tekijänoikeuksia ei rikotaan. Voit lisätä musiikin takaisin some-sovelluksessa.',
+  rivalCard: "⚔️ Duellikortti",
+  companionHint: "{name} on yhteydessä companion-sovelluksen kautta — pistekortti on saatavilla siellä.",
+  winner: "Voittaja",
 },
 replayModal: {
   copyrightNotice: 'Huomautus: Tekijänoikeussyistä johtuen alkuperäistä ääntä tai laulua ei voi sisällyttää vientireplayihin. Vain mikrofonitallenteesi käytetään.',

@@ -69,28 +69,40 @@ export function MirrorResultsLite({ gameResults, onSendDesktopCommand, profile }
       [onSendDesktopCommand],
     );
 
+    // R93: Bei Multiplayer-Songs (Duell/Duett) schickt der Desktop ein
+    // `players`-Array mit — dieses Handy wählt seinen EIGENEN Eintrag
+    // (Match per Profil-Id), sodass jeder Duellant seine persönliche
+    // Scorecard sieht. Fallback: Legacy-Einzelfelder (P1) wie bisher.
+    const profileId = profile?.id;
+    const ownEntry = useMemo(() => {
+      const list = gameResults?.players;
+      if (!list || list.length === 0 || !profileId) return null;
+      return list.find((p) => p.playerId === profileId) ?? null;
+    }, [gameResults?.players, profileId]);
+
     // R42: translated rating word (8-level scale) instead of raw English
-    const ratingKey = `scoreVisualization.${gameResults?.rating}`;
+    // R93: prefers the OWN player entry's rating in multiplayer results.
+    const effectiveRatingKey = `scoreVisualization.${ownEntry?.rating || gameResults?.rating}`;
     const ratingText = gameResults
-      ? (t(ratingKey) === ratingKey ? gameResults.rating : t(ratingKey))
+      ? (t(effectiveRatingKey) === effectiveRatingKey ? (ownEntry?.rating || gameResults.rating) : t(effectiveRatingKey))
       : '';
-    const ratingColor = RATING_HEX_COLORS[gameResults?.rating || ''] || '#ffd700';
+    const ratingColor = RATING_HEX_COLORS[ownEntry?.rating || gameResults?.rating || ''] || '#ffd700';
 
     // ── R60/4: Spieler-Identität — Merge aus Results-Payload (neu, R60:
     //    playerName/Color/Avatar/difficulty/gameMode werden vom Desktop
     //    mitgeschickt) und dem EIGENEN Companion-Profil als Fallback. ──
-    const playerName = gameResults?.playerName || profile?.name || tOr(t, 'mobile.mirrorProfileYou', 'Du');
-    const playerColor = gameResults?.playerColor || profile?.color || '#06B6D4';
-    const playerAvatar = gameResults?.playerAvatar ?? profile?.avatar ?? undefined;
+    const playerName = ownEntry?.playerName || gameResults?.playerName || profile?.name || tOr(t, 'mobile.mirrorProfileYou', 'Du');
+    const playerColor = ownEntry?.playerColor || gameResults?.playerColor || profile?.color || '#06B6D4';
+    const playerAvatar = ownEntry?.playerAvatar ?? gameResults?.playerAvatar ?? profile?.avatar ?? undefined;
     const difficulty: Difficulty = (gameResults?.difficulty && VALID_DIFFICULTIES.includes(gameResults.difficulty)
       ? gameResults.difficulty
       : 'medium');
     const gameMode: GameMode = (gameResults?.gameMode && VALID_GAME_MODES.includes(gameResults.gameMode as GameMode)
       ? gameResults.gameMode as GameMode
       : 'standard');
-    const rating: Rating = (gameResults?.rating && RATING_LEVELS.includes(gameResults.rating as Rating)
-      ? gameResults.rating as Rating
-      : 'okay');
+    const rating: Rating = (ownEntry?.rating || gameResults?.rating) && RATING_LEVELS.includes((ownEntry?.rating || gameResults?.rating) as Rating)
+      ? (ownEntry?.rating || gameResults?.rating) as Rating
+      : 'okay';
 
     // ── R60/4: Synthetisches Song-Objekt für ShortsCreator/ScoreCard — die
     //    Companion kennt Lyrics/BPM etc. nicht, aber der Renderer braucht
@@ -109,6 +121,11 @@ export function MirrorResultsLite({ gameResults, onSendDesktopCommand, profile }
 
     // HighscoreEntry aus den Results + gemergter Spieler-Identität — dieselbe
     // Basis, die die Desktop-ShareBox (share-section.tsx) benutzt.
+    // R93: Bei Multiplayer-Ergebnissen stammen Score/Accuracy/Combo/Rating
+    // aus dem EIGENEN Spielereintrag (ownEntry), nicht mehr P1-Legacy-Felder.
+    const ownScore = ownEntry?.score ?? gameResults?.score ?? 0;
+    const ownAccuracy = ownEntry?.accuracy ?? gameResults?.accuracy ?? 0;
+    const ownMaxCombo = ownEntry?.maxCombo ?? gameResults?.maxCombo ?? 0;
     const scoreEntry = useMemo<HighscoreEntry | null>(() => {
       if (!gameResults) return null;
       return {
@@ -120,16 +137,16 @@ export function MirrorResultsLite({ gameResults, onSendDesktopCommand, profile }
         songId: gameResults.songId || '',
         songTitle: gameResults.songTitle,
         artist: gameResults.songArtist,
-        score: gameResults.score,
-        accuracy: gameResults.accuracy,
-        maxCombo: gameResults.maxCombo,
+        score: ownScore,
+        accuracy: ownAccuracy,
+        maxCombo: ownMaxCombo,
         difficulty,
         gameMode,
         rating,
         rankTitle: '',
         playedAt: gameResults.playedAt,
       };
-    }, [gameResults, profile?.id, playerName, playerAvatar, playerColor, difficulty, gameMode, rating]);
+    }, [gameResults, profile?.id, playerName, playerAvatar, playerColor, difficulty, gameMode, rating, ownScore, ownAccuracy, ownMaxCombo]);
 
     // WYSIWYG-Preview (genau das PNG, das geteilt/geladen wird) — Muster wie
     // score-card.tsx (previewUrl-Memo über renderScoreCardCanvas).
@@ -208,7 +225,7 @@ export function MirrorResultsLite({ gameResults, onSendDesktopCommand, profile }
         {/* Score */}
         <div className="flex flex-col items-center gap-2 rounded-xl bg-gradient-to-br from-cyan-500/15 to-purple-500/15 border border-cyan-400/20 p-6">
           <p className="text-4xl font-bold tabular-nums text-white">
-            {gameResults.score.toLocaleString()}
+            {ownScore.toLocaleString()}
           </p>
           <p className="text-sm text-white/60">
             {t('mobile.mirrorPoints')}
@@ -219,7 +236,7 @@ export function MirrorResultsLite({ gameResults, onSendDesktopCommand, profile }
         <div className="grid grid-cols-3 gap-2">
           <div className="flex flex-col items-center gap-1 rounded-xl bg-white/5 border border-white/10 p-3">
             <span className="text-lg font-semibold text-white">
-              {Math.round(gameResults.accuracy * 100)}%
+              {Math.round(ownAccuracy * 100)}%
             </span>
             <span className="text-[10px] text-white/40">
               {t('mobile.mirrorAccuracy')}
@@ -227,7 +244,7 @@ export function MirrorResultsLite({ gameResults, onSendDesktopCommand, profile }
           </div>
           <div className="flex flex-col items-center gap-1 rounded-xl bg-white/5 border border-white/10 p-3">
             <span className="text-lg font-semibold text-white">
-              {gameResults.maxCombo}x
+              {ownMaxCombo}x
             </span>
             <span className="text-[10px] text-white/40">
               {t('mobile.mirrorMaxCombo')}

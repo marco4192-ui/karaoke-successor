@@ -22,6 +22,7 @@ import { ResultsStatsPanel } from '@/components/results/results-stats-panel';
 import { useReplayLoading } from './use-replay-loading';
 import { useQueueNextSong } from './use-queue-next-song';
 import { usePostGameProcessing } from './use-post-game-processing';
+import { useCompanionConnections } from '@/hooks/use-companion-connections';
 
 // Extracted UI components
 import { ResultsRatingHeader } from './results-rating-header';
@@ -94,6 +95,14 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
   const isDuet = gameState.gameMode === 'duet';
   const isMultiplayer = isDuel || isDuet;
 
+  // R93: which players are connected via the companion app? Those get their
+  // personal scorecard ON THE PHONE — the desktop ShareBox shows a hint
+  // instead of a duplicate. Sources: the per-game device assignment (set at
+  // duel/duet start from the song-start modal) OR a currently connected
+  // companion client carrying that profile.
+  const { connectedProfileIds } = useCompanionConnections(isMultiplayer);
+  const deviceAssignment = gameState.deviceAssignment;
+
   if (!results || !song || !results.players || results.players.length === 0) {
     return (
       <div className="max-w-4xl mx-auto text-center py-20">
@@ -109,6 +118,34 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
   // Get active profile for display
   const activeProfile = profiles.find(p => p.id === activeProfileId);
   const player2Profile = player2Result ? profiles.find(p => p.id === player2Result.playerId) : null;
+  // R93: player identity — resolved from the RESULT ENTRY's playerId (the
+  // authoritative singer of this game), falling back to the live store
+  // players (covers companion players without a desktop profile) and the
+  // active profile. The active profile MUST NOT win: in duels/duets P1 is
+  // players[0], which can differ from whichever profile is "active".
+  const storePlayers = gameState.players;
+  const player1Profile = profiles.find(p => p.id === playerResult.playerId);
+  const p1Identity = storePlayers[0];
+  const p2Identity = player2Result ? (storePlayers.find(p => p.id === player2Result.playerId) ?? storePlayers[1] ?? null) : null;
+  const player1Name = player1Profile?.name || p1Identity?.name || activeProfile?.name || t('resultsScreen.player');
+  const player1Avatar = player1Profile?.avatar || p1Identity?.avatar || activeProfile?.avatar;
+  const player1Color = player1Profile?.color || p1Identity?.color || activeProfile?.color || '#FF6B6B';
+  const player2ProfileFound = player2Result ? profiles.find(p => p.id === player2Result.playerId) : null;
+  const player2Name = player2ProfileFound?.name || p2Identity?.name || song.duetPlayerNames?.[1] || `${t('resultsScreen.player')} 2`;
+  const player2Avatar = player2ProfileFound?.avatar || p2Identity?.avatar;
+  const player2Color = player2ProfileFound?.color || p2Identity?.color || '#a78bfa';
+  const player2ProfileId = player2Result?.playerId ?? null;
+
+  const player1Companion = isMultiplayer && !!(
+    deviceAssignment?.p1Companion
+    // R93: check the profile that ACTUALLY sang as P1 (result entry), not
+    // the active profile — they can differ in duels/duets.
+    || (playerResult.playerId ? connectedProfileIds.has(playerResult.playerId) : false)
+  );
+  const player2Companion = isMultiplayer && !!(
+    deviceAssignment?.p2Companion
+    || (player2ProfileId ? connectedProfileIds.has(player2ProfileId) : false)
+  );
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8 lg:flex-1 lg:min-h-0 lg:flex lg:flex-col">
@@ -172,35 +209,46 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           />
         </div>
 
-        {/* RIGHT column — the social-media box (single player only) */}
+        {/* RIGHT column — the social-media box: single player gets their own
+            card + video (R93 redesign); duel/duet gets the multiplayer box
+            with per-player cards (EXCEPT companion-connected players — theirs
+            live on the phone) and the rivalry card + video for the pair. */}
         <div className="min-h-0 flex flex-col">
-          {!isMultiplayer ? (
-            <ShareSection
-              song={song}
-              playerResult={{
-                score: playerResult.score,
-                accuracy: playerResult.accuracy,
-                maxCombo: playerResult.maxCombo,
-                notesHit: playerResult.notesHit,
-                notesMissed: playerResult.notesMissed,
-                rating: playerResult.rating,
-              }}
-              activeProfileId={activeProfileId}
-              playerName={activeProfile?.name || t('resultsScreen.player')}
-              playerAvatar={activeProfile?.avatar}
-              playerColor={activeProfile?.color || '#FF6B6B'}
-              difficulty={gameState.difficulty}
-              gameMode={gameState.gameMode}
-              compact
-            />
-          ) : (
-            /* Multiplayer: keep the right column calm — duet/duet stats already
-               live in the left column; a single-player share card makes no sense. */
-            <div className="hidden lg:flex flex-col items-center justify-center text-center text-white/30 gap-3 p-6">
-              <span className="text-5xl" aria-hidden>{isDuel ? '⚔️' : '🎤'}</span>
-              <p className="text-sm max-w-xs">{isDuel ? t('resultsScreen.duelShareHint') : t('resultsScreen.duetShareHint')}</p>
-            </div>
-          )}
+          <ShareSection
+            song={song}
+            playerResult={{
+              score: playerResult.score,
+              accuracy: playerResult.accuracy,
+              maxCombo: playerResult.maxCombo,
+              notesHit: playerResult.notesHit,
+              notesMissed: playerResult.notesMissed,
+              rating: playerResult.rating,
+            }}
+            activeProfileId={activeProfileId}
+            playerName={player1Name}
+            playerAvatar={player1Avatar}
+            playerColor={player1Color}
+            difficulty={gameState.difficulty}
+            gameMode={gameState.gameMode}
+            compact
+            player2={isMultiplayer && player2Result ? {
+              name: player2Name,
+              avatar: player2Avatar,
+              color: player2Color,
+              profileId: player2ProfileId,
+              companionConnected: player2Companion,
+              result: {
+                score: player2Result.score,
+                accuracy: player2Result.accuracy,
+                maxCombo: player2Result.maxCombo,
+                notesHit: player2Result.notesHit,
+                notesMissed: player2Result.notesMissed,
+                rating: player2Result.rating,
+              },
+            } : null}
+            player1Companion={player1Companion}
+            rivalMode={isDuel ? 'duel' : 'duet'}
+          />
         </div>
       </div>
 
