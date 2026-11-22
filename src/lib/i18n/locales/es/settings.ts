@@ -69,7 +69,7 @@ settings: {
   stateManagement: 'Gestión de Estado',
   styling: 'Estilo',
   onlineLeaderboard: 'Tabla de Clasificación Online',
-  onlineLeaderboardDesc: 'Conectar con puntuaciones globales',
+  onlineLeaderboardDesc: 'Conectar con la clasificación global',
   onlineActivities: 'Actividades en línea',
   onlineActivitiesDesc: 'Desactiva todas las funciones en línea, incluidas la tabla de clasificación, los desafíos diarios y la sincronización del perfil',
   disableOnline: 'Desactivar actividades en línea',
@@ -535,7 +535,7 @@ settingsGeneral: {
 settingsAbout: {
   technologyStack: 'Stack Tecnológico',
   onlineLeaderboard: 'Tabla de Clasificación Online',
-  onlineLeaderboardDesc: 'Conectar con puntuaciones globales',
+  onlineLeaderboardDesc: 'Conectar con la clasificación global',
   testConnection: 'Probar Conexión',
   connected: '✅ ¡Conectado a la tabla de clasificación!',
   notConnected: '❌ No se pudo conectar a la tabla de clasificación',

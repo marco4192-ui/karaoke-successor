@@ -22,7 +22,7 @@ nav: {
   party: '파티',
   profiles: '프로필',
   queue: '대기열',
-  highscores: '최고 점수',
+  highscores: '랭킹',
   jukebox: '주크박스',
   mobile: '모바일',
   achievements: '업적',
@@ -459,6 +459,9 @@ desktopChat: {
 songChallenge: {
   challengeBtn: '도전',
   cannotAcceptOwn: '자신의 도전은 받을 수 없습니다',
+  deviceLabel: '내 노래 디바이스',
+  deviceCompanion: '컴패니언 앱',
+  deviceMic: '데스크톱 마이크',
 },
 
 songStart: {

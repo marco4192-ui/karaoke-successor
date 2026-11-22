@@ -220,7 +220,7 @@ export const gameTranslations = {
     noResults: 'No results available',
     accuracyLabel: '{n}% accuracy',
     player: 'Player',
-    scores: 'Scores',
+    scores: 'Rankings',
     replay: 'Replay',
     detailsShow: 'All details',
     detailsHide: 'Show less',
@@ -274,7 +274,7 @@ export const gameTranslations = {
   },
 
   highscore: {
-    title: 'Highscores',
+    title: 'Rankings',
     local: 'Local',
     global: 'Global',
     noScores: 'No highscores yet',
@@ -284,11 +284,11 @@ export const gameTranslations = {
     song: 'Song',
     score: 'Score',
     date: 'Date',
-    clearAll: 'Clear All Highscores'
+    clearAll: 'Clear all rankings'
   },
 
   highscoreScreen: {
-    title: 'Highscore Leaderboard',
+    title: 'Rankings',
     description: 'Top singers and their legendary performances!',
     local: 'Local',
     global: 'Online',

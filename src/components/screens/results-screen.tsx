@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
+import { Angry } from 'lucide-react';
 import { useGameStore } from '@/lib/game/store';
 import { useTranslation } from '@/lib/i18n/translations';
 
@@ -103,6 +104,50 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
   const { connectedProfileIds } = useCompanionConnections(isMultiplayer);
   const deviceAssignment = gameState.deviceAssignment;
 
+  // R94-2: duel opponent for the rival toggle — from the LOCAL user's
+  // perspective (active profile): the opponent is the OTHER player. Only
+  // offered when the opponent resolves to a real profile (companion-only
+  // players have no comparable identity). uid = syncUid (online) or the
+  // local profile id — same convention as the song-highscore modal.
+  const duelOpponent = useMemo(() => {
+    const res = gameState.results;
+    if (gameState.gameMode !== 'duel' || !res?.players || res.players.length < 2 || !activeProfileId) return null;
+    const p1 = res.players[0];
+    const p2 = res.players[1];
+    if (!p1 || !p2) return null;
+    const opp = p2.playerId === activeProfileId ? p1 : p2;
+    const oppProfile = profiles.find(p => p.id === opp.playerId) ?? null;
+    if (!oppProfile || oppProfile.id === activeProfileId) return null;
+    return { uid: oppProfile.syncUid || oppProfile.id, name: oppProfile.name, color: oppProfile.color };
+  }, [gameState.gameMode, gameState.results, activeProfileId, profiles]);
+
+  const [rivalListed, setRivalListed] = useState(false);
+  useEffect(() => {
+    if (!duelOpponent) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
+      setRivalListed(false);
+      return;
+    }
+    let cancelled = false;
+    import('@/lib/leaderboard/rivals').then(({ isRival }) => {
+      if (!cancelled) setRivalListed(isRival(duelOpponent.uid));
+    });
+    return () => { cancelled = true; };
+  }, [duelOpponent]);
+
+  const handleToggleRival = useCallback(() => {
+    if (!duelOpponent) return;
+    import('@/lib/leaderboard/rivals').then(({ isRival, addRival, removeRival }) => {
+      if (isRival(duelOpponent.uid)) {
+        removeRival(duelOpponent.uid);
+        setRivalListed(false);
+      } else {
+        addRival({ uid: duelOpponent.uid, name: duelOpponent.name, color: duelOpponent.color });
+        setRivalListed(true);
+      }
+    });
+  }, [duelOpponent]);
+
   if (!results || !song || !results.players || results.players.length === 0) {
     return (
       <div className="max-w-4xl mx-auto text-center py-20">
@@ -185,6 +230,27 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
             drawLabel={t('results.draw')}
             t={t}
           />
+
+          {/* R94-2: add the duel opponent as a rival — right below the winner
+              cards. Angry face = rival symbol (same convention as the
+              song-highscore modal; crossed swords stay reserved for duels). */}
+          {duelOpponent && (
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={handleToggleRival}
+                className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
+                  rivalListed
+                    ? 'border-red-500/60 bg-red-500/15 text-red-400 hover:bg-red-500/25'
+                    : 'border-white/15 bg-white/5 text-white/60 hover:text-white hover:bg-white/10'
+                }`}
+                data-testid={`rival-toggle-results-${duelOpponent.uid.slice(0, 8)}`}
+              >
+                <Angry className="h-4 w-4" aria-hidden />
+                {rivalListed ? t('rivals.remove') : t('rivals.add')}
+              </button>
+            </div>
+          )}
 
           <ResultsStatsPanel
             playerResult={playerResult}

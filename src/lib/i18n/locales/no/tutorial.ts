@@ -112,12 +112,12 @@ export const tutorialTranslations = {
           details: 'Jukeboxens spillelisteinnstillinger tilbyr:\n• Om videoer vises (hvis sangene har noen)\n• Videopauser: pauset videoer mellom sangene, f.eks. til beskjeder\n• Om basen stokkes eller kjører i fast rekkefølge\n\nStarter i fullskjerm — avslutt med Escape eller stoppknappen øverst.',
         },
         highscoreCard: {
-          title: 'Rekorder',
-          body: 'Rekorder per sang og vanskelighetsgrad — slå vennene dine (eller deg selv).',
+          title: 'Toppliste',
+          body: 'Topplister per sang og vanskelighetsgrad — slå vennene dine (eller deg selv).',
           details: 'Listene husker per sang og vanskelighetsgrad:\n• Poeng, presisjon, gullnoter og dato\n• Hvilken spiller som står bak oppføringen (profilavatar)\n• Om oppføringen kom via companion-appen (telefonikon) eller skrivebordet\n\nMed på nett-modus aktivert (profilsiden) ser du i tillegg globale lister og konkurrerer mot spillere fra andre installasjoner.',
         },
         highscoreView: {
-          title: 'Ledertavlene',
+          title: 'Topplistene',
           body: 'Filtrert per sang og vanskelighetsgrad — med filterlinjen øverst. Telefonikonene viser bruk fra companion-appen.',
           details: 'Filterlinjen øverst muliggjør:\n• Søk på sang eller spiller\n• Filtrering på vanskelighetsgrad\n• Bytte lokalt/globalt (når på nett er aktivert)\n\nAntijuks: hver oppføring bærer et sang-fingeravtrykk — manipulerte resultater oppdages og flagges.',
         },
@@ -584,8 +584,8 @@ export const tutorialTranslations = {
           body: 'Festdeltakelsen går alltid gjennom telefonene: i Companion Singalong synger gjestene rett på enheten sin, i turnering og Battle Royale stemmer de med et trykk — alt uten Ta kontroll. Obs i Gi mikrofonen: der sendes bare skrivebordets mikrofon videre; telefonene styrer bare.',
         },
         soloStats: {
-          title: 'Egne prestasjoner & highscores',
-          body: 'Hver gjest har sitt eget album: på telefonen kan de se egne highscores og prestasjoner — uten å ta kontroll. Uansett hva profilen tjener, kan gjesten sjekke det fra sofaen.',
+          title: 'Egne prestasjoner & topplister',
+          body: 'Hver gjest har sitt eget album: på telefonen kan de se egne topplister og prestasjoner — uten å ta kontroll. Uansett hva profilen tjener, kan gjesten sjekke det fra sofaen.',
         },
         soloLimits: {
           title: 'Hva som forblir låst',

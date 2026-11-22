@@ -69,7 +69,7 @@ settings: {
   stateManagement: 'Tilanhallinta',
   styling: 'Tyylit',
   onlineLeaderboard: 'Online-tulostaulukko',
-  onlineLeaderboardDesc: 'Yhdistä globaaleihin huipputuloksiin',
+  onlineLeaderboardDesc: 'Yhdistä globaaleihin tulostauluihin',
   onlineActivities: 'Online-toiminnot',
   onlineActivitiesDesc: 'Poista kaikki online-toiminnot käytöstä, mukaan lukien tulostaulukko, päivittäishaasteet ja profiilin synkronointi',
   disableOnline: 'Poista online-toiminnot käytöstä',
@@ -535,7 +535,7 @@ settingsGeneral: {
 settingsAbout: {
   technologyStack: 'Teknologia-pino',
   onlineLeaderboard: 'Online-tulostaulukko',
-  onlineLeaderboardDesc: 'Yhdistä globaaleihin huipputuloksiin',
+  onlineLeaderboardDesc: 'Yhdistä globaaleihin tulostauluihin',
   testConnection: 'Testaa yhteys',
   connected: '✅ Yhdistetty tulostaulukkoon!',
   notConnected: '❌ Yhdistäminen tulostaulukkoon epäonnistui',

@@ -3,12 +3,19 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { PitchData } from '@/components/screens/mobile/mobile-types';
 import { yinPitchDetection } from '@/lib/audio/pitch-algorithm';
+import { DIFFICULTY_PITCH_CONFIGS } from '@/lib/audio/pitch-config';
 
 interface UseMobilePitchDetectionOptions {
   clientId: string | null;
   isPlaying: boolean;
   songEnded: boolean;
   onError?: (_message: string) => void;
+  /** R94-5: the desktop's current difficulty (2s gamestate push). The YIN
+   *  threshold now follows DIFFICULTY_PITCH_CONFIGS exactly like the
+   *  desktop detector — before, the phone always used the fixed 0.15
+   *  (= desktop "hard"), a permanently more lenient detection than the
+   *  desktop mic on easy/medium. */
+  difficulty?: 'easy' | 'medium' | 'hard';
   /** Optional Socket.IO push path (from useMobileConnection.sendPitch).
    *  Preferred over the HTTP batch: frames arrive at the desktop instantly
    *  instead of via the 200ms batch flush + host polling chain. Returns true
@@ -27,11 +34,20 @@ export function useMobilePitchDetection({
   isPlaying,
   songEnded,
   onError,
+  difficulty,
   sendSocketPitch,
 }: UseMobilePitchDetectionOptions) {
   const [isListening, setIsListening] = useState(false);
   const [currentPitch, setCurrentPitch] = useState<PitchData>({ frequency: null, note: null, volume: 0 });
   const [micPermissionDenied, setMicPermissionDenied] = useState(false);
+  // R94-5: current difficulty in a ref — the detection loop reads it without
+  // restarting (same pattern as the desktop detector's setDifficulty).
+  const difficultyRef = useRef<'easy' | 'medium' | 'hard'>(difficulty ?? 'medium');
+  useEffect(() => {
+    if (difficulty === 'easy' || difficulty === 'medium' || difficulty === 'hard') {
+      difficultyRef.current = difficulty;
+    }
+  }, [difficulty]);
   // R52 — iOS/WebView-Autoplay: Wird das Mikro OUTHALB einer Nutzer-Geste
   // gestartet (Auto-Sing nach Gamestate-Push), bleibt der AudioContext auf
   // iOS Safari im 'suspended'-Zustand — getUserMedia läuft, aber
@@ -362,7 +378,7 @@ export function useMobilePitchDetection({
           setHasSignal(true);
         }
         
-        const frequency = yinPitchDetection(buffer, yinBuffer, audioContextRef.current.sampleRate, 0.15, yinConfidenceRef.current);
+        const frequency = yinPitchDetection(buffer, yinBuffer, audioContextRef.current.sampleRate, DIFFICULTY_PITCH_CONFIGS[difficultyRef.current].yinThreshold, yinConfidenceRef.current);
         
         let note: number | null = null;
         if (frequency !== null && frequency >= 65 && frequency <= 1047) {

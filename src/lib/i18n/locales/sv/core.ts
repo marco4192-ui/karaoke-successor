@@ -22,7 +22,7 @@ nav: {
   party: 'Fest',
   profiles: 'Karaktärer',
   queue: 'Kö',
-  highscores: 'Poäng',
+  highscores: 'Topplista',
   jukebox: 'Jukebox',
   mobile: 'Mobil',
   achievements: 'Prestationer',
@@ -459,6 +459,9 @@ desktopChat: {
 songChallenge: {
   challengeBtn: 'Utmana',
   cannotAcceptOwn: 'Du kan inte acceptera din egen utmaning',
+  deviceLabel: 'Din sångenhet',
+  deviceCompanion: 'Companion-app',
+  deviceMic: 'Skrivbordsmikrofon',
 },
 
 songStart: {

@@ -7,7 +7,7 @@ partyHelpers: {
 party: {
   title: 'Party-Spiele',
   subtitle: 'Wähle einen Spielmodus für deine Party!',
-  passTheMic: 'Reich das Mikro',
+  passTheMic: 'Gib-das-Mikro-weiter',
   passTheMicDesc: 'Wechsle dich beim Singen ab. Wenn die Musik stoppt, ist der nächste dran!',
   companionSingalong: 'Companion Sing-A-Long',
   companionSingalongDesc: 'Dein Handy leuchtet zufällig auf - dann bist du dran! Niemand weiß, wer als nächstes dran ist!',
@@ -37,7 +37,7 @@ party: {
 partySetup: {
   songTooShort: 'Song zu kurz',
   songTooShortDesc: 'Der Song ist kürzer als 60 Sekunden...',
-  songTooShortPassTheMic: 'Der Song ist kürzer als 60 Sekunden und kann nicht für Pass the Mic verwendet werden.',
+  songTooShortPassTheMic: 'Der Song ist kürzer als 60 Sekunden und kann nicht für Gib-das-Mikro-weiter verwendet werden.',
   tournamentError: 'Turnier-Fehler',
   minPlayers: 'Mindestens 2 Spieler werden benötigt...',
   minPlayersRequired: 'Mindestens 2 Spieler werden benötigt. Du hast {n} Spieler ausgewählt.',
@@ -72,7 +72,7 @@ partyGameScreens: {
   error: 'Fehler',
 },
 passTheMic: {
-  title: 'Mikrofon weitergeben',
+  title: 'Gib-das-Mikro-weiter',
   back: '← Zurück',
   gameSettings: 'Spiel-Einstellungen',
   segmentDuration: 'Segment-Dauer',
@@ -81,7 +81,7 @@ passTheMic: {
   randomSwitchesDesc: 'Spieler werden mitten im Song zufällig gewechselt',
   difficulty: 'Schwierigkeit',
   players: 'Spieler',
-  playingTitle: 'Mikrofon weitergeben',
+  playingTitle: 'Gib-das-Mikro-weiter',
   startPlayer: 'STARTSPIELER',
   errorMaxPlayers: 'Maximal 8 Spieler erlaubt',
   errorMinPlayers: 'Mindestens 2 Spieler erforderlich',
@@ -618,7 +618,7 @@ modeSettings: {
 },
 gameModes: {
   passTheMic: {
-    title: 'Reich das Mikro',
+    title: 'Gib-das-Mikro-weiter',
     description: 'Wechsle dich beim Singen ab!',
   },
   companionSingalong: {

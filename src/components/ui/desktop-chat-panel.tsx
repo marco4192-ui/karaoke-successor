@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '@/lib/i18n/translations';
+import { useCompanionConnections } from '@/hooks/use-companion-connections';
+import { StorageKeys, getItem } from '@/lib/storage';
 
 interface ChatMessage {
   id: string;
@@ -16,6 +18,10 @@ interface ChatMessage {
     songArtist: string;
     challengerClientId: string;
     challengerName: string;
+    challengerProfileId?: string | null;
+    challengerMicSource?: 'companion' | 'microphone';
+    challengerMicId?: string;
+    challengerMicName?: string;
     accepted: boolean;
     acceptedBy: string | null;
     acceptedByName: string | null;
@@ -43,6 +49,36 @@ export function DesktopChatPanel({ onClose }: DesktopChatPanelProps) {
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // R94-4.2: configured desktop mics (MULTI_MIC_CONFIG) — read once for the
+  // device dropdown when accepting a challenge (short-lived panel, no
+  // live-sync needed).
+  const [savedMics, setSavedMics] = useState<Array<{ id: string; label: string }>>([]);
+  useEffect(() => {
+    try {
+      const raw = getItem(StorageKeys.MULTI_MIC_CONFIG);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { assignedMics?: Array<{ id: string; customName?: string; deviceName?: string }> };
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot mount sync
+      setSavedMics((parsed.assignedMics || []).map(m => ({
+        id: m.id,
+        label: m.customName || m.deviceName || 'Mikrofon',
+      })));
+    } catch { /* ignore */ }
+  }, []);
+
+  // R94-4.2: is the selected player connected via companion app? Then their
+  // phone is offered as a singing device option.
+  const { connectedProfileIds } = useCompanionConnections(true, 5000);
+  const selectedPlayerCompanionConnected = selectedPlayerId ? connectedProfileIds.has(selectedPlayerId) : false;
+
+  // The acceptor's singing device: 'companion' (their connected phone) or a
+  // desktop mic ('auto' = default mic, or a specific MULTI_MIC_CONFIG id).
+  const [acceptorDevice, setAcceptorDevice] = useState<string>('auto');
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional device preselect
+    setAcceptorDevice(selectedPlayerCompanionConnected ? 'companion' : 'auto');
+  }, [selectedPlayerCompanionConnected, selectedPlayerId]);
 
   // Nachrichten abrufen
   const fetchMessages = useCallback(async () => {
@@ -119,24 +155,35 @@ export function DesktopChatPanel({ onClose }: DesktopChatPanelProps) {
   }, [handleSend]);
 
   // Herausforderung annehmen (als Host/ausgewaehlter Profile)
+  // R94-4.2: die gewählte Gesangs-Einheit wird mitgeschickt — der Server
+  // schreibt sie als partnerMicSource/Id/Name ins Duell-Queue-Item.
   const handleAcceptChallenge = useCallback(async (messageId: string) => {
     if (acceptingId || !selectedPlayerId) return;
     const player = players.find((p) => p.id === selectedPlayerId);
     if (!player) return;
     setAcceptingId(messageId);
+    const chosenMic = savedMics.find(m => m.id === acceptorDevice);
+    const acceptorMicSource = acceptorDevice === 'companion' ? ('companion' as const) : ('microphone' as const);
     try {
       const res = await fetch('/api/mobile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'accept_challenge_host',
-          payload: { messageId, profileId: player.id, profileName: player.name },
+          payload: {
+            messageId,
+            profileId: player.id,
+            profileName: player.name,
+            acceptorMicSource,
+            acceptorMicId: chosenMic?.id,
+            acceptorMicName: chosenMic?.label,
+          },
         }),
       });
       if (res.ok) fetchMessages();
     } catch { /* ignore */ }
     setAcceptingId(null);
-  }, [acceptingId, selectedPlayerId, players, fetchMessages]);
+  }, [acceptingId, selectedPlayerId, players, fetchMessages, acceptorDevice, savedMics]);
 
   const formatTime = (ts: number) => new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -201,18 +248,48 @@ export function DesktopChatPanel({ onClose }: DesktopChatPanelProps) {
                     ) : msg.challenge.challengerClientId === 'host' ? (
                       <p className="text-xs text-white/40">⏳ {(t('desktopChat.waitingForOpponent') || 'Warte auf Gegner...')}</p>
                     ) : (
-                      <button
-                        onClick={() => handleAcceptChallenge(msg.id)}
-                        disabled={!!acceptingId || !selectedPlayerId || msg.challenge.challengerClientId === 'host'}
-                        className="w-full py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-xs font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={!selectedPlayerId
-                          ? (t('desktopChat.selectPlayerFirst') || 'Zuerst einen Player auswählen')
-                          : msg.challenge.challengerClientId === 'host'
-                            ? (t('songChallenge.cannotAcceptOwn') || 'Du kannst deine eigene Herausforderung nicht annehmen')
-                            : undefined}
-                      >
-                        {acceptingId === msg.id ? '...' : (t('songChallenge.acceptBtn') || 'Herausforderung annehmen')}
-                      </button>
+                      <>
+                        {/* R94-4.2: singing device picker for the ACCEPTOR —
+                            their connected companion phone (if the selected
+                            player is connected) or a desktop microphone. */}
+                        <div className="mb-2">
+                          <label className="block text-[10px] uppercase tracking-wider text-white/35 mb-1">
+                            {(t('songChallenge.deviceLabel') || 'Dein Gesangs-Gerät')}
+                          </label>
+                          <select
+                            value={acceptorDevice}
+                            onChange={(e) => setAcceptorDevice(e.target.value)}
+                            data-testid="chat-challenge-device-select"
+                            className="w-full appearance-none bg-white/10 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white cursor-pointer focus:outline-none focus:border-cyan-500/50"
+                          >
+                            {selectedPlayerCompanionConnected && (
+                              <option value="companion" className="bg-[#1a1a2e] text-white">
+                                📱 {(t('songChallenge.deviceCompanion') || 'Companion-App')}
+                              </option>
+                            )}
+                            <option value="auto" className="bg-[#1a1a2e] text-white">
+                              🎤 {(t('songChallenge.deviceMic') || 'Desktop-Mikrofon')}
+                            </option>
+                            {savedMics.map(m => (
+                              <option key={m.id} value={m.id} className="bg-[#1a1a2e] text-white">
+                                🎤 {m.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <button
+                          onClick={() => handleAcceptChallenge(msg.id)}
+                          disabled={!!acceptingId || !selectedPlayerId || msg.challenge.challengerClientId === 'host'}
+                          className="w-full py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-xs font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                          title={!selectedPlayerId
+                            ? (t('desktopChat.selectPlayerFirst') || 'Zuerst einen Player auswählen')
+                            : msg.challenge.challengerClientId === 'host'
+                              ? (t('songChallenge.cannotAcceptOwn') || 'Du kannst deine eigene Herausforderung nicht annehmen')
+                              : undefined}
+                        >
+                          {acceptingId === msg.id ? '...' : (t('songChallenge.acceptBtn') || 'Herausforderung annehmen')}
+                        </button>
+                      </>
                     )}
                   </div>
                 )}

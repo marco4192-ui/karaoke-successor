@@ -16,6 +16,10 @@ interface ChatMessage {
     songArtist: string;
     challengerClientId: string;
     challengerName: string;
+    challengerProfileId?: string | null;
+    challengerMicSource?: 'companion' | 'microphone';
+    challengerMicId?: string;
+    challengerMicName?: string;
     accepted: boolean;
     acceptedBy: string | null;
     acceptedByName: string | null;
@@ -25,14 +29,20 @@ interface ChatMessage {
 interface MobileChatProps {
   clientId: string;
   onClose: () => void;
+  /** R94-4.2: configured desktop microphones (from the 2s gamestate push) —
+   *  lets the acceptor pick their singing device when accepting a challenge. */
+  availableMics?: Array<{ id: string; name: string }>;
 }
 
-export function MobileChat({ clientId, onClose }: MobileChatProps) {
+export function MobileChat({ clientId, onClose, availableMics = [] }: MobileChatProps) {
   const { t } = useTranslation();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  // R94-4.2: the acceptor's singing device for the NEXT accepted challenge —
+  // 'companion' (this phone, default) or a desktop mic id from availableMics.
+  const [acceptorDevice, setAcceptorDevice] = useState<string>('companion');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -97,6 +107,10 @@ export function MobileChat({ clientId, onClose }: MobileChatProps) {
   const handleAcceptChallenge = useCallback(async (messageId: string) => {
     if (acceptingId) return;
     setAcceptingId(messageId);
+    // R94-4.2: chosen singing device travels with the acceptance — the
+    // server writes it into the duel queue item (partnerMicSource/Id/Name).
+    const chosenMic = availableMics.find(m => m.id === acceptorDevice);
+    const acceptorMicSource = acceptorDevice === 'companion' ? 'companion' as const : 'microphone' as const;
     try {
       await fetch('/api/mobile', {
         method: 'POST',
@@ -104,13 +118,18 @@ export function MobileChat({ clientId, onClose }: MobileChatProps) {
         body: JSON.stringify({
           type: 'accept_challenge',
           clientId,
-          payload: { messageId },
+          payload: {
+            messageId,
+            acceptorMicSource,
+            acceptorMicId: chosenMic?.id,
+            acceptorMicName: chosenMic?.name,
+          },
         }),
       });
       fetchMessages();
     } catch { /* ignore */ }
     setAcceptingId(null);
-  }, [clientId, acceptingId, fetchMessages]);
+  }, [clientId, acceptingId, fetchMessages, acceptorDevice, availableMics]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -182,13 +201,40 @@ export function MobileChat({ clientId, onClose }: MobileChatProps) {
                         ✅ {(t('songChallenge.acceptedBy') || 'Angenommen von')} {msg.challenge.acceptedByName}
                       </p>
                     ) : msg.challenge.challengerClientId !== clientId ? (
-                      <button
-                        onClick={() => handleAcceptChallenge(msg.id)}
-                        disabled={!!acceptingId}
-                        className="w-full py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-xs font-bold active:scale-95 transition-transform disabled:opacity-50"
-                      >
-                        {acceptingId === msg.id ? '...' : (t('songChallenge.acceptBtn') || 'Herausforderung annehmen')}
-                      </button>
+                      <>
+                        {/* R94-4.2: singing device picker — this phone (default)
+                            or one of the desktop microphones. */}
+                        <div className="mb-2">
+                          <label className="block text-[10px] uppercase tracking-wider text-white/35 mb-1">
+                            {t('songChallenge.deviceLabel') || 'Dein Gesangs-Gerät'}
+                          </label>
+                          <select
+                            value={acceptorDevice}
+                            onChange={(e) => setAcceptorDevice(e.target.value)}
+                            data-testid="challenge-device-select"
+                            className="w-full appearance-none bg-white/10 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white cursor-pointer focus:outline-none focus:border-cyan-500/50"
+                          >
+                            <option value="companion" className="bg-[#1a1a2e] text-white">
+                              📱 {t('songChallenge.deviceCompanion') || 'Companion-App'}
+                            </option>
+                            <option value="auto" className="bg-[#1a1a2e] text-white">
+                              🎤 {t('songChallenge.deviceMic') || 'Desktop-Mikrofon'}
+                            </option>
+                            {availableMics.map(m => (
+                              <option key={m.id} value={m.id} className="bg-[#1a1a2e] text-white">
+                                🎤 {m.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <button
+                          onClick={() => handleAcceptChallenge(msg.id)}
+                          disabled={!!acceptingId}
+                          className="w-full py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-xs font-bold active:scale-95 transition-transform disabled:opacity-50"
+                        >
+                          {acceptingId === msg.id ? '...' : (t('songChallenge.acceptBtn') || 'Herausforderung annehmen')}
+                        </button>
+                      </>
                     ) : (
                       <p className="text-xs text-white/40">⏳ Warte auf Gegner...</p>
                     )}

@@ -22,7 +22,7 @@ nav: {
   party: 'Fiesta',
   profiles: 'Perfiles',
   queue: 'Cola',
-  highscores: 'Puntuaciones',
+  highscores: 'Clasificación',
   jukebox: 'Jukebox',
   mobile: 'Móvil',
   achievements: 'Logros',
@@ -459,6 +459,9 @@ desktopChat: {
 songChallenge: {
   challengeBtn: 'Desafiar',
   cannotAcceptOwn: 'No puedes aceptar tu propio desafío',
+  deviceLabel: 'Tu dispositivo de canto',
+  deviceCompanion: 'App Companion',
+  deviceMic: 'Micrófono del escritorio',
 },
 
 songStart: {

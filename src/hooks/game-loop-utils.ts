@@ -18,7 +18,16 @@ export interface ComputeElapsedParams {
 }
 
 export interface BuildP2PitchParams {
-  frequency: number;
+  /**
+   * R94-5 REGRESSION FIX: MIDI note. `setP2DetectedPitch` has carried MIDI
+   * NOTES since the R60 refactor (use-duet-p2-pitch sets `mp.note` and
+   * `result.rawNote ?? result.note`), but this builder still treated the
+   * value as a FREQUENCY and re-converted Hz→MIDI — every P2 pitch was
+   * scrambled through a bogus log2 mapping (a sung A4 / note 69 came out
+   * as note 37!). P2 scored pseudo-random hits/misses with permanently
+   * broken combos in duels/duets — for mic AND companion P2 singers.
+   */
+  note: number;
   volume: number;
 }
 
@@ -83,12 +92,15 @@ export function computeGameElapsedMs(params: ComputeElapsedParams): number {
  * display — not scoring.
  */
 export function buildP2PitchResult(params: BuildP2PitchParams): PitchDetectionResult {
-  const { frequency, volume } = params;
-  const note = Math.round(12 * (Math.log2(frequency / 440)) + 69);
+  const { note, volume } = params;
+  const rounded = Math.round(note * 10) / 10;
+  // Reconstruct the frequency — checkPlayerNoteHits gates on
+  // `pitch.frequency` truthiness before looking at the note.
+  const frequency = 440 * Math.pow(2, (rounded - 69) / 12);
   return {
     frequency,
-    note,
-    rawNote: note, // P2 pitch is not stabilized, so rawNote == note
+    note: rounded,
+    rawNote: rounded, // P2 pitch is not stabilized, so rawNote == note
     clarity: 0.7,
     volume,
   };

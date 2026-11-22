@@ -22,7 +22,7 @@ nav: {
   party: 'Feest',
   profiles: 'Profielen',
   queue: 'Wachtrij',
-  highscores: 'Highscores',
+  highscores: 'Ranglijst',
   jukebox: 'Jukebox',
   mobile: 'Mobiel',
   achievements: 'Prestaties',
@@ -459,6 +459,9 @@ desktopChat: {
 songChallenge: {
   challengeBtn: 'Uitdagen',
   cannotAcceptOwn: 'Je kunt je eigen uitdaging niet accepteren',
+  deviceLabel: 'Jouw zangapparaat',
+  deviceCompanion: 'Companion-app',
+  deviceMic: 'Desktopmicrofoon',
 },
 
 songStart: {

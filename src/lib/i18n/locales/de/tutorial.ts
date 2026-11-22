@@ -91,12 +91,12 @@ export const tutorialTranslations = {
         },
         partyCard: {
           title: 'Party-Modi',
-          body: '9 Spiele für bis zu 32 Spieler: Battle Royal, Pass-the-Mic, Medley-Wettbewerb, Turnier, Fehlende Wörter, Blind-Karaoke und mehr — inklusive Handy-Anbindung als Mikro.',
-          details: 'Die 9 Modi im Überblick:\n• Battle Royal: Alle singen, pro Runde scheidet der Schwächste aus — Last Man Standing.\n• Pass-the-Mic: Das Mikro wandert im Takt von Spieler zu Spieler — jeder singt seinen Part.\n• Medley-Wettbewerb: Teams singen sich durch kurze Song-Ausschnitte mit Spezial-Regeln.\n• Turnier: K.-o.-Baum mit Duellen — der Sieger steigt jede Runde auf.\n• Fehlende Wörter: Textstellen werden ausgeblitzt — wer das fehlende Wort singt, punktet.\n• Blind-Karaoke: Die Noten-Anzeige verdunkelt sich passagenweise — nur Gehör!\n• Rate meinen Song & Companion-Singalong und mehr — schau in die Modus-Karten, jede erklärt sich selbst.\n\nFast alle Modi unterstützen die Companion-App als Mikro und Steuerung.',
+          body: '9 Spiele für bis zu 32 Spieler: Battle Royal, Gib-das-Mikro-weiter, Medley-Wettbewerb, Turnier, Fehlende Wörter, Blind-Karaoke und mehr — inklusive Handy-Anbindung als Mikro.',
+          details: 'Die 9 Modi im Überblick:\\n• Battle Royal: Alle singen, pro Runde scheidet der Schwächste aus — Last Man Standing.\\n• Gib-das-Mikro-weiter: Das Mikro wandert im Takt von Spieler zu Spieler — jeder singt seinen Part.\\n• Medley-Wettbewerb: Teams singen sich durch kurze Song-Ausschnitte mit Spezial-Regeln.\\n• Turnier: K.-o.-Baum mit Duellen — der Sieger steigt jede Runde auf.\\n• Fehlende Wörter: Textstellen werden ausgeblitzt — wer das fehlende Wort singt, punktet.\\n• Blind-Karaoke: Die Noten-Anzeige verdunkelt sich passagenweise — nur Gehör!\\n• Rate meinen Song & Companion-Singalong und mehr — schau in die Modus-Karten, jede erklärt sich selbst.\\n\\nFast alle Modi unterstützen die Companion-App als Mikro und Steuerung.',
         },
         partyModes: {
           title: 'Die Modi-Auswahl',
-          body: 'Hier wählt ihr den Party-Modus: Battle Royal (Last Man Standing), Pass-the-Mic (Mikro-Weitergabe), Turnier (K.-o.-Baum), Medley und mehr.\n\nJede Karte zeigt, was dich erwartet — ein Klick startet die Spielerauswahl.',
+          body: 'Hier wählt ihr den Party-Modus: Battle Royal (Last Man Standing), Gib-das-Mikro-weiter, Turnier (K.-o.-Baum), Medley und mehr.\\n\\nJede Karte zeigt, was dich erwartet — ein Klick startet die Spielerauswahl.',
           details: 'Nach dem Klick auf eine Modus-Karte folgt die Spielerauswahl: Ihr wählt Profile aus (oder verbindet Companion-Geräte), legt ggf. Team-Größen, Rundenanzahl oder Zeitlimits fest — je nach Modus.\n\nMotto-Party-Tipp: Wenn in den Einstellungen ein Motto aktiv ist (z. B. „80er Jahre Party"), greift jede Song-Auswahl im Party-Modus automatisch nur noch auf passende Songs zu — so bleibt die Party im Thema.',
         },
         jukeboxCard: {
@@ -110,8 +110,8 @@ export const tutorialTranslations = {
           details: 'In den Playlist-Einstellungen der Jukebox stellst du ein:\n• Ob Videos angezeigt werden (falls die Songs welche haben)\n• Der Video-Break-Modus: Pausen-Videos zwischen Songs, z. B. für Ansagen\n• Ob der Pool gemischt wird oder in fester Reihenfolge läuft\n\nGestartet wird im Vollbild — beenden mit Escape oder dem Stopp-Button oben.',
         },
         highscoreCard: {
-          title: 'Bestenlisten',
-          body: 'Highscores pro Song und Schwierigkeit — schlage deine Freunde (oder dich selbst).',
+          title: 'Bestenliste',
+          body: 'Bestenlisten pro Song und Schwierigkeit — schlage deine Freunde (oder dich selbst).',
           details: 'Die Bestenlisten merken sich pro Song und Schwierigkeit:\n• Punkte, Genauigkeit, goldene Noten und Datum\n• Welcher Spieler den Eintrag erzielt hat (Profil-Avatar)\n• Ob der Eintrag über die Companion-App (Handy-Symbol) oder am Desktop entstanden ist\n\nMit aktiviertem Online-Modus (Profil-Screen) siehst du zusätzlich globale Bestenlisten und trittst gegen Spieler anderer Installationen an.',
         },
         highscoreView: {
@@ -538,7 +538,7 @@ export const tutorialTranslations = {
         roles: {
           title: 'Die Rollen der App',
           body: 'Nach dem Verbinden bietet die App je nach Kontext:\n\n🎤 Mikro-Ansicht mit Tonhöhen-Anzeige\n🎮 Fernbedienung für den Desktop\n🎵 Song-Browser + Queue-Wünsche\n💬 Chat\n🪞 Live-Mirror des Bildschirms',
-          details: 'Die Rollen im Detail:\n• Mikrofon: Das Handy misst die Tonhöhe und überträgt sie live — der Desktop zeigt die Noten wie von einem „echten" Mikro. Funktioniert für fast alle Modi (auch Duell: zwei Handys!) — Ausnahme z. B. Pass-the-Mic: dort teilen sich alle dasselbe Desktop-Mikro.\n• Fernbedienung: Screens, Buttons und Bestätigungen vom Handy aus — gut für Party-Hosts, die durch den Raum laufen.\n• Song-Browser: Die komplette Bibliothek auf dem Handy — inklusive Vorschau und Warteschlangen-Wunsch mit 📱-Badge auf dem Desktop.\n• Chat: Nachrichten an den Desktop und andere Gäste.\n• Mirror: Der Bildschirm des Desktops (Spiel, Ergebnisse) wird auf dem Handy gespiegelt — die Gäste sehen alles von ihren Plätzen.',
+          details: 'Die Rollen im Detail:\\n• Mikrofon: Das Handy misst die Tonhöhe und überträgt sie live — der Desktop zeigt die Noten wie von einem „echten" Mikro. Funktioniert für fast alle Modi (auch Duell: zwei Handys!) — Ausnahme z. B. Gib-das-Mikro-weiter: dort teilen sich alle dasselbe Desktop-Mikro.\\n• Fernbedienung: Screens, Buttons und Bestätigungen vom Handy aus — gut für Party-Hosts, die durch den Raum laufen.\\n• Song-Browser: Die komplette Bibliothek auf dem Handy — inklusive Vorschau und Warteschlangen-Wunsch mit 📱-Badge auf dem Desktop.\\n• Chat: Nachrichten an den Desktop und andere Gäste.\\n• Mirror: Der Bildschirm des Desktops (Spiel, Ergebnisse) wird auf dem Handy gespiegelt — die Gäste sehen alles von ihren Plätzen.',
         },
         chatRole: {
           title: 'Chat am Desktop',
@@ -551,7 +551,7 @@ export const tutorialTranslations = {
         singAlong: {
           title: 'Mitsing-Modi 🎶',
           body: 'Im Party-Modus Companion-Singalong singen die Gäste direkt über ihre Handys — die Tonhöhen-Erkennung läuft auf dem Gerät, der Desktop orchestriert.',
-          details: 'Companion-Singalong: Jeder Gast bekommt auf seinem Handy Lyrics + Tonhöhen-Anzeige — der Desktop zeigt die gemeinsame Note-Bahn.\n\nPass-the-Mic: Alle singen nacheinander in dasselbe Mikrofon am Desktop — es wird nur weitergereicht. Handys dienen hier ausschließlich als Steuerung und Live-Spiegel, nicht als Mikrofon.\n\nFürs Singen per Handy gilt: Je besser die WLAN-Qualität, desto flüssiger die Tonhöhe.',
+          details: 'Companion-Singalong: Jeder Gast bekommt auf seinem Handy Lyrics + Tonhöhen-Anzeige — der Desktop zeigt die gemeinsame Note-Bahn.\\n\\nGib-das-Mikro-weiter: Alle singen nacheinander in dasselbe Mikrofon am Desktop — es wird nur weitergereicht. Handys dienen hier ausschließlich als Steuerung und Live-Spiegel, nicht als Mikrofon.\\n\\nFürs Singen per Handy gilt: Je besser die WLAN-Qualität, desto flüssiger die Tonhöhe.',
         },
         takeControl: {
           title: 'Take Control 🎮',
@@ -579,11 +579,11 @@ export const tutorialTranslations = {
         },
         soloParty: {
           title: 'Mitsingen & Abstimmen',
-          body: 'Party-Partizipation läuft immer über die Handys: Im Companion-Singalong singen die Gäste direkt über ihr Gerät, bei Turnier und Battle Royale stimmen sie per Tipp ab — alles ohne Take Control. Achtung Pass-the-Mic: Dort wird nur das Desktop-Mikro weitergereicht, Handys steuern lediglich.',
+          body: 'Party-Partizipation läuft immer über die Handys: Im Companion-Singalong singen die Gäste direkt über ihr Gerät, bei Turnier und Battle Royale stimmen sie per Tipp ab — alles ohne Take Control. Achtung Gib-das-Mikro-weiter: Dort wird nur das Desktop-Mikro weitergereicht, Handys steuern lediglich.',
         },
         soloStats: {
-          title: 'Eigene Erfolge & Highscores',
-          body: 'Jeder Gast führt sein eigenes Sammelalbum: Auf dem Handy lassen sich die eigenen Highscores und Erfolge ansehen — ganz ohne Take Control. Was das Profil ersingt, sieht der Gast also auch von der Couch aus.',
+          title: 'Eigene Erfolge & Bestenliste',
+          body: 'Jeder Gast führt sein eigenes Sammelalbum: Auf dem Handy lassen sich die eigenen Bestenlisten und Erfolge ansehen — ganz ohne Take Control. Was das Profil ersingt, sieht der Gast also auch von der Couch aus.',
         },
         soloLimits: {
           title: 'Was gesperrt bleibt',

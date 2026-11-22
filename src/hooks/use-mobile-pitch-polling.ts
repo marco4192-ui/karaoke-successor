@@ -2,13 +2,27 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { subscribePitchFeed } from '@/lib/socketio/socketio-pitch-feed';
+import { PitchStabilizer } from '@/lib/audio/pitch-smoothing';
 
 export interface MobilePitchData {
   frequency: number | null;
   note: number | null;
   volume: number;
   clarity?: number;
+  /** R94-5: server receive time — drives the stale-frame TTL below. */
+  timestamp?: number;
 }
+
+/** R94-5: companion frames older than this are treated as silence. Kills the
+ *  hidden "infinite hold": the last frame used to stay in the ref forever
+ *  (phone locked / network stall) and kept scoring. 500 ms > the phone's
+ *  33 ms send throttle + network jitter, so live streams never trip it. */
+const COMPANION_FRAME_TTL_MS = 500;
+/** R94-5: same stabilization the DESKTOP pitch detector applies before
+ *  scoring (DIFFICULTY_PITCH_CONFIGS.medium.pitchStabilityFrames = 2) —
+ *  without this the desktop scored a smoothed note while the companion
+ *  scored raw jitter, an asymmetric scoring basis. */
+const COMPANION_STABILITY_FRAMES = 2;
 
 /**
  * Hook to poll mobile companion pitch data from the server.
@@ -45,6 +59,10 @@ export function useMobilePitchPolling(
 } {
   const [mobilePitch, setMobilePitch] = useState<MobilePitchData | null>(null);
   const [hasMobileClient, setHasMobileClient] = useState(false);
+  // R94-5: mirror of the legacy-mode state so the stale sweep can read the
+  // current frame without re-subscribing on every pitch change.
+  const mobilePitchStateRef = useRef<MobilePitchData | null>(null);
+  useEffect(() => { mobilePitchStateRef.current = mobilePitch; }, [mobilePitch]);
   // Track last received pitch to skip identical updates (dedup re-renders)
   const lastPitchRef = useRef<string>('');
   // Stable ref of the profile to match (song changes restart the effect; the
@@ -76,6 +94,25 @@ export function useMobilePitchPolling(
     // Exponential backoff: when no companion is connected, poll less frequently
     let pollDelay = 100;
 
+    // ── R94-5: parity layer for companion frames ──
+    // 1) PitchStabilizer: same 2-frame/±1-semitone smoothing the desktop
+    //    detector applies — both input sources now feed the SAME note
+    //    quality into scoring.
+    // 2) TTL sweep: when no fresh frame arrived within COMPANION_FRAME_TTL_MS,
+    //    the ref/state is nulled (silence) — mirrors the desktop detector,
+    //    which nulls immediately when the gate closes.
+    const stabilizer = new PitchStabilizer(COMPANION_STABILITY_FRAMES);
+    const processFrame = (frame: MobilePitchData): MobilePitchData => {
+      if (frame.note != null) {
+        const stable = stabilizer.process(frame.note);
+        return stable !== null ? { ...frame, note: stable } : frame;
+      }
+      stabilizer.reset();
+      return frame;
+    };
+    const isStale = (frame: MobilePitchData | null): boolean =>
+      !!frame && typeof frame.timestamp === 'number' && Date.now() - frame.timestamp > COMPANION_FRAME_TTL_MS;
+
     // R60: Frame-Zustellung — Ref-Modus schreibt direkt (kein Re-Render),
     // Legacy-Modus updated State.
     const applyFrame = (pitchData: MobilePitchData) => {
@@ -86,6 +123,20 @@ export function useMobilePitchPolling(
       }
       setMobilePitch(pitchData);
     };
+
+    const staleSweepInterval = setInterval(() => {
+      if (aborted) return;
+      const target = pitchRefStable.current;
+      if (target) {
+        if (isStale(target.current) && target.current?.note != null) {
+          stabilizer.reset();
+          target.current = { ...target.current, frequency: null, note: null };
+        }
+      } else if (isStale(mobilePitchStateRef.current) && mobilePitchStateRef.current?.note != null) {
+        stabilizer.reset();
+        setMobilePitch({ ...mobilePitchStateRef.current, frequency: null, note: null });
+      }
+    }, 250);
 
     // ── Socket.IO pitch feed (preferred): instant pushes, no polling chain ──
     // Matching semantics: with matchProfileId ONLY frames from that profile
@@ -107,7 +158,14 @@ export function useMobilePitchPolling(
         if (event.clientId !== firstSocketClientId) return;
       }
       lastSocketPitchAt = Date.now();
-      const pitchData = event.data;
+      // R94-5: stabilize + TTL-check BEFORE dedup (identical raw frames must
+      // still advance the stabilizer's window).
+      const raw = event.data as MobilePitchData;
+      if (isStale(raw)) {
+        stabilizer.reset();
+        return;
+      }
+      const pitchData = processFrame(raw);
       // Dedup on the meaningful fields only (excluding the ever-changing
       // timestamp) so silence doesn't cause 30 useless re-renders per second.
       const serialized = JSON.stringify({
@@ -154,13 +212,22 @@ export function useMobilePitchPolling(
             ? entries.find(e => e.profile?.id === wanted && e.data)
             : undefined;
           const chosen = matched ?? entries[0];
-          const pitchData = chosen?.data;
+          const pitchData = chosen?.data as MobilePitchData | undefined;
           if (pitchData) {
+            // R94-5: same TTL for the HTTP watchdog — a stale server frame
+            // (phone stopped streaming) must not feed scoring.
+            if (isStale(pitchData)) {
+              setHasMobileClient(false);
+              return;
+            }
+            const processed = processFrame(pitchData);
             // Dedup: only update state if pitch actually changed
-            const serialized = JSON.stringify(pitchData);
+            const serialized = JSON.stringify({
+              f: processed.frequency, n: processed.note, v: processed.volume,
+            });
             if (serialized !== lastPitchRef.current) {
               lastPitchRef.current = serialized;
-              applyFrame(pitchData);
+              applyFrame(processed);
             }
             setHasMobileClient(true);
           }
@@ -191,6 +258,7 @@ export function useMobilePitchPolling(
     return () => {
       aborted = true;
       unsubPitchFeed();
+      clearInterval(staleSweepInterval);
       if (pollInterval) clearInterval(pollInterval);
       if (abortController) abortController.abort();
     };

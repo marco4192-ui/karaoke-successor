@@ -69,7 +69,7 @@ settings: {
   stateManagement: 'Gestione Stato',
   styling: 'Stile',
   onlineLeaderboard: 'Classifica Online',
-  onlineLeaderboardDesc: 'Connetti ai punteggi globali',
+  onlineLeaderboardDesc: 'Connetti alla classifica globale',
   onlineActivities: 'Attività Online',
   onlineActivitiesDesc: 'Disattiva tutte le funzioni online, inclusa classifica, sfide giornaliere e sincronizzazione del profilo',
   disableOnline: 'Disattiva le attività online',
@@ -535,7 +535,7 @@ settingsGeneral: {
 settingsAbout: {
   technologyStack: 'Stack Tecnologico',
   onlineLeaderboard: 'Classifica Online',
-  onlineLeaderboardDesc: 'Connetti ai punteggi globali',
+  onlineLeaderboardDesc: 'Connetti alla classifica globale',
   testConnection: 'Testa Connessione',
   connected: '✅ Connesso alla classifica!',
   notConnected: '❌ Impossibile connettersi alla classifica',

@@ -69,7 +69,7 @@ settings: {
   stateManagement: 'State Management',
   styling: 'Styling',
   onlineLeaderboard: 'Online rangliste',
-  onlineLeaderboardDesc: 'Opret forbindelse til globale highscores',
+  onlineLeaderboardDesc: 'Opret forbindelse til globale toplister',
   onlineActivities: 'Onlineaktiviteter',
   onlineActivitiesDesc: 'Deaktivér alle onlinefunktioner inkl. rangliste, daglige udfordringer og profilsynkronisering',
   disableOnline: 'Deaktivér onlineaktiviteter',
@@ -535,7 +535,7 @@ settingsGeneral: {
 settingsAbout: {
   technologyStack: 'Teknologisk stack',
   onlineLeaderboard: 'Online rangliste',
-  onlineLeaderboardDesc: 'Opret forbindelse til globale highscores',
+  onlineLeaderboardDesc: 'Opret forbindelse til globale toplister',
   testConnection: 'Test forbindelse',
   connected: '✅ Forbundet til rangliste!',
   notConnected: '❌ Kunne ikke forbinde til rangliste',

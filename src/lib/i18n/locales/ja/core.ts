@@ -22,7 +22,7 @@ nav: {
   party: 'パーティー',
   profiles: 'キャラクター',
   queue: 'キュー',
-  highscores: 'ハイスコア',
+  highscores: 'ランキング',
   jukebox: 'ジュークボックス',
   mobile: 'モバイル',
   achievements: '実績',
@@ -459,6 +459,9 @@ desktopChat: {
 songChallenge: {
   challengeBtn: 'チャレンジ',
   cannotAcceptOwn: '自分のチャレンジは受けられません',
+  deviceLabel: 'あなたの歌唱デバイス',
+  deviceCompanion: 'Companionアプリ',
+  deviceMic: 'デスクトップマイク',
 },
 
 songStart: {

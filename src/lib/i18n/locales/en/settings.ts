@@ -70,7 +70,7 @@ export const settingsTranslations = {
     stateManagement: 'State Management',
     styling: 'Styling',
     onlineLeaderboard: 'Online Leaderboard',
-    onlineLeaderboardDesc: 'Connect to global highscores',
+    onlineLeaderboardDesc: 'Connect to global rankings',
     onlineActivities: 'Online Activities',
     onlineActivitiesDesc: 'Disable all online features including leaderboard, daily challenges, and profile sync',
     disableOnline: 'Disable online activities',
@@ -691,7 +691,7 @@ export const settingsTranslations = {
   settingsAbout: {
     technologyStack: 'Technology Stack',
     onlineLeaderboard: 'Online Leaderboard',
-    onlineLeaderboardDesc: 'Connect to global highscores',
+    onlineLeaderboardDesc: 'Connect to global rankings',
     testConnection: 'Test Connection',
     testingConnection: 'Testing…',
     connected: '✅ Connected to leaderboard!',

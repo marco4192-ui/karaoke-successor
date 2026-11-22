@@ -69,7 +69,7 @@ settings: {
   stateManagement: 'Zustandsverwaltung',
   styling: 'Styling',
   onlineLeaderboard: 'Online-Leaderboard',
-  onlineLeaderboardDesc: 'Mit globalen Highscores verbinden',
+  onlineLeaderboardDesc: 'Mit globalen Bestenlisten verbinden',
   onlineActivities: 'Online-Aktivitäten',
   onlineActivitiesDesc: 'Alle Online-Features deaktivieren inkl. Leaderboard, Daily Challenges und Profil-Sync',
   disableOnline: 'Online-Aktivitäten deaktivieren',
@@ -204,7 +204,7 @@ settingsRules: {
 },
 settingsMotto: {
   title: 'Motto-Party',
-  desc: 'Stelle das gesamte Spiel auf ein Motto ein (z. B. eine 80er-Jahre-Party). Ist die Motto-Party aktiviert, werden im Party-Setup alle Suchfelder und Filter ausgeblendet und durch das Motto ersetzt — jede Song-Auswahl (Zufall, Abstimmung, Medley, Battle Royale, Turnier, Pass the Mic) greift dann nur noch auf die passenden Songs zu.',
+  desc: 'Stelle das gesamte Spiel auf ein Motto ein (z. B. eine 80er-Jahre-Party). Ist die Motto-Party aktiviert, werden im Party-Setup alle Suchfelder und Filter ausgeblendet und durch das Motto ersetzt — jede Song-Auswahl (Zufall, Abstimmung, Medley, Battle Royale, Turnier, Gib-das-Mikro-weiter) greift dann nur noch auf die passenden Songs zu.',
   activationTitle: 'Motto-Party',
   activationDesc: 'Aktivieren, um alle Suchfelder und Filter im Spiel durch das Motto zu ersetzen.',
   activeBadge: 'Aktiv',
@@ -671,7 +671,7 @@ settingsGeneral: {
 settingsAbout: {
   technologyStack: 'Technologie-Stack',
   onlineLeaderboard: 'Online-Leaderboard',
-  onlineLeaderboardDesc: 'Mit globalen Highscores verbinden',
+  onlineLeaderboardDesc: 'Mit globalen Bestenlisten verbinden',
   testConnection: 'Verbindung testen',
   testingConnection: 'Teste…',
   connected: '✅ Mit Leaderboard verbunden!',

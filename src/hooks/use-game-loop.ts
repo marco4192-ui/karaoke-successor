@@ -219,6 +219,18 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   const sampleVisualTicksRef = useRef(sampleVisualTicks);
   const sampleP2VisualTicksRef = useRef(sampleP2VisualTicks);
 
+  // ── R94-5: pitch-hold (grace period), ported from Battle Royale (R14) ──
+  // Short dropouts (note onsets/offsets, breaths, detector flicker, brief
+  // network stalls) previously left ticks UNEVALUATED — run-scoring-pass
+  // counted them as lost ticks → combo breaks + lost perfect/golden bonuses
+  // ("Aussetzer zerstören Boni für komplette Noten"). Bridged SYMMETRICALLY
+  // for BOTH input sources (desktop mic + companion phone) so the scoring
+  // basis is identical. Same 200 ms / 0.04 volume as BR.
+  const PITCH_HOLD_MS = 200;
+  const PITCH_HOLD_MIN_VOLUME = 0.04;
+  const p1LastValidPitchRef = useRef<{ note: number; at: number } | null>(null);
+  const p2LastValidPitchRef = useRef<{ note: number; at: number } | null>(null);
+
   // ── Result generation hook (extracted) ──
   const { generateResults, playersRef } = useGameResults({
     song,
@@ -700,9 +712,34 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       // liefert der Companion-Pitch-Stream die P1-Daten (Handy-Mikro); der
       // Desktop-Detektor ist geschlossen. MobilePitchData ist strukturell
       // kompatibel zu PitchDetectionResult (rawNote ist optional).
-      const currentPitch: PitchDetectionResult | null = (p1CompanionRef?.current && mobilePitchRef?.current)
-        ? (mobilePitchRef.current as unknown as PitchDetectionResult)
+      // R94-5: the source flag follows the DEVICE ASSIGNMENT (not the ref
+      // content) — a nulled companion ref (stale TTL) must not fall through
+      // to the closed desktop detector, or the hold below could not bridge.
+      const p1FromCompanion = !!p1CompanionRef?.current;
+      const rawP1Pitch: PitchDetectionResult | null = p1FromCompanion
+        ? ((mobilePitchRef?.current ?? null) as unknown as PitchDetectionResult | null)
         : pitchResultRef.current;
+
+      // R94-5: pitch-hold — bridge dropouts up to 200 ms with the last valid
+      // note (synthetic frame: checkNoteHits gates on frequency truthiness).
+      // Desktop mic: only while still audible (BR semantics); companion:
+      // time window alone (phone frames carry no reliable volume).
+      let currentPitch: PitchDetectionResult | null = rawP1Pitch;
+      if (rawP1Pitch && rawP1Pitch.note != null) {
+        p1LastValidPitchRef.current = { note: rawP1Pitch.note, at: now };
+      } else {
+        const lastValid = p1LastValidPitchRef.current;
+        const stillAudible = p1FromCompanion || (rawP1Pitch?.volume ?? 0) >= PITCH_HOLD_MIN_VOLUME;
+        if (lastValid && stillAudible && now - lastValid.at <= PITCH_HOLD_MS) {
+          currentPitch = {
+            frequency: 440 * Math.pow(2, (lastValid.note - 69) / 12),
+            note: lastValid.note,
+            rawNote: lastValid.note,
+            clarity: 0.5,
+            volume: rawP1Pitch?.volume ?? 0,
+          };
+        }
+      }
 
       // Visual tick sampling: ALWAYS called (even when no pitch),
       // so missed ticks are recorded for Singstar-style display.
@@ -753,13 +790,24 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       const currentP2Pitch = p2DetectedPitchRef.current;
       const currentP2Vol = p2VolumeRef.current;
       if (isDuetMode && currentP2Pitch !== null && currentP2Pitch > 0) {
+        p2LastValidPitchRef.current = { note: currentP2Pitch, at: now };
         const p2PitchResult = buildP2PitchResult({
-          frequency: currentP2Pitch,
+          note: currentP2Pitch,
           volume: currentP2Vol,
         });
         checkP2NoteHitsRef.current(adjustedTime, p2PitchResult);
       } else if (isDuetMode) {
-        setP2Volume(0);
+        // R94-5: same 200 ms pitch-hold for P2 (symmetric to P1) — dropouts
+        // no longer leave ticks unevaluated. After the window: real silence.
+        const lastValidP2 = p2LastValidPitchRef.current;
+        if (lastValidP2 && now - lastValidP2.at <= PITCH_HOLD_MS) {
+          checkP2NoteHitsRef.current(adjustedTime, buildP2PitchResult({
+            note: lastValidP2.note,
+            volume: currentP2Vol,
+          }));
+        } else {
+          setP2Volume(0);
+        }
       }
 
       // End song by time ONLY when #END: tag is explicitly defined.

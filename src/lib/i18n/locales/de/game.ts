@@ -206,7 +206,7 @@ resultsScreen: {
   noResults: 'Keine Ergebnisse verfügbar',
   accuracyLabel: '{n}% Genauigkeit',
   player: 'Spieler',
-  scores: 'Punkte',
+  scores: 'Bestenliste',
   replay: 'Replay',
   detailsShow: 'Alle Details',
   detailsHide: 'Weniger anzeigen',
@@ -258,7 +258,7 @@ scoreVisualization: {
   stat: 'Stat',
 },
 highscore: {
-  title: 'Highscores',
+  title: 'Bestenliste',
   local: 'Lokal',
   global: 'Global',
   noScores: 'Noch keine Highscores',
@@ -268,10 +268,10 @@ highscore: {
   song: 'Song',
   score: 'Punkte',
   date: 'Datum',
-  clearAll: 'Alle Highscores löschen',
+  clearAll: 'Alle Bestenlisten löschen',
 },
 highscoreScreen: {
-  title: 'Highscore-Rangliste',
+  title: 'Bestenliste',
   description: 'Top-Sänger und ihre legendären Auftritte!',
   local: 'Lokal',
   global: 'Online',
@@ -469,8 +469,8 @@ achievements: {
     description: 'Gewinne ein Duell',
   },
   passTheMic: {
-    name: 'Reich das Mikro!',
-    description: 'Spiele Reich-das-Mikro-Modus',
+    name: 'Gib-das-Mikro-weiter!',
+    description: 'Spiele den Modus Gib-das-Mikro-weiter',
   },
   showerSinger: {
     name: 'Duschsänger',

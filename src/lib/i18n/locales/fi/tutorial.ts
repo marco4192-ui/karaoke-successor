@@ -111,12 +111,12 @@ export const tutorialTranslations = {
           details: 'Jukeboksin soittolista-asetukset tarjoavat:\n• Näytetäänkö videot (jos kappaleissa on sellaisia)\n• Videotaukot: välivideot kappaleiden välissä, esim. kuulutuksia varten\n• Sekoitetanko pohja vai toistetaanko kiinteässä järjestyksessä\n\nKäynnistyy koko näytölle — poistu Escillä tai ylälaidan pysäytyspainikkeesta.',
         },
         highscoreCard: {
-          title: 'Huipputulokset',
-          body: 'Huipputulokset per kappale ja vaikeustaso — voita ystäväsi (tai itsesi).',
+          title: 'Tulostaulu',
+          body: 'Tulostaulut per kappale ja vaikeustaso — voita ystäväsi (tai itsesi).',
           details: 'Taulut muistivat per kappale ja vaikeustaso:\n• Pisteet, tarkkuus, kultaiset nuotit ja päivämäärä\n• Kuka pelaaja tuloksen teki (profiilikuva)\n• Tuliko tulos companion-sovelluksen kautta (puhelinkuvake) vai työpöydältä\n\nKun verkkotila on päällä (profiilinäkymä), näet lisäksi globaalit taulut ja kilpailet muiden asennusten pelaajien kanssa.',
         },
         highscoreView: {
-          title: 'Huipputuloslistat',
+          title: 'Tulostaulut',
           body: 'Suodatettu kappaleen ja vaikeustason mukaan — yläreunan suodatuspalkilla. Puhelinkuvakkeet näyttävät companion-sovelluksen käytön.',
           details: 'Yläreunan suodatuspalkki mahdollistaa:\n• Haun kappaleen tai pelaajan mukaan\n• Suodatuksen vaikeustason mukaan\n• Vaihdon paikallinen/globaali (kun verkkotila on päällä)\n\nHuijauksen esto: jokainen tulos sisältää kappaleen sormenjäljen — manipuloidut tulokset havaitaan ja merkataan.',
         },
@@ -583,8 +583,8 @@ export const tutorialTranslations = {
           body: 'Juhliin osallistuminen kulkee aina puhelimien kautta: Companion-mukalaulussa vieraat laulavat suoraan laitteellaan, turnauksessa ja Battle Royalessa he äänestävät napautuksella — kaikki ilman hallinnan ottamista. Huom. Mikrofonin vaihdossa: siellä kiertää vain työpöydän mikrofoni; puhelimet vain ohjaavat.',
         },
         soloStats: {
-          title: 'Omat saavutukset ja huipputulokset',
-          body: 'Jokaisella vieraalla on oma albuminsa: puhelimella voi katsella omia huipputuloksia ja saavutuksia — hallintaa ei tarvita. Mitä tahansa profiili ansaitseekin, vieras voi tarkistaa sen sohvalta käsin.',
+          title: 'Omat saavutukset ja tulostaulut',
+          body: 'Jokaisella vieraalla on oma albuminsa: puhelimella voi katsella omia tulostauluja ja saavutuksia — hallintaa ei tarvita. Mitä tahansa profiili ansaitseekin, vieras voi tarkistaa sen sohvalta käsin.',
         },
         soloLimits: {
           title: 'Mikä pysyy lukossa',

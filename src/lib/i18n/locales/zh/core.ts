@@ -22,7 +22,7 @@ nav: {
   party: '派对',
   profiles: '档案',
   queue: '播放队列',
-  highscores: '高分榜',
+  highscores: '排行榜',
   jukebox: '点唱机',
   mobile: '移动端',
   achievements: '成就',
@@ -459,6 +459,9 @@ desktopChat: {
 songChallenge: {
   challengeBtn: '挑战',
   cannotAcceptOwn: '不能接受自己的挑战',
+  deviceLabel: '你的演唱设备',
+  deviceCompanion: 'Companion 应用',
+  deviceMic: '桌面麦克风',
 },
 
 songStart: {

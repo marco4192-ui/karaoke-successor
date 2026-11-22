@@ -69,7 +69,7 @@ settings: {
   stateManagement: '状態管理',
   styling: 'スタイリング',
   onlineLeaderboard: 'オンラインリーダーボード',
-  onlineLeaderboardDesc: 'グローバルハイスコアに接続',
+  onlineLeaderboardDesc: 'グローバルランキングに接続',
   onlineActivities: 'オンラインアクティビティ',
   onlineActivitiesDesc: 'リーダーボード、デイリーチャレンジ、プロファイル同期を含むすべてのオンライン機能を無効化します',
   disableOnline: 'オンラインアクティビティを無効化',
@@ -535,7 +535,7 @@ settingsGeneral: {
 settingsAbout: {
   technologyStack: '技術スタック',
   onlineLeaderboard: 'オンラインリーダーボード',
-  onlineLeaderboardDesc: 'グローバルハイスコアに接続',
+  onlineLeaderboardDesc: 'グローバルランキングに接続',
   testConnection: '接続テスト',
   connected: '✅ リーダーボードに接続しました！',
   notConnected: '❌ リーダーボードに接続できませんでした',

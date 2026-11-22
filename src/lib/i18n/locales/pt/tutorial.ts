@@ -113,8 +113,8 @@ export const tutorialTranslations = {
           details: 'As configurações de playlist do jukebox oferecem:\n• Se os vídeos são exibidos (quando as músicas têm)\n• Intervalos de vídeo: clipes de pausa entre as músicas, ex.: para anúncios\n• Se o repertório é embaralhado ou segue ordem fixa\n\nAbre em tela cheia — saia com Esc ou com o botão de parar no topo.',
         },
         highscoreCard: {
-          title: 'Pontuações',
-          body: 'Pontuações por música e dificuldade — vença seus amigos (ou você mesmo).',
+          title: 'Classificação',
+          body: 'Classificação por música e dificuldade — vença seus amigos (ou você mesmo).',
           details: 'Os rankings lembram, por música e dificuldade:\n• Pontuação, precisão, notas douradas e data\n• Qual jogador conseguiu a marca (avatar do perfil)\n• Se a entrada veio do app Companion (ícone de celular) ou do desktop\n\nCom o modo online ativado (tela de perfis) você também vê rankings globais e compete com jogadores de outras instalações.',
         },
         highscoreView: {
@@ -585,8 +585,8 @@ export const tutorialTranslations = {
           body: 'A participação na festa passa sempre pelos telefones: no Companion Sing-A-Long os convidados cantam direto do aparelho, no torneio e no Battle Royale votam com um toque — tudo sem Take Control. Atenção ao Passe o Microfone: lá só o microfone do desktop circula; os celulares apenas controlam.',
         },
         soloStats: {
-          title: 'Conquistas e pontuações próprias',
-          body: 'Cada convidado mantém seu próprio álbum: no telefone dá para ver as próprias pontuações e conquistas — sem Take Control. O que o perfil conquista, o convidado confere até do sofá.',
+          title: 'Conquistas e classificação próprias',
+          body: 'Cada convidado mantém seu próprio álbum: no telefone dá para ver as próprias classificações e conquistas — sem Take Control. O que o perfil conquista, o convidado confere até do sofá.',
         },
         soloLimits: {
           title: 'O que segue bloqueado',

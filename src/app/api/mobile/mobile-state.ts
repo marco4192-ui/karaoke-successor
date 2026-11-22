@@ -273,6 +273,14 @@ function createMutableState() {
         songArtist: string;
         challengerClientId: string;
         challengerName: string;
+        // R94-4: challenger's profile id + chosen singing device — previously
+        // dropped, so the duel queue item got neither the profile (P1 fell
+        // back to companionCode → no profile match for pitch routing/stats)
+        // nor the device (challenger always landed on the desktop mic).
+        challengerProfileId?: string | null;
+        challengerMicSource?: 'companion' | 'microphone';
+        challengerMicId?: string;
+        challengerMicName?: string;
         accepted: boolean;
         acceptedBy: string | null;
         acceptedByName: string | null;

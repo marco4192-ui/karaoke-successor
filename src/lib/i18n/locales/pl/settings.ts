@@ -69,7 +69,7 @@ settings: {
   stateManagement: 'Zarządzanie stanem',
   styling: 'Stylowanie',
   onlineLeaderboard: 'Tabela wyników online',
-  onlineLeaderboardDesc: 'Połącz z globalnymi najlepszymi wynikami',
+  onlineLeaderboardDesc: 'Połącz z globalnym rankingiem',
   onlineActivities: 'Aktywności online',
   onlineActivitiesDesc: 'Wyłącz wszystkie funkcje online, w tym tabelę wyników, codzienne wyzwania i synchronizację profili',
   disableOnline: 'Wyłącz aktywności online',
@@ -535,7 +535,7 @@ settingsGeneral: {
 settingsAbout: {
   technologyStack: 'Stos technologiczny',
   onlineLeaderboard: 'Tabela wyników online',
-  onlineLeaderboardDesc: 'Połącz z globalnymi najlepszymi wynikami',
+  onlineLeaderboardDesc: 'Połącz z globalnym rankingiem',
   testConnection: 'Testuj połączenie',
   connected: '✅ Połączono z tabelą wyników!',
   notConnected: '❌ Nie udało się połączyć z tabelą wyników',

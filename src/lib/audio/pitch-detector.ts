@@ -20,10 +20,14 @@ export class PitchDetector {
   private animationFrame: number | null = null;
   private onPitchDetected: ((_result: PitchDetectionResult) => void) | null = null;
 
-  // FFT buffer — 2048 samples for ~46ms latency at 44.1kHz.
-  // Previously 4096 (~93ms), reduced for faster response.
-  // YIN still accurate enough for singing pitch detection with this window size.
-  private bufferSize = 2048;
+  // FFT buffer / YIN analysis window.
+  // R94-5: 4096 (~85-93 ms) — SAME window the companion phone's detector
+  // uses. The previous 2048 (~43 ms) window was the main source of desktop
+  // "dropouts": short windows jitter and fail YIN more often on sustained
+  // karaoke notes, while the phone's 4096 window tracked them cleanly
+  // (user measured ~400-500 points more via companion singing the same
+  // passage). Parity of the analysis window = parity of the scoring basis.
+  private bufferSize = 4096;
   private buffer: Float32Array<ArrayBuffer> | null = null;
   private frequencyBuffer: Float32Array<ArrayBuffer> | null = null;
 
@@ -69,10 +73,15 @@ export class PitchDetector {
   async initialize(deviceId?: string, stereoChannel?: number): Promise<boolean> {
     try {
       // Build audio constraints — optionally target a specific device
+      // R94-5: autoGainControl true — matches the companion phone's
+      // constraints. With AGC off, quiet distant-mic singing dipped below
+      // the fixed volume/noise gates → null frames ("dropouts"), while the
+      // phone's AGC kept the level above its gate. Same constraints on both
+      // sides = same scoring basis.
       const audioConstraints: MediaTrackConstraints = {
         echoCancellation: true,
         noiseSuppression: true,
-        autoGainControl: false,
+        autoGainControl: true,
       };
       if (deviceId) {
         // IMPORTANT: Use { exact: deviceId } first for reliable mic selection

@@ -22,7 +22,7 @@ nav: {
   party: 'Impreza',
   profiles: 'Profile',
   queue: 'Kolejka',
-  highscores: 'Najlepsze wyniki',
+  highscores: 'Ranking',
   jukebox: 'Jukebox',
   mobile: 'Mobilne',
   achievements: 'Osiągnięcia',
@@ -459,6 +459,9 @@ desktopChat: {
 songChallenge: {
   challengeBtn: 'Wyzwij',
   cannotAcceptOwn: 'Nie możesz zaakceptować własnego wyzwania',
+  deviceLabel: 'Twoje urządzenie do śpiewania',
+  deviceCompanion: 'Aplikacja Companion',
+  deviceMic: 'Mikrofon na pulpicie',
 },
 
 songStart: {

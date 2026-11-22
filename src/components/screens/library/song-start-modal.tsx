@@ -387,11 +387,17 @@ export function SongStartModal({
   };
 
   // Herausfordern: sendet Challenge an den Chat
+  // R94-4: Herausforderer-Profil + gewähltes Gesangs-Gerät mitgeben — der
+  // Server legt beides in der Challenge ab, damit das Duell-Queue-Item nach
+  // der Annahme Profil-Identität UND Geräte-Routing (Companion vs. Mikro)
+  // des Herausforderers behält.
   const handleChallenge = () => {
     const selectedPlayerId = startOptions.players[0];
     if (!selectedPlayerId) return;
     const selectedProfile = profiles.find(p => p.id === selectedPlayerId);
     const playerName = selectedProfile?.name || 'Host';
+    const isDual = startOptions.mode === 'duel' || startOptions.mode === 'duet';
+    const playerDevice = resolveDevice(isDual ? startOptions.micIdP1 : startOptions.micId);
     fetch('/api/mobile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -403,6 +409,10 @@ export function SongStartModal({
           songTitle: selectedSong.title,
           songArtist: selectedSong.artist,
           gameMode: startOptions.mode === 'duet' ? 'duet' : 'duel',
+          challengerProfileId: selectedPlayerId,
+          challengerMicSource: playerDevice.source,
+          challengerMicId: playerDevice.micId,
+          challengerMicName: playerDevice.micName,
         },
       }),
     }).catch(() => { /* ignore */ });

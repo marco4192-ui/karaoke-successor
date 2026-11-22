@@ -111,12 +111,12 @@ export const tutorialTranslations = {
           details: 'Jukeboxens spillelisteindstillinger tilbyder:\n• Om videoer vises (hvis sangene har nogen)\n• Videopauser: pausevideoer mellem sange, f.eks. til meddelelser\n• Om puljen blandes eller afspilles i fast rækkefølge\n\nStarten sker i fuldskærm — afslut med Escape eller stop-knappen øverst.',
         },
         highscoreCard: {
-          title: 'Highscores',
-          body: 'Highscores pr. sang og sværhedsgrad — slå dine venner (eller dig selv).',
+          title: 'Topliste',
+          body: 'Toplister pr. sang og sværhedsgrad — slå dine venner (eller dig selv).',
           details: 'Ranglisterne husker pr. sang og sværhedsgrad:\n• Score, præcision, gyldne noder og dato\n• Hvilken spiller der står for posten (profilavatar)\n• Om posten kom via companion-appen (telefonikon) eller skrivebordet\n\nMed online-tilstand slået til (profilsiden) ser du desuden globale ranglister og konkurrerer med spillere fra andre installationer.',
         },
         highscoreView: {
-          title: 'Highscore-tavlerne',
+          title: 'Toplisterne',
           body: 'Filtreret pr. sang og sværhedsgrad — med filterbjælken øverst. Telefonikonerne viser brug af companion-appen.',
           details: 'Filterbjælken øverst giver:\n• Søgning efter sang eller spiller\n• Filtrering efter sværhedsgrad\n• Skift mellem lokalt/globalt (når online er slået til)\n\nAnti-cheat: hver post bærer et sang-fingeraftryk — manipulerede resultater opdages og markeres.',
         },
@@ -583,8 +583,8 @@ export const tutorialTranslations = {
           body: 'Festdeltagelsen går altid gennem telefonerne: i Companion Sing-A-Long synger gæsterne direkte på deres enhed, i Tournament Mode og Battle Royale stemmer de med et tryk — alt uden Tag kontrol. Bemærk ved Pass the Mic: der sendes kun skrivebordets mikrofon videre; telefonerne styrer kun.',
         },
         soloStats: {
-          title: 'Egne præstationer & highscores',
-          body: 'Hver gæst fører sit eget album: på telefonen kan de se egne highscores og præstationer — Tag kontrol er ikke nødvendigt. Hvad profilen end tjener, kan gæsten tjekke det fra sofaen.',
+          title: 'Egne præstationer & toplister',
+          body: 'Hver gæst fører sit eget album: på telefonen kan de se egne toplister og præstationer — Tag kontrol er ikke nødvendigt. Hvad profilen end tjener, kan gæsten tjekke det fra sofaen.',
         },
         soloLimits: {
           title: 'Hvad der forbliver låst',

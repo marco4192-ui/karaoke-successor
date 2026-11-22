@@ -110,12 +110,12 @@ export const tutorialTranslations = {
           details: 'Los ajustes de listas del jukebox ofrecen:\n• Si se muestran los vídeos (si las canciones los tienen)\n• Modo de pausa de vídeo: vídeos de intermedio entre canciones, p. ej. para anuncios\n• Si el repertorio se mezcla o sigue un orden fijo\n\nArranca a pantalla completa — sal con Escape o el botón de parada de arriba.',
         },
         highscoreCard: {
-          title: 'Puntuaciones',
-          body: 'Mejores puntuaciones por canción y dificultad — vence a tus amigos (o a ti mismo).',
+          title: 'Clasificación',
+          body: 'Clasificación por canción y dificultad — vence a tus amigos (o a ti mismo).',
           details: 'Las tablas recuerdan, por canción y dificultad:\n• Puntuación, precisión, notas doradas y fecha\n• Qué jugador logró la entrada (avatar del perfil)\n• Si la entrada llegó vía app compañera (icono de teléfono) o desde el escritorio\n\nCon el modo online activado (pantalla de perfiles) además verás tablas globales y competirás con jugadores de otras instalaciones.',
         },
         highscoreView: {
-          title: 'Las tablas de puntuaciones',
+          title: 'Las tablas de clasificación',
           body: 'Filtradas por canción y dificultad — con la barra de filtros de arriba. Los iconos de teléfono muestran el uso de la app compañera.',
           details: 'La barra de filtros superior permite:\n• Buscar por canción o jugador\n• Filtrar por dificultad\n• Cambiar entre local y global (con el modo online activado)\n\nAnti-trampas: cada entrada lleva una huella de canción — los resultados manipulados se detectan y se marcan.',
         },
@@ -582,8 +582,8 @@ export const tutorialTranslations = {
           body: 'La participación en la fiesta pasa siempre por los teléfonos: en Companion Sing-A-Long los invitados cantan directamente desde su dispositivo, en el torneo y en Battle Royale votan con un toque — todo sin Take Control. Ojo con Pasa el Micrófono: allí solo se pasa el micro del escritorio; los teléfonos únicamente controlan.',
         },
         soloStats: {
-          title: 'Logros y puntuaciones propios',
-          body: 'Cada invitado lleva su propio álbum: en el teléfono puede ver sus puntuaciones y logros — sin Take Control. Lo que el perfil consigue, el invitado lo comprueba incluso desde el sofá.',
+          title: 'Logros y clasificación propios',
+          body: 'Cada invitado lleva su propio álbum: en el teléfono puede ver sus clasificaciones y logros — sin Take Control. Lo que el perfil consigue, el invitado lo comprueba incluso desde el sofá.',
         },
         soloLimits: {
           title: 'Lo que sigue bloqueado',

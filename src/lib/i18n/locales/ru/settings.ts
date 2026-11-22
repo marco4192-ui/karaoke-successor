@@ -69,7 +69,7 @@ settings: {
   stateManagement: 'Управление состоянием',
   styling: 'Оформление',
   onlineLeaderboard: 'Онлайн таблица лидеров',
-  onlineLeaderboardDesc: 'Подключиться к глобальным рекордам',
+  onlineLeaderboardDesc: 'Подключиться к глобальному рейтингу',
   onlineActivities: 'Онлайн-активности',
   onlineActivitiesDesc: 'Отключить все онлайн-функции, включая таблицу лидеров, ежедневные задания и синхронизацию профиля',
   disableOnline: 'Отключить онлайн-активности',
@@ -535,7 +535,7 @@ settingsGeneral: {
 settingsAbout: {
   technologyStack: 'Технологический стек',
   onlineLeaderboard: 'Онлайн таблица лидеров',
-  onlineLeaderboardDesc: 'Подключиться к глобальным рекордам',
+  onlineLeaderboardDesc: 'Подключиться к глобальному рейтингу',
   testConnection: 'Проверить соединение',
   connected: '✅ Подключено к таблице лидеров!',
   notConnected: '❌ Не удалось подключиться к таблице лидеров',

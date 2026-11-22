@@ -112,12 +112,12 @@ export const tutorialTranslations = {
           details: 'Ustawienia playlist jukeboxa oferują:\n• Czy wideo jest pokazywane (jeśli piosenki je mają)\n• Tryb przerw na wideo: filmy przerywnikowe między piosenkami, np. na ogłoszenia\n• Czy pula jest tasowana, czy leci w stałej kolejności\n\nStart na pełnym ekranie — wyjście przez Escape lub przycisk zatrzymania u góry.',
         },
         highscoreCard: {
-          title: 'Najlepsze wyniki',
-          body: 'Najlepsze wyniki na piosenkę i poziom trudności — pokonaj znajomych (albo siebie).',
+          title: 'Ranking',
+          body: 'Rankingi na piosenkę i poziom trudności — pokonaj znajomych (albo siebie).',
           details: 'Tabele pamiętają dla każdej piosenki i trudności:\n• Wynik, celność, złote nuty i datę\n• Który gracz ustanowił wpis (avatar profilu)\n• Czy wpis przyszedł przez aplikację kompana (ikona telefonu), czy z komputera\n\nPrzy włączonym trybie online (ekran profilu) widzisz dodatkowo globalne tabele i rywalizujesz z graczami z innych instalacji.',
         },
         highscoreView: {
-          title: 'Tablice wyników',
+          title: 'Tablice rankingów',
           body: 'Filtrowane po piosence i trudności — z paskiem filtrów na górze. Ikony telefonu pokazują użycie aplikacji kompana.',
           details: 'Górny pasek filtrów pozwala:\n• Szukać po piosence lub graczu\n• Filtrować według trudności\n• Przełączać lokalne/globalne (gdy online jest włączone)\n\nAnty-cheat: każdy wpis zawiera sygnaturę piosenki — zmanipulowane wyniki są wykrywane i oznaczane.',
         },
@@ -584,8 +584,8 @@ export const tutorialTranslations = {
           body: 'Udział w imprezie zawsze idzie przez telefony: w Śpiewie z Companionem goście śpiewają prosto ze swojego urządzenia, w turnieju i Battle Royale głosują dotknięciem — wszystko bez przejmowania kontroli. Uwaga na Przekaż mikrofon: tam krąży tylko mikrofon przy komputerze; telefony służą wyłącznie do sterowania.',
         },
         soloStats: {
-          title: 'Własne osiągnięcia i wyniki',
-          body: 'Każdy gość prowadzi własny album: na telefonie może obejrzeć swoje najlepsze wyniki i osiągnięcia — bez przejmowania kontroli. Cokolwiek zarobi profil, gość sprawdzi to prosto z kanapy.',
+          title: 'Własne osiągnięcia i rankingi',
+          body: 'Każdy gość prowadzi własny album: na telefonie może obejrzeć swoje rankingi i osiągnięcia — bez przejmowania kontroli. Cokolwiek zarobi profil, gość sprawdzi to prosto z kanapy.',
         },
         soloLimits: {
           title: 'Co pozostaje zablokowane',

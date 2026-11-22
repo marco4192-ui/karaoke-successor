@@ -549,10 +549,15 @@ export function MirrorLibraryLite({
     // DO-NOT-CHANGE: Herausfordern per Chat-Nachricht (wie Desktop-App).
     // Sendet song_challenge an die API, die eine Chat-Nachricht erstellt.
     // clientId MUSS im Body sein, sonst liefert der Server 400.
+    // R94-4: Das gewählte Gesangs-Gerät (DevicePicker direkt über dem
+    // Challenge-Button) wird mitgeschickt — vorher fiel die Auswahl hier
+    // unter den Tisch und der Challenger landete nach der Annahme immer am
+    // Desktop-Mikro, obwohl er Companion gewählt hatte.
     const handleOverlayChallenge = useCallback(async () => {
       if (!overlaySong || ovChallengeSent) return;
       haptic();
       setOvChallengeSent(true);
+      const playerMic = availableMics.find(m => m.id === ovPlayerDevice);
       try {
         const res = await fetch('/api/mobile', {
           method: 'POST',
@@ -566,6 +571,9 @@ export function MirrorLibraryLite({
               songArtist: overlaySong.artist,
               gameMode: libGameMode,
               challengedPartnerId: ovPartnerId || undefined,
+              challengerMicSource: ovPlayerDevice === 'companion' ? 'companion' : 'microphone',
+              challengerMicId: playerMic?.id,
+              challengerMicName: playerMic?.name,
             },
           }),
         });
@@ -577,7 +585,7 @@ export function MirrorLibraryLite({
       } catch {
         setOvChallengeSent(false);
       }
-    }, [overlaySong, ovChallengeSent, libGameMode, ovPartnerId, clientId, closeOverlay]);
+    }, [overlaySong, ovChallengeSent, libGameMode, ovPartnerId, clientId, closeOverlay, ovPlayerDevice, availableMics]);
 
     // Modus-Button-Konfiguration
     const MODE_BUTTONS: { mode: GameMode; icon: string; labelKey: string; fallback: string; activeColor: string }[] = [

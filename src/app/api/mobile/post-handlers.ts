@@ -176,7 +176,9 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           client.lastActivity = Date.now();
 
           // Store only the last frame — this is what the host polls via latestPitchData
-          const lastFrame = batchPayload.frames[batchPayload.frames.length - 1];
+          // R94-5: stamp the SERVER receive time (phone clocks can skew) so
+          // the desktop's stale-frame TTL compares against a reliable clock.
+          const lastFrame = { ...batchPayload.frames[batchPayload.frames.length - 1], timestamp: Date.now() };
           client.pitchData = lastFrame;
           mobileClients.set(clientId, client);
           latestPitchData.set(clientId, lastFrame);
@@ -1347,7 +1349,18 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         if (!requireAuth(request)) {
           return Response.json({ success: false, message: 'Unauthorized' }, { status: 401 });
         }
-        const chPayload = payload as { fromName: string; songId: string; songTitle: string; songArtist: string; gameMode: 'duel' | 'duet' };
+        const chPayload = payload as {
+          fromName: string;
+          songId: string;
+          songTitle: string;
+          songArtist: string;
+          gameMode: 'duel' | 'duet';
+          // R94-4: challenger identity + singing device from the song-start modal
+          challengerProfileId?: string;
+          challengerMicSource?: 'companion' | 'microphone';
+          challengerMicId?: string;
+          challengerMicName?: string;
+        };
         if (!chPayload.songTitle || !chPayload.songArtist || !chPayload.fromName) {
           return Response.json({ success: false, message: 'Missing data' }, { status: 400 });
         }
@@ -1365,6 +1378,10 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
             songArtist: chPayload.songArtist,
             challengerClientId: 'host',
             challengerName: chPayload.fromName,
+            challengerProfileId: chPayload.challengerProfileId ?? null,
+            challengerMicSource: chPayload.challengerMicSource,
+            challengerMicId: chPayload.challengerMicId,
+            challengerMicName: chPayload.challengerMicName,
             accepted: false,
             acceptedBy: null,
             acceptedByName: null,
@@ -1411,7 +1428,16 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         if (!clientId) {
           return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
         }
-        const chPayload = payload as { songId: string; songTitle: string; songArtist: string };
+        const chPayload = payload as {
+          songId: string;
+          songTitle: string;
+          songArtist: string;
+          // R94-4: the challenger's chosen singing device (from the overlay
+          // DevicePicker) — previously dropped here.
+          challengerMicSource?: 'companion' | 'microphone';
+          challengerMicId?: string;
+          challengerMicName?: string;
+        };
         const chClient = mobileClients.get(clientId);
         if (!chClient) return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
         if (!chPayload.songTitle || !chPayload.songArtist) {
@@ -1432,6 +1458,13 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
             songArtist: chPayload.songArtist,
             challengerClientId: clientId,
             challengerName: chName,
+            // R94-4: real profile id (the companion carries it since R93g) +
+            // the chosen singing device — both flow into the duel queue item
+            // on accept so P1 keeps profile identity + companion pitch routing.
+            challengerProfileId: chClient.profile?.id ?? null,
+            challengerMicSource: chPayload.challengerMicSource,
+            challengerMicId: chPayload.challengerMicId,
+            challengerMicName: chPayload.challengerMicName,
             accepted: false,
             acceptedBy: null,
             acceptedByName: null,
@@ -1453,7 +1486,14 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         if (!clientId) {
           return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
         }
-        const acPayload = payload as { messageId: string };
+        const acPayload = payload as {
+          messageId: string;
+          // R94-4.2: the acceptor's chosen singing device (dropdown in the
+          // challenge card) — 'companion' (this phone) or a desktop mic.
+          acceptorMicSource?: 'companion' | 'microphone';
+          acceptorMicId?: string;
+          acceptorMicName?: string;
+        };
         const acClient = mobileClients.get(clientId);
         if (!acClient) return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
         if (!acPayload.messageId) {
@@ -1490,24 +1530,40 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         const challengerClient = mobileClients.get(chMsgData.challenge.challengerClientId);
 
         // Create ONE duel queue entry (challenger vs acceptor)
+        // R94-3: inherit the desktop's CURRENT difficulty (2s gamestate push)
+        // instead of hardcoding 'medium' — playing the challenge must not
+        // silently reset the user's global difficulty setting.
         const baseQueueItem = {
           songId: chMsgData.challenge.songId,
           songTitle: chMsgData.challenge.songTitle,
           songArtist: chMsgData.challenge.songArtist,
           gameMode: 'duel' as const,
-          difficulty: 'medium' as const,
+          difficulty: mutableState.gameState.difficulty ?? ('medium' as const),
           status: 'pending' as const,
           addedAt: Date.now(),
         };
 
         // Single queue entry representing the duel match
+        // R94-4: carry the challenger's REAL profile id (was: only the
+        // companionCode → the desktop couldn't match a profile, breaking
+        // companion-pitch routing and profile stats) plus BOTH singing
+        // devices: the challenger's choice from the challenge, the
+        // acceptor's choice from the accept dropdown.
         const duelQueueItem: QueueItem = {
           ...baseQueueItem,
           id: `queue-challenge-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
           addedBy: chMsgData.challenge.challengerName,
           companionCode: challengerClient?.connectionCode || '',
+          playerId: chMsgData.challenge.challengerProfileId || undefined,
+          playerName: chMsgData.challenge.challengerName,
           partnerId: acClient.profile?.id || clientId,
           partnerName: acceptorName,
+          playerMicSource: chMsgData.challenge.challengerMicSource,
+          playerMicId: chMsgData.challenge.challengerMicId,
+          playerMicName: chMsgData.challenge.challengerMicName,
+          partnerMicSource: acPayload.acceptorMicSource,
+          partnerMicId: acPayload.acceptorMicId,
+          partnerMicName: acPayload.acceptorMicName,
         };
 
         mutableState.songQueue.push(duelQueueItem);
@@ -1534,7 +1590,16 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         if (!requireAuth(request)) {
           return Response.json({ success: false, message: 'Unauthorized' }, { status: 401 });
         }
-        const achPayload = payload as { messageId: string; profileId: string; profileName: string };
+        const achPayload = payload as {
+          messageId: string;
+          profileId: string;
+          profileName: string;
+          // R94-4.2: the acceptor's chosen singing device (dropdown next to
+          // the player selector) — desktop mic or companion app.
+          acceptorMicSource?: 'companion' | 'microphone';
+          acceptorMicId?: string;
+          acceptorMicName?: string;
+        };
         if (!achPayload.messageId || !achPayload.profileId || !achPayload.profileName) {
           return Response.json({ success: false, message: 'Missing data' }, { status: 400 });
         }
@@ -1566,12 +1631,13 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         mutableState.chatMessages[achMsgIdx] = achMsgData;
 
         // Create ONE duel queue entry for the match
+        // R94-3: inherit the desktop's CURRENT difficulty (see accept_challenge)
         const achBaseQueueItem = {
           songId: achMsgData.challenge.songId,
           songTitle: achMsgData.challenge.songTitle,
           songArtist: achMsgData.challenge.songArtist,
           gameMode: 'duel' as const,
-          difficulty: 'medium' as const,
+          difficulty: mutableState.gameState.difficulty ?? ('medium' as const),
           status: 'pending' as const,
           addedAt: Date.now(),
         };
@@ -1581,13 +1647,24 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           : null;
 
         // Single queue entry representing the duel match
+        // R94-4: challenger profile id + both singing devices (see
+        // accept_challenge). For host challenges the challenger sings on a
+        // desktop mic unless stated otherwise.
         const achQueueItem: QueueItem = {
           ...achBaseQueueItem,
           id: `queue-challenge-host-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
           addedBy: achMsgData.challenge.challengerName,
           companionCode: achChallengerClient?.connectionCode || '',
+          playerId: achMsgData.challenge.challengerProfileId || undefined,
+          playerName: achMsgData.challenge.challengerName,
           partnerId: achPayload.profileId,
           partnerName: acceptorName,
+          playerMicSource: achMsgData.challenge.challengerMicSource,
+          playerMicId: achMsgData.challenge.challengerMicId,
+          playerMicName: achMsgData.challenge.challengerMicName,
+          partnerMicSource: achPayload.acceptorMicSource,
+          partnerMicId: achPayload.acceptorMicId,
+          partnerMicName: achPayload.acceptorMicName,
         };
         mutableState.songQueue.push(achQueueItem);
 

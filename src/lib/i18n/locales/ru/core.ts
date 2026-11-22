@@ -22,7 +22,7 @@ nav: {
   party: 'Вечеринка',
   profiles: 'Профили',
   queue: 'Очередь',
-  highscores: 'Рекорды',
+  highscores: 'Рейтинг',
   jukebox: 'Джукбокс',
   mobile: 'Мобильный',
   achievements: 'Достижения',
@@ -459,6 +459,9 @@ desktopChat: {
 songChallenge: {
   challengeBtn: 'Вызвать',
   cannotAcceptOwn: 'Нельзя принять собственный вызов',
+  deviceLabel: 'Ваше устройство для пения',
+  deviceCompanion: 'Приложение-компаньон',
+  deviceMic: 'Микрофон компьютера',
 },
 
 songStart: {

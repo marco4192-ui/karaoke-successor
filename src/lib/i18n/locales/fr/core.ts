@@ -22,7 +22,7 @@ nav: {
   party: 'Fête',
   profiles: 'Profils',
   queue: 'File',
-  highscores: 'Scores',
+  highscores: 'Classement',
   jukebox: 'Jukebox',
   mobile: 'Mobile',
   achievements: 'Succès',
@@ -459,6 +459,9 @@ desktopChat: {
 songChallenge: {
   challengeBtn: 'Défier',
   cannotAcceptOwn: 'Vous ne pouvez pas accepter votre propre défi',
+  deviceLabel: 'Ton périphérique de chant',
+  deviceCompanion: 'App Companion',
+  deviceMic: 'Micro du poste',
 },
 
 songStart: {

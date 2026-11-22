@@ -149,6 +149,11 @@ export interface MobileGameState {
   partyGameMode?: string | null;
   // Whether party mode is active on the desktop
   isPartyModeActive?: boolean;
+  // R94-3: the desktop's CURRENT global difficulty (pushed every 2s with
+  // the gamestate sync). Used when a chat challenge is accepted — the duel
+  // queue item must inherit the user's setting instead of hardcoding
+  // 'medium' (which silently reset the global difficulty when played).
+  difficulty?: 'easy' | 'medium' | 'hard';
   // R39/P4: Configured desktop microphones (MULTI_MIC_CONFIG) — pushed with
   // the 2s gamestate so the companion library can offer mic vs. companion
   // device selection in the song options overlay.

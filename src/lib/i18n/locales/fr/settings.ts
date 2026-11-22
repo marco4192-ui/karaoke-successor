@@ -69,7 +69,7 @@ settings: {
   stateManagement: 'Gestion d\'État',
   styling: 'Style',
   onlineLeaderboard: 'Classement en Ligne',
-  onlineLeaderboardDesc: 'Se connecter aux scores mondiaux',
+  onlineLeaderboardDesc: 'Se connecter au classement mondial',
   onlineActivities: 'Activités en ligne',
   onlineActivitiesDesc: 'Désactiver toutes les fonctionnalités en ligne, y compris le classement, les défis quotidiens et la synchronisation du profil',
   disableOnline: 'Désactiver les activités en ligne',
@@ -535,7 +535,7 @@ settingsGeneral: {
 settingsAbout: {
   technologyStack: 'Stack Technologique',
   onlineLeaderboard: 'Classement en Ligne',
-  onlineLeaderboardDesc: 'Se connecter aux scores mondiaux',
+  onlineLeaderboardDesc: 'Se connecter au classement mondial',
   testConnection: 'Tester la Connexion',
   connected: '✅ Connecté au classement !',
   notConnected: '❌ Impossible de se connecter au classement',

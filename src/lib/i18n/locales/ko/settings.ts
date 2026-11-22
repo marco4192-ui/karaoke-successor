@@ -69,7 +69,7 @@ settings: {
   stateManagement: '상태 관리',
   styling: '스타일링',
   onlineLeaderboard: '온라인 리더보드',
-  onlineLeaderboardDesc: '글로벌 최고 점수에 연결',
+  onlineLeaderboardDesc: '글로벌 랭킹에 연결',
   onlineActivities: '온라인 활동',
   onlineActivitiesDesc: '리더보드, 일일 챌린지, 프로필 동기화를 포함한 모든 온라인 기능을 비활성화합니다',
   disableOnline: '온라인 활동 비활성화',
@@ -535,7 +535,7 @@ settingsGeneral: {
 settingsAbout: {
   technologyStack: '기술 스택',
   onlineLeaderboard: '온라인 리더보드',
-  onlineLeaderboardDesc: '글로벌 최고 점수에 연결',
+  onlineLeaderboardDesc: '글로벌 랭킹에 연결',
   testConnection: '연결 테스트',
   connected: '✅ 리더보드에 연결되었습니다!',
   notConnected: '❌ 리더보드에 연결할 수 없습니다',

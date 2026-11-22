@@ -111,11 +111,13 @@ export function useDuetP2Pitch({
       p2DetectorInitRef.current = true;
 
       detector.start((result) => {
-        if (result.frequency) {
-          // Use rawNote (un-stabilized MIDI) for responsive P2 visual display
-          setP2DetectedPitch(result.rawNote ?? result.note);
-          setP2Volume(result.volume || 0);
-        }
+        // R94-5: ALWAYS report — silent frames must NULL the pitch so the
+        // game loop's 200 ms hold window (not an indefinitely stale note)
+        // bounds P2's scoring. Previously only valid frames were forwarded,
+        // so a dropout froze P2's last note forever (invisible infinite
+        // hold that desynced mic-P2 from companion-P2 scoring).
+        setP2DetectedPitch(result.frequency ? (result.rawNote ?? result.note) : null);
+        setP2Volume(result.volume || 0);
       });
 
       // Set difficulty to match P1

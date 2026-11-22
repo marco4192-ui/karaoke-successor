@@ -353,7 +353,10 @@ export function initSocketIO(httpServer: HTTPServer): SocketIOServer {
         note,
         clarity,
         volume,
-        timestamp: typeof data.timestamp === 'number' ? data.timestamp : Date.now(),
+        // R94-5: ALWAYS the server receive time (phone clocks can skew by
+        // seconds — a phone-provided timestamp would break the desktop's
+        // stale-frame TTL). Consumers only ever compare against Date.now().
+        timestamp: Date.now(),
       };
 
       // Same store the HTTP batch_pitch handler writes to — every

@@ -166,7 +166,7 @@ export const libraryTranslations = {
     duel: 'Duel',
     addToQueue: 'Add to Queue',
     startGame: 'Start Game',
-    highscores: 'Highscores',
+    highscores: 'Rankings',
     duration: 'Duration',
     bpm: 'BPM',
     preview: 'Preview'
@@ -178,7 +178,7 @@ export const libraryTranslations = {
   },
 
   songHighscoreModal: {
-    highscores: '{artist} - Highscores',
+    highscores: '{artist} - Rankings',
     local: 'Local ({n})',
     global: 'Online',
     startSong: 'Start song',
@@ -244,7 +244,7 @@ export const libraryTranslations = {
     blindKaraoke: 'Blind Karaoke',
     favorited: 'Favorited',
     favorite: 'Favorite',
-    scores: 'Scores',
+    scores: 'Rankings',
     queue: 'Queue',
     playlist: 'Playlist',
     instrumentalButton: 'Instrumental',

@@ -113,8 +113,8 @@ export const tutorialTranslations = {
           details: 'Le impostazioni playlist del jukebox offrono:\n• Se mostrare i video (se le canzoni ne hanno)\n• Intermezzi video: video di pausa tra le canzoni, es. per gli annunci\n• Se mescolare il serbatoio o seguirne l\'ordine fisso\n\nParte a schermo intero — esci con Esc o col pulsante di stop in alto.',
         },
         highscoreCard: {
-          title: 'Punteggi',
-          body: 'Punteggi per canzone e difficoltà — batti gli amici (o te stesso).',
+          title: 'Classifica',
+          body: 'Classifica per canzone e difficoltà — batti gli amici (o te stesso).',
           details: 'Le classifiche ricordano, per canzone e difficoltà:\n• Punteggio, precisione, note dorate e data\n• Chi ha ottenuto il risultato (avatar del profilo)\n• Se la voce arriva dall\'app companion (icona telefono) o dal desktop\n\nCon la modalità online attiva (schermata profili) vedi anche le classifiche globali e gareggi con i giocatori di altre installazioni.',
         },
         highscoreView: {
@@ -585,8 +585,8 @@ export const tutorialTranslations = {
           body: 'La partecipazione alla festa passa sempre dai telefoni: in Companion Sing-A-Long gli ospiti cantano direttamente dal dispositivo, al torneo e in Battle Royale votano con un tocco — tutto senza Take Control. Attenzione a Passa il Microfono: lì si passa solo il micro del desktop; i telefoni si limitano a controllare.',
         },
         soloStats: {
-          title: 'Risultati e punteggi propri',
-          body: 'Ogni ospite ha il proprio album: sul telefono può consultare i propri punteggi e risultati — senza Take Control. Ciò che il profilo conquista, l\'ospite lo verifica anche dal divano.',
+          title: 'Risultati e classifica propri',
+          body: 'Ogni ospite ha il proprio album: sul telefono può consultare i propri classifiche e risultati — senza Take Control. Ciò che il profilo conquista, l\'ospite lo verifica anche dal divano.',
         },
         soloLimits: {
           title: 'Cosa resta bloccato',

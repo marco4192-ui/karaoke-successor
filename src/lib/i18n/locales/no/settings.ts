@@ -69,7 +69,7 @@ settings: {
   stateManagement: 'Tilstandshåndtering',
   styling: 'Utseende',
   onlineLeaderboard: 'Online ledertavle',
-  onlineLeaderboardDesc: 'Koble til globale rekorder',
+  onlineLeaderboardDesc: 'Koble til globale topplister',
   onlineActivities: 'På nett-aktiviteter',
   onlineActivitiesDesc: 'Deaktiver alle funksjoner på nett, inkludert ledertavler, daglige utfordringer og profilsynkronisering',
   disableOnline: 'Deaktiver på nett-aktiviteter',
@@ -535,7 +535,7 @@ settingsGeneral: {
 settingsAbout: {
   technologyStack: 'Teknologisk stabel',
   onlineLeaderboard: 'Online ledertavle',
-  onlineLeaderboardDesc: 'Koble til globale rekorder',
+  onlineLeaderboardDesc: 'Koble til globale topplister',
   testConnection: 'Test tilkobling',
   connected: '✅ Tilkoblet til ledertavle!',
   notConnected: '❌ Kunne ikke koble til ledertavle',

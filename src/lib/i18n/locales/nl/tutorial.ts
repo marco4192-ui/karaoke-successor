@@ -112,12 +112,12 @@ export const tutorialTranslations = {
           details: 'De afspeellijstinstellingen van de jukebox bieden:\n• Of video\'s worden getoond (als de nummers die hebben)\n• Videopauzemodus: intermissievideo\'s tussen nummers, bijv. voor aankondigingen\n• Of de poel wordt geschud of in vaste volgorde draait\n\nStart fullscreen — afsluiten met Escape of de stopknop bovenin.',
         },
         highscoreCard: {
-          title: 'Highscores',
-          body: 'Highscores per nummer en moeilijkheid — versla je vrienden (of jezelf).',
+          title: 'Ranglijst',
+          body: 'Ranglijsten per nummer en moeilijkheid — versla je vrienden (of jezelf).',
           details: 'De borden onthouden per nummer en moeilijkheid:\n• Score, nauwkeurigheid, gouden noten en datum\n• Welke speler de score behaalde (profielavatar)\n• Of de score via de companion-app (telefoonicoon) of de desktop binnenkwam\n\nMet de online-modus ingeschakeld (profielscherm) zie je daarnaast globale borden en wed je met spelers van andere installaties.',
         },
         highscoreView: {
-          title: 'De highscoreborden',
+          title: 'De ranglijsten',
           body: 'Gefilterd op nummer en moeilijkheid — met de filterbalk bovenaan. De telefooniconen tonen companion-app-gebruik.',
           details: 'De filterbalk bovenaan maakt mogelijk:\n• Zoeken op nummer of speler\n• Filteren op moeilijkheid\n• Wisselen tussen lokaal/globaal (wanneer online is ingeschakeld)\n\nAnti-cheat: elke score draagt een nummer-vingerafdruk — gemanipuleerde resultaten worden herkend en gemarkeerd.',
         },
@@ -584,8 +584,8 @@ export const tutorialTranslations = {
           body: 'Feestdeelname loopt altijd via de telefoons: in Companion Sing-A-Long zingen gasten direct via hun apparaat, in toernooi en Battle Royale stemmen ze met een tik — allemaal zonder besturing over te nemen. Let op bij Geef de Mic: daar wordt alleen de desktopmicrofoon doorgegeven; telefoons sturen alleen.',
         },
         soloStats: {
-          title: 'Eigen prestaties & highscores',
-          body: 'Elke gast houdt zijn eigen album bij: op de telefoon kunnen ze eigen highscores en prestaties bekijken — besturing overnemen is niet nodig. Wat het profiel ook verdient, de gast kan het vanaf de bank controleren.',
+          title: 'Eigen prestaties & ranglijsten',
+          body: 'Elke gast houdt zijn eigen album bij: op de telefoon kunnen ze eigen ranglijsten en prestaties bekijken — besturing overnemen is niet nodig. Wat het profiel ook verdient, de gast kan het vanaf de bank controleren.',
         },
         soloLimits: {
           title: 'Wat op slot blijft',

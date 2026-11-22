@@ -110,12 +110,12 @@ export const tutorialTranslations = {
           details: 'Les réglages de playlist du jukebox proposent :\n• Si les vidéos sont affichées (si les chansons en ont)\n• Mode pause vidéo : vidéos d\'interlude entre les chansons, p. ex. pour des annonces\n• Si le réservoir est mélangé ou suit un ordre fixe\n\nDémarre en plein écran — sortez avec Échap ou le bouton stop en haut.',
         },
         highscoreCard: {
-          title: 'Scores',
-          body: 'Meilleurs scores par chanson et difficulté — battez vos amis (ou vous-même).',
+          title: 'Classement',
+          body: 'Classement par chanson et difficulté — battez vos amis (ou vous-même).',
           details: 'Les classements se souviennent, par chanson et difficulté :\n• Score, précision, notes dorées et date\n• Quel joueur a réalisé l\'entrée (avatar du profil)\n• Si l\'entrée est arrivée via l\'app compagnon (icône téléphone) ou depuis le bureau\n\nAvec le mode en ligne activé (écran des profils), vous voyez en plus des classements globaux et rivalisez avec des joueurs d\'autres installations.',
         },
         highscoreView: {
-          title: 'Les classements des scores',
+          title: 'Les classements',
           body: 'Filtrés par chanson et difficulté — avec la barre de filtres en haut. Les icônes téléphone montrent l\'usage de l\'app compagnon.',
           details: 'La barre de filtres en haut permet :\n• De chercher par chanson ou joueur\n• De filtrer par difficulté\n• De basculer local/global (quand le mode en ligne est activé)\n\nAnti-triche : chaque entrée porte une empreinte de chanson — les résultats manipulés sont détectés et signalés.',
         },
@@ -582,8 +582,8 @@ export const tutorialTranslations = {
           body: 'La participation à la fête passe toujours par les téléphones : en Companion Sing-A-Long, les invités chantent directement sur leur appareil ; au tournoi et en Battle Royale, ils votent d\'un geste — le tout sans Take Control. Attention Passe le Micro : là, seul le micro du bureau circule ; les téléphones ne font que piloter.',
         },
         soloStats: {
-          title: 'Succès et scores personnels',
-          body: 'Chaque invité garde son propre album : sur le téléphone, il peut consulter ses scores et ses succès — sans Take Control. Ce que le profil gagne, l\'invité peut le vérifier depuis le canapé.',
+          title: 'Succès et classement personnels',
+          body: 'Chaque invité garde son propre album : sur le téléphone, il peut consulter ses classements et ses succès — sans Take Control. Ce que le profil gagne, l\'invité peut le vérifier depuis le canapé.',
         },
         soloLimits: {
           title: 'Ce qui reste verrouillé',

@@ -22,7 +22,7 @@ nav: {
   party: 'Juhlat',
   profiles: 'Profiilit',
   queue: 'Jono',
-  highscores: 'Pisteet',
+  highscores: 'Tulostaulu',
   jukebox: 'Jukeboksi',
   mobile: 'Mobiili',
   achievements: 'Saavutukset',
@@ -459,6 +459,9 @@ desktopChat: {
 songChallenge: {
   challengeBtn: 'Haasta',
   cannotAcceptOwn: 'Et voi hyväksyä omaa haastettasi',
+  deviceLabel: 'Laululaitteesi',
+  deviceCompanion: 'Companion-sovellus',
+  deviceMic: 'Työpöydän mikrofoni',
 },
 
 songStart: {

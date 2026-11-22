@@ -111,12 +111,12 @@ export const tutorialTranslations = {
           details: 'The jukebox playlist settings offer:\n• Whether videos are shown (if the songs have any)\n• Video-break mode: intermission videos between songs, e.g. for announcements\n• Whether the pool is shuffled or runs in fixed order\n\nStarts fullscreen — exit with Escape or the stop button on top.',
         },
         highscoreCard: {
-          title: 'Highscores',
-          body: 'Highscores per song and difficulty — beat your friends (or yourself).',
+          title: 'Rankings',
+          body: 'Rankings per song and difficulty — beat your friends (or yourself).',
           details: 'The boards remember per song and difficulty:\n• Score, accuracy, golden notes and date\n• Which player achieved the entry (profile avatar)\n• Whether the entry came via the companion app (phone icon) or the desktop\n\nWith online mode enabled (profile screen) you additionally see global boards and compete with players from other installations.',
         },
         highscoreView: {
-          title: 'The highscore boards',
+          title: 'The ranking boards',
           body: 'Filtered by song and difficulty — with the filter bar on top. The phone icons show companion app usage.',
           details: 'The filter bar on top allows:\n• Search by song or player\n• Filter by difficulty\n• Switch local/global (when online is enabled)\n\nAnti-cheat: every entry carries a song fingerprint — manipulated results are detected and flagged.',
         },
@@ -583,8 +583,8 @@ export const tutorialTranslations = {
           body: 'Party participation always runs through the phones: in Companion Singalong guests sing straight on their device, in tournament and Battle Royale they vote by tap — all without Take Control. Note: in Pass-the-Mic only the desktop mic is passed around; phones just control.',
         },
         soloStats: {
-          title: 'Own achievements & highscores',
-          body: 'Every guest keeps their own album: on the phone they can view their own highscores and achievements — no Take Control needed. Whatever the profile earns, the guest can check from the couch.',
+          title: 'Own achievements & rankings',
+          body: 'Every guest keeps their own album: on the phone they can view their own rankings and achievements — no Take Control needed. Whatever the profile earns, the guest can check from the couch.',
         },
         soloLimits: {
           title: 'What stays locked',

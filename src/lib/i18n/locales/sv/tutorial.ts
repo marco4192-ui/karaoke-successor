@@ -111,12 +111,12 @@ export const tutorialTranslations = {
           details: 'Jukeboxens spellisteinställningar erbjuder:\n• Om videor visas (om låtarna har någon)\n• Videopauser: pausvideor mellan låtarna, t.ex. för att göra utrop\n• Om poolen blandas eller spelas i fast ordning\n\nStartar i helskärm — avsluta med Escape eller stoppknappen upptill.',
         },
         highscoreCard: {
-          title: 'Highscores',
-          body: 'Highscores per låt och svårighetsgrad — slå dina vänner (eller dig själv).',
+          title: 'Topplista',
+          body: 'Topplistor per låt och svårighetsgrad — slå dina vänner (eller dig själv).',
           details: 'Listorna minns per låt och svårighetsgrad:\n• Poäng, träffsäkerhet, guldnoter och datum\n• Vilken spelare som ligger bakom posten (profilavatar)\n• Om posten kom via companion-appen (telefonikon) eller skrivbordet\n\nMed onlineläget aktiverat (profilsidan) ser du dessutom globala listor och tävlar mot spelare från andra installationer.',
         },
         highscoreView: {
-          title: 'Poänglistorna',
+          title: 'Topplistorna',
           body: 'Filtrerade per låt och svårighetsgrad — med filterraden upptill. Telefonikonerna visar användning från companion-appen.',
           details: 'Filterraden upptill möjliggör:\n• Sökning på låt eller spelare\n• Filtrering på svårighetsgrad\n• Växling lokalt/globalt (när onlineläget är aktiverat)\n\nAnti-fusk: varje post bär ett låt-fingeravtryck — manipulerade resultat upptäcks och flaggas.',
         },
@@ -583,8 +583,8 @@ export const tutorialTranslations = {
           body: 'Participerandet går alltid via telefonerna: i Companion Singalong sjunger gästerna direkt i sin enhet, i turnering och Battle Royale röstar de med ett tryck — allt utan Ta kontroll. Obs i Ge över Micen: där skickas bara skrivbordsmikrofonen vidare; telefonerna styr bara.',
         },
         soloStats: {
-          title: 'Egna prestationer & highscores',
-          body: 'Varje gäst har sitt eget album: på telefonen kan de se egna highscores och prestationer — ingen kontroll behövs. Vad profilen än tjänar kan gästen kolla från soffan.',
+          title: 'Egna prestationer & topplistor',
+          body: 'Varje gäst har sitt eget album: på telefonen kan de se egna topplistor och prestationer — ingen kontroll behövs. Vad profilen än tjänar kan gästen kolla från soffan.',
         },
         soloLimits: {
           title: 'Vad som förblir låst',

@@ -69,7 +69,7 @@ settings: {
   stateManagement: 'Tillståndshantering',
   styling: 'Stil',
   onlineLeaderboard: 'Online-poänglista',
-  onlineLeaderboardDesc: 'Anslut till globala poänglistor',
+  onlineLeaderboardDesc: 'Anslut till globala topplistor',
   onlineActivities: 'Onlineaktiviteter',
   onlineActivitiesDesc: 'Inaktivera alla onlinefunktioner inklusive topplistor, dagliga utmaningar och profilsynkronisering',
   disableOnline: 'Inaktivera onlineaktiviteter',
@@ -535,7 +535,7 @@ settingsGeneral: {
 settingsAbout: {
   technologyStack: 'Teknikstack',
   onlineLeaderboard: 'Online-poänglista',
-  onlineLeaderboardDesc: 'Anslut till globala poänglistor',
+  onlineLeaderboardDesc: 'Anslut till globala topplistor',
   testConnection: 'Testa Anslutning',
   connected: '✅ Ansluten till poänglistan!',
   notConnected: '❌ Kunde inte ansluta till poänglistan',

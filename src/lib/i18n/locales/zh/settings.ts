@@ -69,7 +69,7 @@ settings: {
   stateManagement: '状态管理',
   styling: '样式',
   onlineLeaderboard: '在线排行榜',
-  onlineLeaderboardDesc: '连接全球高分记录',
+  onlineLeaderboardDesc: '连接全球排行榜',
   onlineActivities: '在线活动',
   onlineActivitiesDesc: '禁用所有在线功能，包括排行榜、每日挑战和档案同步',
   disableOnline: '禁用在线活动',
@@ -535,7 +535,7 @@ settingsGeneral: {
 settingsAbout: {
   technologyStack: '技术栈',
   onlineLeaderboard: '在线排行榜',
-  onlineLeaderboardDesc: '连接全球高分记录',
+  onlineLeaderboardDesc: '连接全球排行榜',
   testConnection: '测试连接',
   connected: '✅ 已连接到排行榜！',
   notConnected: '❌ 无法连接到排行榜',

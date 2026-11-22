@@ -22,7 +22,7 @@ nav: {
   party: 'Fest',
   profiles: 'Profiler',
   queue: 'Kø',
-  highscores: 'Rekorder',
+  highscores: 'Toppliste',
   jukebox: 'Jukebox',
   mobile: 'Mobil',
   achievements: 'Prestasjoner',
@@ -459,6 +459,9 @@ desktopChat: {
 songChallenge: {
   challengeBtn: 'Utfordre',
   cannotAcceptOwn: 'Du kan ikke akseptere din egen utfordring',
+  deviceLabel: 'Din syngingsenhet',
+  deviceCompanion: 'Companion-app',
+  deviceMic: 'Skrivebordsmikrofon',
 },
 
 songStart: {

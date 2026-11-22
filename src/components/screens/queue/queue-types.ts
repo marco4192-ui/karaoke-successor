@@ -20,6 +20,10 @@ export interface CompanionQueueItem {
   partnerMicSource?: 'companion' | 'microphone';
   playerMicName?: string;
   partnerMicName?: string;
+  /** R94-4: gewählte Desktop-Mics (interne MULTI_MIC_CONFIG-Id + Name) —
+   *  z. B. aus der Challenge-Annahme; konsistent zum Wizard-Pfad gespeichert. */
+  playerMicId?: string;
+  partnerMicId?: string;
   /** R51/Bug11 — Im Companion-Queue-Wizard gewählte Schwierigkeit. */
   difficulty?: 'easy' | 'medium' | 'hard';
   /** R39/P7: Entry mirrors the desktop's LOCAL queue (syncdesktopqueue) —
@@ -45,6 +49,10 @@ export interface QueueScreenProps {
     deviceInfo?: {
       playerMicSource?: 'companion' | 'microphone';
       partnerMicSource?: 'companion' | 'microphone';
+      playerMicId?: string;
+      partnerMicId?: string;
+      playerMicName?: string;
+      partnerMicName?: string;
       difficulty?: 'easy' | 'medium' | 'hard';
     },
   ) => void;

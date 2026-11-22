@@ -69,7 +69,7 @@ settings: {
   stateManagement: 'Gerenciamento de Estado',
   styling: 'Estilo',
   onlineLeaderboard: 'Ranking Online',
-  onlineLeaderboardDesc: 'Conectar com pontuações globais',
+  onlineLeaderboardDesc: 'Conectar com a classificação global',
   onlineActivities: 'Atividades Online',
   onlineActivitiesDesc: 'Desative todos os recursos online, incluindo ranking, desafios diários e sincronização do perfil',
   disableOnline: 'Desativar atividades online',
@@ -535,7 +535,7 @@ settingsGeneral: {
 settingsAbout: {
   technologyStack: 'Pilha de Tecnologia',
   onlineLeaderboard: 'Placar Online',
-  onlineLeaderboardDesc: 'Conectar a recordes globais',
+  onlineLeaderboardDesc: 'Conectar com a classificação global',
   testConnection: 'Testar Conexão',
   connected: '✅ Conectado ao placar!',
   notConnected: '❌ Não foi possível conectar ao placar',

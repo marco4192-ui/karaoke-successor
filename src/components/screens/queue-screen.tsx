@@ -228,7 +228,9 @@ export function QueueScreen({ onPlayFromQueue, autoPlayNext }: QueueScreenProps)
       gameMode: item.gameMode || 'single',
       playerMicSource: item.playerMicSource,
       partnerMicSource: item.partnerMicSource,
+      playerMicId: item.playerMicId,
       playerMicName: item.playerMicName,
+      partnerMicId: item.partnerMicId,
       partnerMicName: item.partnerMicName,
       difficulty: item.difficulty,
       isFromCompanion: true,
@@ -373,12 +375,17 @@ export function QueueScreen({ onPlayFromQueue, autoPlayNext }: QueueScreenProps)
     }
 
     if (onPlayFromQueue) {
-      // R51/Bug11 — Gesangs-Geräte + Difficulty des Items mitgeben: die
-      // Haupt-App übernimmt sie im onPlayFromQueue-Zweig (deviceAssignment
+      // R51/Bug11 + R94-4 — Gesangs-Geräte (inkl. konkreter Mic-Ids/Namen,
+      // z. B. aus der Challenge-Annahme) + Difficulty des Items mitgeben:
+      // die Haupt-App übernimmt sie im onPlayFromQueue-Zweig (deviceAssignment
       // steuert, ob P1/P2 über die Companion-App singen).
       onPlayFromQueue(song, gameMode, players, {
         playerMicSource: item.playerMicSource,
         partnerMicSource: item.partnerMicSource,
+        playerMicId: item.playerMicId,
+        playerMicName: item.playerMicName,
+        partnerMicId: item.partnerMicId,
+        partnerMicName: item.partnerMicName,
         difficulty: item.difficulty,
       });
     } else {

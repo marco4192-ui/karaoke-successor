@@ -44,7 +44,6 @@ function SettingsScreen() {
   // Folder scanning hook — encapsulates all library management logic
   const folderScanner = useFolderScanner();
 
-  const [initialDifficultyLoaded, setInitialDifficultyLoaded] = useState(false);
   const [isTauriDetected, setIsTauriDetected] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [, forceUpdate] = useReducer((c: number) => c + 1, 0);
@@ -121,6 +120,14 @@ function SettingsScreen() {
         // Reload the FULL config from localStorage (the companion sends the
         // complete JSON blob) so the webcam tab reflects the change live.
         setWebcamConfig(loadWebcamConfig());
+      } else if (detail.key === StorageKeys.DEFAULT_DIFFICULTY) {
+        // R94-3: keep the difficulty selector in sync when the companion
+        // changes it remotely (the store is updated separately by
+        // use-global-remote-control — this covers the visible form state).
+        const raw = String(detail.value);
+        if (raw === 'easy' || raw === 'medium' || raw === 'hard') {
+          setDefaultDifficulty(raw);
+        }
       }
     };
     window.addEventListener('settingsChange', handleCompanionSetting);
@@ -174,13 +181,16 @@ function SettingsScreen() {
     }
   }, []);
 
-  // Sync difficulty from global store on first load
+  // Sync difficulty from the global store — on mount AND on every later
+  // change (R94-3: e.g. a companion settings_set that went through
+  // setDifficulty, or a queue item). The once-flag previously froze the
+  // form at the mount value and stale saves overwrote newer changes.
   useEffect(() => {
-    if (!initialDifficultyLoaded && gameState.difficulty) {
+    if (gameState.difficulty) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional store→form sync
       setDefaultDifficulty(gameState.difficulty);
-      setInitialDifficultyLoaded(true);
     }
-  }, [gameState.difficulty, initialDifficultyLoaded]);
+  }, [gameState.difficulty]);
 
   const handleLanguageChange = (newLang: Language) => {
     setLanguage(newLang);

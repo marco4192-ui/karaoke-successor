@@ -145,6 +145,10 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   } = useMobilePitchDetection({
     clientId, isPlaying: gameState.isPlaying, songEnded: gameState.songEnded, onError: setError,
     sendSocketPitch: sendPitch,
+    // R94-5: the desktop's current difficulty (2s gamestate push) — the
+    // phone's YIN threshold now matches the desktop detector's config
+    // instead of a permanently lenient fixed value.
+    difficulty: gameState.difficulty,
   });
 
   // ── R53: Unsicherer Kontext (http://<LAN-IP>) ──
@@ -1131,7 +1135,13 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       {/* ====== CHAT OVERLAY ====== */}
       {showChat && clientId && (
         <div className="fixed inset-0 z-50 bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white">
-          <MobileChat clientId={clientId} onClose={() => setShowChat(false)} />
+          {/* R94-4.2: desktop mics from the 2s gamestate push — the acceptor
+              picks their singing device when accepting a chat challenge. */}
+          <MobileChat
+            clientId={clientId}
+            onClose={() => setShowChat(false)}
+            availableMics={gameState.availableMics ?? []}
+          />
         </div>
       )}
 

@@ -266,8 +266,8 @@ achievements: {
     description: 'Gewinne ein Duell',
   },
   pass_the_mic: {
-    name: 'Mikrofon weitergeben!',
-    description: 'Spiele Pass the Mic',
+    name: 'Gib-das-Mikro-weiter!',
+    description: 'Spiele den Modus Gib-das-Mikro-weiter',
   },
   shower_singer: {
     name: 'Duschen-Sänger',

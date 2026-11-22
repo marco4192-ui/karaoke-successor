@@ -4,6 +4,8 @@ import { useEffect, useCallback, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { createPollErrorLogger } from '@/lib/polling-resilience';
 import { addSongToPlaylist, createPlaylist } from '@/lib/playlist-manager';
+import { useGameStore } from '@/lib/game/store';
+import { StorageKeys } from '@/lib/storage';
 
 /**
  * Global remote control command types from mobile companions
@@ -717,6 +719,16 @@ export function useGlobalRemoteControl({
               window.dispatchEvent(new CustomEvent('settingsChange', {
                 detail: { companionSetting: true, key: rawKey, value: rawVal },
               }));
+              // R94-3: difficulty changes from the companion must ALSO reach
+              // the zustand game store — the store is the source the game
+              // reads and persists. Writing only localStorage left store and
+              // storage diverging, which looked like "the setting is not
+              // persistent" after a companion changed it.
+              if (rawKey === StorageKeys.DEFAULT_DIFFICULTY) {
+                if (rawVal === 'easy' || rawVal === 'medium' || rawVal === 'hard') {
+                  useGameStore.getState().setDifficulty(rawVal);
+                }
+              }
               // Theme-Aenderung: auch themeChange-Event ausloesen
               if (rawKey === 'karaoke-theme') {
                 window.dispatchEvent(new CustomEvent('themeChange', { detail: rawVal }));

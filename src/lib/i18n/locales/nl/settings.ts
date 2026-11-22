@@ -69,7 +69,7 @@ settings: {
   stateManagement: 'Statusbeheer',
   styling: 'Opmaak',
   onlineLeaderboard: 'Online leaderboard',
-  onlineLeaderboardDesc: 'Verbind met wereldwijde highscores',
+  onlineLeaderboardDesc: 'Verbind met wereldwijde ranglijsten',
   onlineActivities: 'Online-activiteiten',
   onlineActivitiesDesc: 'Alle onlinefuncties uitschakelen, waaronder leaderboard, dagelijkse uitdagingen en profielsynchronisatie',
   disableOnline: 'Online-activiteiten uitschakelen',
@@ -535,7 +535,7 @@ settingsGeneral: {
 settingsAbout: {
   technologyStack: 'Technologiestack',
   onlineLeaderboard: 'Online leaderboard',
-  onlineLeaderboardDesc: 'Verbind met wereldwijde highscores',
+  onlineLeaderboardDesc: 'Verbind met wereldwijde ranglijsten',
   testConnection: 'Verbinding testen',
   connected: '✅ Verbonden met leaderboard!',
   notConnected: '❌ Kon niet verbinden met leaderboard',
