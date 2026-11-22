@@ -89,6 +89,7 @@ export const profileTranslations = {
     recoveryCode: 'Recovery code',
     recoveryCodePlaceholder: 'XXXX-XXXX-XXXX-XXXX',
     recoverTitle: 'Reset password',
+    recoverDesc: 'Enter your e-mail address, the one-time recovery code and a new password. On success the server issues a NEW recovery code — store it safely, it is shown only once.',
     recoverButton: 'Reset password',
     recoverFailed: 'Reset failed — please check your e-mail and recovery code',
     recoverRelinkHint: 'No recovery code? On a device with your profile you can re-link the account using your sync code instead.',

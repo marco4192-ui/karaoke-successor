@@ -87,6 +87,7 @@ profileAuth: {
   recoveryCode: 'Wiederherstellungs-Code',
   recoveryCodePlaceholder: 'XXXX-XXXX-XXXX-XXXX',
   recoverTitle: 'Passwort zurücksetzen',
+  recoverDesc: 'Gib deine E-Mail-Adresse, den einmaligen Wiederherstellungs-Code und ein neues Passwort ein. Bei Erfolg stellt der Server einen NEUEN Wiederherstellungs-Code aus — bewahre ihn sicher auf, er wird nur einmal angezeigt.',
   recoverButton: 'Passwort zurücksetzen',
   recoverFailed: 'Zurücksetzen fehlgeschlagen — bitte prüfe E-Mail und Wiederherstellungs-Code',
   recoverRelinkHint: 'Keinen Wiederherstellungs-Code? Auf einem Gerät mit deinem Profil kannst du das Konto stattdessen per Sync-Code neu verknüpfen.',

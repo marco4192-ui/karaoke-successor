@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { StorageKeys, setItem, setJson, removeItem } from '@/lib/storage';
+import { StorageKeys, setItem, setJson, removeItem, getJsonOptional } from '@/lib/storage';
 import { useTranslation } from '@/lib/i18n/translations';
 import { tOr } from '@/lib/i18n/t-or';
 
@@ -33,6 +33,12 @@ import {
   MobileBottomNav,
 } from './mobile/mobile-views';
 import { MobileOfflineIndicator } from './mobile/mobile-offline-indicator';
+
+// R93g: Online-Konto & Profilsync — identisch zur Desktop-App
+import { MobileOnlineLoginDialog } from './mobile/profile/mobile-online-login';
+import { mobileProfileToPlayerProfile } from './mobile/profile/mobile-profile-bridge';
+import type { MobileAccountOptions } from './mobile/profile/mobile-account-fields';
+import { RecoveryCodeDialog } from '@/components/screens/character/recovery-code-dialog';
 
 // R33/P19: Hilfe-Reader (rein lokal — keine Commands, keine Desktop-Tutorials)
 import { MobileHelpView } from './mobile/mobile-help-view';
@@ -65,6 +71,10 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   const [votedMatchIds, setVotedMatchIds] = useState<Set<string>>(new Set());
   const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // R93g: Online-Konto / Profilsync (wie Desktop)
+  const [showOnlineLogin, setShowOnlineLogin] = useState(false);
+  /** R69: one-time recovery code issued at account registration (R93g). */
+  const [registrationRecoveryCode, setRegistrationRecoveryCode] = useState<string | null>(null);
 
   // R33/P1: menuScreen = aktuell angezeigter MENÜ-Screen.
   //  - steuernder Companion: bidirektional — Tabs senden remote_command UND
@@ -383,15 +393,102 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   }, [profileId, isConnected, clientId, syncProfile, markLocalProfileMutation]);
 
   // Profile callbacks
-  const handleCreateProfile = useCallback((hostProfile?: MobileProfile) => {
+  const handleCreateProfile = useCallback((hostProfile?: MobileProfile, accountOptions?: MobileAccountOptions) => {
     if (!profileName.trim()) return;
+    // R93g: neue Profile übernehmen die Online-Optionen (storage mode, Land,
+    // Privacy + Konto-Zugangsdaten) — ein Host-Profil behält seine eigenen
+    // Desktop-seitigen Online-Einstellungen.
     const newProfile: MobileProfile = hostProfile
       ? { id: hostProfile.id, name: hostProfile.name, avatar: hostProfile.avatar || avatarPreview || undefined, color: hostProfile.color, createdAt: hostProfile.createdAt || Date.now() }
-      : { id: `profile-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`, name: profileName.trim(), avatar: avatarPreview || undefined, color: profileColor, createdAt: Date.now() };
+      : {
+          id: `profile-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+          name: profileName.trim(),
+          avatar: avatarPreview || undefined,
+          color: profileColor,
+          createdAt: Date.now(),
+          storageMode: accountOptions?.storageMode,
+          country: accountOptions?.country || undefined,
+          privacy: accountOptions?.privacy,
+        };
     markLocalProfileMutation(); // R34: local change takes precedence over server reconcile
     setProfile(newProfile); setJson(StorageKeys.MOBILE_PROFILE, newProfile); syncProfile(newProfile);
     setShowProfile(false);
-  }, [profileName, avatarPreview, profileColor, syncProfile, markLocalProfileMutation]);
+
+    // R93g: Hintergrund-Registrierung des optionalen Online-Kontos —
+    // identisch zur Desktop-Anlage (character-screen.tsx handleCreate):
+    // Profil ist sofort nutzbar, Konto + Sync-Code werden asynchron
+    // nachgereicht; authEmail/syncCode landen erst nach Erfolg im Profil.
+    if (!hostProfile && accountOptions?.auth && accountOptions.storageMode === 'online') {
+      pushToast(tOr(t, 'profileAuth.registrationPending', 'Creating the online account…'), 'info');
+      const pendingProfile = newProfile;
+      void (async () => {
+        try {
+          const { leaderboardService } = await import('@/lib/api/leaderboard-service');
+          const result = await leaderboardService.registerAccount({
+            profile: mobileProfileToPlayerProfile(pendingProfile),
+            email: accountOptions.auth!.email,
+            password: accountOptions.auth!.password,
+          });
+          if (result.ok) {
+            // Aktualisiere das GESPEICHERTE Profil (nicht die stale
+            // Closure-Variable) — identisch zur Desktop-Logik.
+            const stored = getJsonOptional<MobileProfile>(StorageKeys.MOBILE_PROFILE);
+            if (stored && stored.id === pendingProfile.id) {
+              const updated: MobileProfile = {
+                ...stored,
+                ...(result.sync_code ? { syncCode: result.sync_code } : {}),
+                authEmail: accountOptions.auth!.email,
+              };
+              setProfile(updated);
+              setJson(StorageKeys.MOBILE_PROFILE, updated);
+              syncProfile(updated);
+            }
+            pushToast(tOr(t, 'profileAuth.registrationSuccess', 'Online account created — you can now log in on any device'), 'success');
+            // R69: der Server hat einen EINMALIGEN Recovery-Code ausgestellt —
+            // sofort anzeigen (er wird nie wieder zurückgegeben).
+            if (result.recovery_code) {
+              setRegistrationRecoveryCode(result.recovery_code);
+            }
+          } else {
+            const reason = /already registered/i.test(result.error || '')
+              ? tOr(t, 'profileAuth.emailTaken', 'This e-mail is already registered')
+              : tOr(t, 'profileAuth.registerFailed', 'Could not create the online account');
+            pushToast(reason, 'error');
+          }
+        } catch (err) {
+          console.error('Companion account registration error:', err); // eslint-disable-line no-console
+          pushToast(tOr(t, 'profileAuth.registerFailed', 'Could not create the online account'), 'error');
+        }
+      })();
+    }
+  }, [profileName, avatarPreview, profileColor, syncProfile, markLocalProfileMutation, pushToast, t]);
+
+  // R93g: Online-Login — lädt ein Server-Profil als Companion-Profil
+  // (identische Übernahme wie Desktop importOnlineProfile: ID + Sync-Felder
+  // bleiben erhalten, damit Handy und Desktop dieselbe Identität singen).
+  const handleAdoptOnlineProfile = useCallback((adopted: MobileProfile) => {
+    markLocalProfileMutation();
+    setProfile(adopted);
+    setProfileName(adopted.name);
+    setProfileColor(adopted.color);
+    setAvatarPreview(adopted.avatar || null);
+    setJson(StorageKeys.MOBILE_PROFILE, adopted);
+    syncProfile(adopted);
+    setShowProfile(false);
+    pushToast(tOr(t, 'profileAuth.loginSuccess', 'Profile "{n}" loaded successfully!').replace('{n}', adopted.name), 'success');
+  }, [syncProfile, markLocalProfileMutation, pushToast, t]);
+
+  // R93g: Profil-Aktualisierung aus der Sync-Karte (Upload/Download/Relink/
+  // Delete) — persistiert localStorage + Companion-Server-Sync.
+  const handleUpdateMobileProfile = useCallback((next: MobileProfile) => {
+    markLocalProfileMutation();
+    setProfile(next);
+    setProfileName(next.name);
+    setProfileColor(next.color);
+    setAvatarPreview(next.avatar || null);
+    setJson(StorageKeys.MOBILE_PROFILE, next);
+    syncProfile(next);
+  }, [syncProfile, markLocalProfileMutation]);
 
   const handlePhotoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -900,6 +997,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
           profileColor={profileColor} onProfileColorChange={setProfileColor}
           avatarPreview={avatarPreview} profileColors={PROFILE_COLORS}
           fileInputRef={fileInputRef} onCreateProfile={handleCreateProfile} onPhotoUpload={handlePhotoUpload}
+          onLoginOnline={() => setShowOnlineLogin(true)}
         />
       ) : showProfile ? (
         <div className="pb-20">
@@ -910,6 +1008,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
             profileColors={PROFILE_COLORS} fileInputRef={fileInputRef}
             onSave={handleSaveProfile} onPhotoUpload={handlePhotoUpload}
             onSwitchToHostProfile={handleSwitchToHostProfile}
+            onProfileUpdate={handleUpdateMobileProfile}
           />
           <div className="sticky bottom-16 left-0 right-0 px-4 py-2 bg-gradient-to-t from-black/80 to-transparent">
             <button
@@ -1012,6 +1111,22 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
 
       {/* ====== TOAST-LEISTE (P7/P18 — direkt über der Menüleiste) ====== */}
       <ToastBar toasts={toasts} onDismiss={dismissToast} />
+
+      {/* ====== R93g: ONLINE-LOGIN (E-Mail + Passwort — wie Desktop) ====== */}
+      <MobileOnlineLoginDialog
+        open={showOnlineLogin}
+        onOpenChange={setShowOnlineLogin}
+        onAdoptProfile={handleAdoptOnlineProfile}
+      />
+
+      {/* ====== R93g/R69: einmaliger Recovery-Code nach Konto-Registrierung ====== */}
+      {registrationRecoveryCode && (
+        <RecoveryCodeDialog
+          code={registrationRecoveryCode}
+          open
+          onOpenChange={() => setRegistrationRecoveryCode(null)}
+        />
+      )}
 
       {/* ====== CHAT OVERLAY ====== */}
       {showChat && clientId && (

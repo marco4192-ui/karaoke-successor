@@ -27,6 +27,27 @@ export interface MobileProfile {
   avatar?: string;
   color: string;
   createdAt: number;
+  /**
+   * R93g: Online-account / profile-sync fields (optional, fully backward
+   * compatible). Mirrors the desktop PlayerProfile fields so a companion
+   * profile can register an online account (e-mail + password), join the
+   * online leaderboard and sync across devices EXACTLY like the desktop
+   * app — including login with e-mail + password on a new phone.
+   */
+  storageMode?: 'online' | 'local';
+  /** ISO 3166-1 alpha-2 country code (leaderboard flair, like desktop) */
+  country?: string;
+  privacy?: {
+    showOnLeaderboard: boolean;
+    showPhoto: boolean;
+    showCountry: boolean;
+  };
+  /** Server-issued sync code (cross-device profile sync) */
+  syncCode?: string;
+  /** Server-side profile_uid this sync code belongs to */
+  syncUid?: string;
+  /** Login e-mail of the linked online account (never the password) */
+  authEmail?: string;
 }
 
 export interface QueueItem {

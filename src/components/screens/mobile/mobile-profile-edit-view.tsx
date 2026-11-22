@@ -17,6 +17,7 @@ import type { MobileProfile } from './mobile-types';
 import { loadUserStats } from '@/lib/mobile-achievements';
 import type { UserStats } from '@/lib/mobile-achievements';
 import { MobileAchievements } from './mobile-achievements';
+import { MobileSyncCard } from './profile/mobile-sync-card';
 
 interface ProfileEditViewProps {
   profile: MobileProfile;
@@ -31,6 +32,8 @@ interface ProfileEditViewProps {
   onSave: () => void;
   onPhotoUpload: (_e: React.ChangeEvent<HTMLInputElement>) => void;
   onSwitchToHostProfile?: (_hostProfile: MobileProfile) => void;
+  /** R93g: persist an updated profile (localStorage + companion sync). */
+  onProfileUpdate: (_next: MobileProfile) => void;
 }
 
 export function MobileProfileEditView({
@@ -45,6 +48,7 @@ export function MobileProfileEditView({
   onSave,
   onPhotoUpload,
   onSwitchToHostProfile,
+  onProfileUpdate,
 }: ProfileEditViewProps) {
   const { t } = useTranslation();
   const [hostProfiles, setHostProfiles] = useState<MobileProfile[]>([]);
@@ -316,6 +320,19 @@ export function MobileProfileEditView({
               {t('mobileViews.saveChanges')}
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* ── R93g: Profil-Sync & Online-Konto — dieselben Features wie die
+          Desktop-App (Sync-Code, Upload/Download, Passwort ändern, Relink,
+          Online-Daten löschen). ── */}
+      <Card className="bg-white/10 border-white/20 mt-4" data-testid="mobile-profile-sync-card-wrapper">
+        <CardContent className="py-5">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg" aria-hidden>☁️</span>
+            <h3 className="font-bold text-sm">{t('profileSync.title')}</h3>
+          </div>
+          <MobileSyncCard profile={profile} onProfileUpdate={onProfileUpdate} />
         </CardContent>
       </Card>
 

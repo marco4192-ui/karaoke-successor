@@ -6,7 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StorageKeys, getItem } from '@/lib/storage';
 import { useTranslation } from '@/lib/i18n/translations';
+import { CloudDownloadIcon } from '@/components/icons';
 import type { MobileProfile } from './mobile-types';
+import {
+  MobileAccountFields,
+  DEFAULT_MOBILE_ACCOUNT_OPTIONS,
+  type MobileAccountOptions,
+} from './profile/mobile-account-fields';
 
 interface ProfileCreateViewProps {
   profileName: string;
@@ -16,8 +22,10 @@ interface ProfileCreateViewProps {
   avatarPreview: string | null;
   profileColors: readonly string[];
   fileInputRef: React.RefObject<HTMLInputElement | null>;
-  onCreateProfile: (hostProfile?: MobileProfile) => void;
+  onCreateProfile: (_hostProfile?: MobileProfile, _accountOptions?: MobileAccountOptions) => void;
   onPhotoUpload: (_e: React.ChangeEvent<HTMLInputElement>) => void;
+  /** R93g: open the online-account login (load a profile from the server). */
+  onLoginOnline: () => void;
 }
 
 export function MobileProfileCreateView({
@@ -30,6 +38,7 @@ export function MobileProfileCreateView({
   fileInputRef,
   onCreateProfile,
   onPhotoUpload,
+  onLoginOnline,
 }: ProfileCreateViewProps) {
   const { t } = useTranslation();
   const [hostProfiles, setHostProfiles] = useState<MobileProfile[]>([]);
@@ -38,6 +47,11 @@ export function MobileProfileCreateView({
   const [hostProfilesError, setHostProfilesError] = useState<string | null>(null);
   // Track a selected host profile before confirming — allows deselection
   const [selectedHostProfile, setSelectedHostProfile] = useState<MobileProfile | null>(null);
+  // R93g: online-account options (storage mode, country, e-mail + password,
+  // privacy) — same fields as the desktop profile creation. Controlled by
+  // this view; only submitted when a NEW profile is created (a claimed host
+  // profile keeps its own desktop-side online settings).
+  const [accountOptions, setAccountOptions] = useState<MobileAccountOptions>(DEFAULT_MOBILE_ACCOUNT_OPTIONS);
 
   // Fetch host profiles when component mounts
   React.useEffect(() => {
@@ -89,6 +103,10 @@ export function MobileProfileCreateView({
     }
   };
 
+  // R93g: same create-button rule as the desktop form — an intended but
+  // incomplete/invalid account blocks creation.
+  const accountBlocksCreate = accountOptions.wantsAccount && !accountOptions.auth;
+
   return (
     <div className="p-4 max-w-md mx-auto">
       <Card className="bg-white/10 border-white/20">
@@ -118,25 +136,25 @@ export function MobileProfileCreateView({
               </p>
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {availableProfiles.map((hp) => (
-                    <button
-                      key={hp.id}
-                      onClick={() => handleSelectHostProfile(hp)}
-                      className="flex items-center gap-3 p-2 rounded-lg w-full text-left transition-colors bg-white/5 hover:bg-white/10 cursor-pointer"
+                  <button
+                    key={hp.id}
+                    onClick={() => handleSelectHostProfile(hp)}
+                    className="flex items-center gap-3 p-2 rounded-lg w-full text-left transition-colors bg-white/5 hover:bg-white/10 cursor-pointer"
+                  >
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                      style={{ backgroundColor: hp.color }}
                     >
-                      <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
-                        style={{ backgroundColor: hp.color }}
-                      >
-                        {hp.avatar ? (
-                          <img src={hp.avatar} alt={hp.name} className="w-full h-full rounded-full object-cover" />
-                        ) : (
-                          hp.name.charAt(0).toUpperCase()
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm truncate block">{hp.name}</span>
-                      </div>
-                    </button>
+                      {hp.avatar ? (
+                        <img src={hp.avatar} alt={hp.name} className="w-full h-full rounded-full object-cover" />
+                      ) : (
+                        hp.name.charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm truncate block">{hp.name}</span>
+                    </div>
+                  </button>
                 ))}
               </div>
               <div className="flex items-center gap-2 pt-2">
@@ -246,18 +264,47 @@ export function MobileProfileCreateView({
               ))}
             </div>
           </div>
-          
+
+          {/* ── R93g: Online-Konto & Sync — identical to the desktop creation ──
+              Only for NEW profiles; a claimed host profile keeps its own
+              desktop-side online settings. */}
+          {!selectedHostProfile && (
+            <div className="pt-1 border-t border-white/10">
+              <MobileAccountFields
+                options={accountOptions}
+                onChange={setAccountOptions}
+              />
+            </div>
+          )}
+
           {/* Create Button */}
           <Button 
-            onClick={() => onCreateProfile()}
-            disabled={!profileName.trim()}
+            onClick={() => onCreateProfile(undefined, accountOptions)}
+            disabled={!profileName.trim() || accountBlocksCreate}
             className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 disabled:opacity-50"
+            data-testid="mobile-create-profile-btn"
           >
             {t('mobileViews.createProfileBtn')}
           </Button>
+
+          {/* ── R93g: Load an online profile (e-mail + password login) ── */}
+          <div className="pt-1 border-t border-white/10">
+            <Button
+              variant="outline"
+              onClick={onLoginOnline}
+              className="w-full gap-2 border-purple-500/40 text-purple-300 hover:bg-purple-500/10"
+              data-testid="mobile-login-online-btn"
+            >
+              <CloudDownloadIcon className="w-4 h-4" />
+              {t('profileAuth.loginTitle')}
+            </Button>
+            <p className="text-[11px] text-white/35 text-center mt-2 leading-relaxed">
+              {t('profileAuth.accountDesc')}
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }
 MobileProfileCreateView.displayName = 'MobileProfileCreateView';
