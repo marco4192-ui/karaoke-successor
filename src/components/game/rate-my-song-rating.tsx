@@ -9,6 +9,13 @@ import { useTranslation } from '@/lib/i18n/translations';
 import type { RateMySongRating } from './rate-my-song-types';
 import type { RateMySongRatingScreenProps } from './rate-my-song-types';
 import { CATEGORY_WEIGHTS, CATEGORY_KEYS, type CategoryKey, calcWeightedTotal } from './rate-my-song-types';
+import { HandmadeIcon, IconWithFallback } from '@/components/ui/handmade-icon';
+
+/** Live-Reaktionen: Emoji → handgemachte Grafik (R95), wo vorhanden. */
+const REACTION_HANDMADE: Record<string, string> = {
+  '👏': 'reaction-applause',
+  '😍': 'reaction-love',
+};
 
 // ===================== RATING SCREEN =====================
 // TODO: Implement duel/duet-specific rating UI and scoring logic
@@ -215,7 +222,7 @@ export function RateMySongRatingScreen({
           <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30">
             <div className="text-sm font-semibold text-amber-400 mb-1">{t('rateMySong.currentChallenge')}</div>
             <div className="flex items-center gap-2">
-              <span className="text-2xl">{currentChallenge.icon}</span>
+              <span className="text-2xl"><IconWithFallback id={currentChallenge.id} emoji={currentChallenge.icon} className="h-8 w-8" /></span>
               <div>
                 <div className="font-medium">{challengeTitle}</div>
                 <div className="text-xs text-gray-300">{challengeDesc}</div>
@@ -265,7 +272,9 @@ export function RateMySongRatingScreen({
                   onClick={() => handleReaction(emoji)}
                   className="text-3xl hover:scale-125 active:scale-90 transition-transform"
                 >
-                  {emoji}
+                  {REACTION_HANDMADE[emoji]
+                    ? <HandmadeIcon id={REACTION_HANDMADE[emoji]} className="h-9 w-9" />
+                    : emoji}
                 </button>
               ))}
             </div>
@@ -278,7 +287,9 @@ export function RateMySongRatingScreen({
                   className="absolute animate-rms-float-emoji text-2xl pointer-events-none"
                   style={{ left: `${fe.x}%`, animationDuration: '2s' }}
                 >
-                  {fe.emoji}
+                  {REACTION_HANDMADE[fe.emoji]
+                    ? <HandmadeIcon id={REACTION_HANDMADE[fe.emoji]} className="h-8 w-8" />
+                    : fe.emoji}
                 </span>
               ))}
             </div>

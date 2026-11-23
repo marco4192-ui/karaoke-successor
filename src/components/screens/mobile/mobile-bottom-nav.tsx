@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { useTranslation } from '@/lib/i18n/translations';
+import { HandmadeIcon } from '@/components/ui/handmade-icon';
 
 // ===================== Desktop-Menüpunkte für den Footer =====================
 
@@ -10,6 +11,8 @@ interface NavItem {
   icon: string;
   labelKey: string;
   fallback: string;
+  /** R95: Optionale ID einer handgemachten Grafik (lib/game/handmade-icons.ts). */
+  handmadeId?: string;
 }
 
 // R40: Der Profiles-Tab ist ZURÜCK — der Nutzer hat die R39/P9-Entscheidung
@@ -28,7 +31,7 @@ const FOOTER_ITEMS: NavItem[] = [
   { screen: 'highscores',    icon: '🏆', labelKey: 'nav.highscores',  fallback: 'Highscores' },
   { screen: 'achievements',  icon: '🏅', labelKey: 'nav.achievements', fallback: 'Erfolge' },
   { screen: 'profile',       icon: '👤', labelKey: 'nav.profiles',    fallback: 'Profile' },
-  { screen: 'settings',      icon: '⚙️', labelKey: 'nav.settings',    fallback: 'Einstellungen' },
+  { screen: 'settings',      icon: '⚙️', labelKey: 'nav.settings',    fallback: 'Einstellungen', handmadeId: 'settings-gear' },
 ];
 
 // ===================== Props =====================
@@ -124,7 +127,9 @@ export function MobileBottomNav({ activeScreen, onNavigate, disabledScreens, loc
               }
             >
               <span className="relative">
-                <span className={'text-lg leading-none ' + (isLocked ? 'grayscale' : '')}>{item.icon}</span>
+                <span className={'text-lg leading-none ' + (isLocked ? 'grayscale' : '')}>
+                  {item.handmadeId ? <HandmadeIcon id={item.handmadeId} className="h-[1.35em] w-[1.35em] align-[-0.25em]" /> : item.icon}
+                </span>
                 {isLocked && (
                   <span
                     aria-hidden="true"

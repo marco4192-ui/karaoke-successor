@@ -781,7 +781,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                   <CardContent className="pt-4 pb-4">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-2xl flex-shrink-0" aria-hidden><FlagAwareEmoji text={def.icon} flagClassName="h-5 w-7" /></span>
+                        <span className="text-2xl flex-shrink-0" aria-hidden><FlagAwareEmoji text={def.icon} id={def.id} flagClassName="h-5 w-7" imgClassName="h-8 w-8" /></span>
                         <div className="min-w-0">
                           <div className="font-medium truncate">{slotData.slot + 1}. {typeName(def, t)}</div>
                           <div className="text-xs text-white/50 truncate">
@@ -842,7 +842,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
             <div className="min-w-0 flex-1">
               <h2 className="text-sm font-semibold text-white/90">
                 {t('dailyChallengeScreen.stepSong')}
-                <span className="ml-2 text-white/60 font-normal">— {playSlot + 1}. <FlagAwareEmoji text={typeDef.icon} flagClassName="h-3.5 w-5" /> {typeName(typeDef, t)}</span>
+                <span className="ml-2 text-white/60 font-normal">— {playSlot + 1}. <FlagAwareEmoji text={typeDef.icon} id={typeDef.id} flagClassName="h-3.5 w-5" /> {typeName(typeDef, t)}</span>
               </h2>
               <p className="text-xs text-white/50">{challengeDescription}</p>
             </div>
@@ -1161,7 +1161,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                   <CardContent className="pt-4 pb-4">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-2xl flex-shrink-0" aria-hidden><FlagAwareEmoji text={def.icon} flagClassName="h-5 w-7" /></span>
+                        <span className="text-2xl flex-shrink-0" aria-hidden><FlagAwareEmoji text={def.icon} id={def.id} flagClassName="h-5 w-7" imgClassName="h-8 w-8" /></span>
                         <div className="min-w-0">
                           <div className="font-medium truncate">{slotData.slot + 1}. {typeName(def, t)}</div>
                           <div className="text-xs text-white/50">
@@ -1232,7 +1232,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                   <div className="min-w-0 flex-1">
                     <h2 className="text-sm font-semibold text-white/90">
                       {t('dailyChallengeScreen.stepSong')}
-                      <span className="ml-2 text-white/60 font-normal">— {selectedWeeklySlot + 1}. <FlagAwareEmoji text={wDef.icon} flagClassName="h-3.5 w-5" /> {typeName(wDef, t)}</span>
+                      <span className="ml-2 text-white/60 font-normal">— {selectedWeeklySlot + 1}. <FlagAwareEmoji text={wDef.icon} id={wDef.id} flagClassName="h-3.5 w-5" /> {typeName(wDef, t)}</span>
                     </h2>
                     <p className="text-xs text-white/50">
                       {interpolateChallengeText(t(wDef.descriptionKey), wDef.descriptionParams, slotInfo.target, wDef.metricKey)} · {wDef.aggregation === 'sum' ? t('dailyChallengeScreen.weeklySumType') : t('dailyChallengeScreen.weeklyBestType')}
@@ -1387,7 +1387,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                     {isCompleted && !locked && (
                       <div className="absolute top-2 right-2 text-lg" title={t('dailyChallengeScreen.modeCompleted')}>✅</div>
                     )}
-                    <div className="text-3xl mb-2"><FlagAwareEmoji text={mode.icon} flagClassName="h-6 w-8" /></div>
+                    <div className="text-3xl mb-2"><FlagAwareEmoji text={mode.icon} id={mode.id} flagClassName="h-6 w-8" imgClassName="h-10 w-10" /></div>
                     <h4 className="font-bold text-white mb-1">{t(mode.nameKey)}</h4>
                     <p className="text-xs text-white/60 mb-3 line-clamp-2">{t(mode.descriptionKey)}</p>
                     {locked && requirementStatus && (
@@ -1427,7 +1427,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                   <div className="min-w-0 flex-1">
                     <h2 className="text-sm font-semibold text-white/90">
                       {t('dailyChallengeScreen.stepSong')}
-                      <span className="ml-2 text-white/60 font-normal">— <FlagAwareEmoji text={selectedMode.icon} flagClassName="h-3.5 w-5" /> {t(selectedMode.nameKey)}</span>
+                      <span className="ml-2 text-white/60 font-normal">— <FlagAwareEmoji text={selectedMode.icon} id={selectedMode.id} flagClassName="h-3.5 w-5" /> {t(selectedMode.nameKey)}</span>
                     </h2>
                     <p className="text-xs text-white/50">{t(selectedMode.descriptionKey)}</p>
                   </div>
