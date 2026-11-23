@@ -264,7 +264,8 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
             if (!song.duetPlayerNames) {
               song.duetPlayerNames = [];
             }
-            while (song.duetPlayerNames.length < 4) song.duetPlayerNames.push('');
+            // Pad only up to this voice's index (no fixed length-4 padding)
+            while (song.duetPlayerNames.length <= idx) song.duetPlayerNames.push('');
             song.duetPlayerNames[idx] = value.trim();
             break;
           }
@@ -355,6 +356,15 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
   // stray single P1 marker must not turn a solo song into a duet.
   if (hasDuetHeader || notesHaveBothPlayers(song.notes)) {
     song.isDuet = true;
+  }
+
+  // Trim trailing empty voice names: a duet (P1+P2) yields ['John','Jane'],
+  // not ['John','Jane','',''] — consumers access by index with fallbacks.
+  if (song.duetPlayerNames) {
+    while (song.duetPlayerNames.length > 0 && song.duetPlayerNames[song.duetPlayerNames.length - 1] === '') {
+      song.duetPlayerNames.pop();
+    }
+    if (song.duetPlayerNames.length === 0) delete song.duetPlayerNames;
   }
 
   return song;

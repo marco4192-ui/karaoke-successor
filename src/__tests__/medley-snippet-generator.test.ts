@@ -266,17 +266,22 @@ describe('Medley Snippet Generator', () => {
   });
 
   describe('getAvailableLanguages()', () => {
-    it('returns sorted unique languages with "all" first', () => {
+    it('returns canonical names for languages reaching the 5-song threshold, "all" first', () => {
+      // Shared language-filter rules (lib/game/language-filter.ts):
+      // a language needs >= 5 songs for its own entry (canonical names —
+      // 'en' → 'English'), smaller ones collapse into 'Others'.
       const songs = [
-        createMockSong({ language: 'en' }),
-        createMockSong({ language: 'de' }),
-        createMockSong({ language: 'en' }),
+        ...Array.from({ length: 6 }, (_, i) => createMockSong({ id: `en-${i}`, language: 'en' })),
+        ...Array.from({ length: 5 }, (_, i) => createMockSong({ id: `de-${i}`, language: 'de' })),
+        createMockSong({ id: 'fr-1', language: 'fr' }),
       ];
 
       const langs = getAvailableLanguages(songs);
       expect(langs[0]).toBe('all');
-      expect(langs).toContain('de');
-      expect(langs).toContain('en');
+      expect(langs).toContain('English');
+      expect(langs).toContain('German');
+      expect(langs).not.toContain('fr');
+      expect(langs).toContain('Others');
     });
 
     it('returns only "all" for empty song list', () => {
