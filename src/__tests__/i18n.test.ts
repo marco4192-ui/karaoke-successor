@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { t, translations as getTranslations, Language, LANGUAGE_NAMES, LANGUAGE_FLAGS } from '@/lib/i18n/translations';
+import { t, translations as getTranslations, Language, LANGUAGE_NAMES, LANGUAGE_FLAGS, loadAllLanguages } from '@/lib/i18n/translations';
+
+// R97b: translations load as separate async chunks per language — load ALL
+// of them before building the (synchronous) test access map below.
+await loadAllLanguages();
 
 // getTranslations() is a lazy-init function, call once for test access
 const translations = getTranslations();

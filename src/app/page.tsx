@@ -19,6 +19,10 @@ import { useState, useEffect, Suspense } from 'react';
  * preload) keeps booting behind the animated intro — clicking Start reveals
  * a fully warmed-up app. If the splash chunk fails to load, the app still
  * starts normally (splash is strictly optional).
+ *
+ * R97b: the stored UI language's i18n chunk is preloaded BEFORE the app
+ * mounts (dynamic language loading — only EN ships in the main bundle),
+ * so non-English users never see an English flash.
  */
 
 function LoadingScreen() {
@@ -51,8 +55,18 @@ export default function Page() {
     // ensuring the current render cycle completes and React's runtime
     // is fully initialized before any user modules are evaluated.
     const timer = setTimeout(() => {
+      // R97b: preload the stored UI language chunk (dynamic i18n loading).
+      // Must resolve BEFORE the app mounts — parallel to the app chunk load.
+      const langPromise = import('@/lib/i18n/translations').then(m =>
+        m.ensureLanguageLoaded(m.getInitialLanguage())
+      );
+
       import('./karaoke-app')
-        .then((mod) => {
+        .then(async (mod) => {
+          // Wait for the language chunk (app chunk already resolved here).
+          // A language-chunk failure must not block the app — t() then
+          // falls back to English until the chunk loads later.
+          await langPromise.catch(() => undefined);
           if (!cancelled) {
             setAppComponent(() => mod.default);
           }

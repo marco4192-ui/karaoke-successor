@@ -5,19 +5,21 @@
 // All translations are accessed via getTranslations() (lazy function call),
 // which completely eliminates TDZ risk from webpack code-splitting.
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useReducer } from 'react';
 import { StorageKeys, setItem, getString, removeItem } from '@/lib/storage';
 import {
   Language,
   ALL_LANGUAGES,
   getTranslations,
+  ensureLanguageLoaded,
+  loadAllLanguages,
   createNestedObject,
   t,
 } from '@/lib/i18n/locales';
 
 // Re-export types, constants, and t() for consumers
 export type { Language };
-export { ALL_LANGUAGES, t };
+export { ALL_LANGUAGES, t, ensureLanguageLoaded, loadAllLanguages };
 
 export const LANGUAGE_NAMES: Record<Language, string> = {
   en: 'English',
@@ -98,6 +100,14 @@ export function getStoredLanguage(): Language {
   const shared = getString(StorageKeys.LANGUAGE, 'en');
   return isSupportedLanguage(shared) ? shared : 'en';
 }
+
+/**
+ * R97b: The language the app should boot with (same precedence as
+ * getStoredLanguage). Used by the page.tsx boot gate to preload the UI
+ * language chunk BEFORE the app mounts — non-English users never see an
+ * English flash.
+ */
+export { getStoredLanguage as getInitialLanguage };
 
 // Create a nested translation object for object-style access (t.settings.title)
 function buildNestedTranslation(language: Language): Record<string, unknown> {
@@ -193,6 +203,18 @@ export function useTranslation() {
       window.removeEventListener('languageChange', handleLanguageChange);
     };
   }, []);
+
+// R97b: force a re-render once the active language's chunk finished loading
+  // (until then t() falls back to English — the page.tsx boot gate normally
+  // preloads the stored language, so this only matters for runtime switches).
+  const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
+  useEffect(() => {
+    let cancelled = false;
+    ensureLanguageLoaded(language).then(() => {
+      if (!cancelled) forceUpdate();
+    });
+    return () => { cancelled = true; };
+  }, [language]);
 
   const translate = useCallback((key: string): string => {
     const translations = getTranslations();
