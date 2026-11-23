@@ -28,19 +28,24 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "AfterTen Karaoke - The Ultimate Karaoke Experience",
   description: "Sing your heart out with real-time pitch detection, compete with friends, and enjoy party games! The ultimate karaoke experience.",
+  manifest: "/manifest.json",
   keywords: ["karaoke", "singing", "pitch detection", "party games", "music", "microphone", "karaoke game"],
   authors: [{ name: "AfterTen Karaoke Team" }],
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icons/favicon-96x96.png", sizes: "96x96", type: "image/png" },
       { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
       { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
-      { url: "/logo.svg", type: "image/svg+xml" },
     ],
-    shortcut: "/favicon.svg",
-    apple: [
+    shortcut: [
+      { url: "/favicon.ico" },
       { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
     ],
   },
   formatDetection: {

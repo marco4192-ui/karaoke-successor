@@ -7,7 +7,10 @@ const DYNAMIC_CACHE = 'karaoke-dynamic-v1';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
-  '/logo.svg',
+  '/favicon.svg',
+  '/favicon.ico',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
 ];
 
 // Install event - cache static assets

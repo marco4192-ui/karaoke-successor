@@ -8,7 +8,9 @@ import { useTranslation } from '@/lib/i18n/translations';
 import { SettingsIntroCard } from '@/components/settings/settings-intro-card';
 import { useThemeLogo } from '@/hooks/use-theme-logo';
 import { hexToRgba } from '@/lib/game/themes';
-import { Monitor, Cpu, PackageCheck, PackageX, Server } from 'lucide-react';
+import { IconGalleryDialog } from '@/components/settings/icon-gallery-dialog';
+import { ICON_CATALOG } from '@/components/settings/icon-catalog';
+import { Monitor, Cpu, PackageCheck, PackageX, Server, Shapes } from 'lucide-react';
 
 interface AboutTabProps {
   tx: (_key: string) => string;
@@ -58,6 +60,8 @@ export function AboutTab({
   // R92: theme-matched brand assets (e.g. AfterTen Green → green clock badge)
   const { badge: badgeSrc, primary } = useThemeLogo();
   const [platform, setPlatform] = useState<PlatformInfo | null>(null);
+  // R93: icon library dialog (reference list of all in-game icons)
+  const [iconGalleryOpen, setIconGalleryOpen] = useState(false);
   /** R9 (user request 5): live leaderboard connection status. */
   const [leaderboardStatus, setLeaderboardStatus] = useState<
     | { state: 'testing' }
@@ -247,6 +251,36 @@ export function AboutTab({
         </CardContent>
       </Card>
 
+      {/* R93: Icon-Bibliothek — Referenzliste aller Icons für eigene Handmade-Icons */}
+      <Card className="bg-white/5 border-white/10">
+        <CardContent className="py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h4 className="font-medium flex items-center gap-2">
+                <Shapes className="w-4 h-4 text-pink-400 shrink-0" aria-hidden />
+                Icon-Bibliothek
+                <span className="text-xs font-normal text-white/40">
+                  {ICON_CATALOG.length} Icons
+                </span>
+              </h4>
+              <p className="text-sm text-white/60">
+                Alle Icons im Spiel mit Funktion und Einsatzort — inklusive SVG-Vorlagen-Download
+                für eigene, handgemachte Icons.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setIconGalleryOpen(true)}
+              className="border-pink-500/50 text-pink-300 hover:bg-pink-500/10 hover:text-pink-200 shrink-0"
+              data-testid="open-icon-gallery"
+            >
+              <Shapes className="w-4 h-4 mr-1.5" aria-hidden />
+              Icons ansehen
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Leaderboard Status */}
       <Card className="bg-white/5 border-white/10">
         <CardContent className="py-4">
@@ -343,6 +377,9 @@ export function AboutTab({
           </div>
         </div>
       )}
+
+      {/* R93: Icon gallery overlay */}
+      <IconGalleryDialog open={iconGalleryOpen} onOpenChange={setIconGalleryOpen} />
     </div>
   );
 }
