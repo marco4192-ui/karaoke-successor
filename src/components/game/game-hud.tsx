@@ -4,7 +4,6 @@ import type { AudioEffectsEngine, AudioEffectPreset, VoiceFxSettings, VoiceFxMod
 import { PRESET_LABELS } from '@/lib/audio/audio-effects';
 import type { VocalFilterUnsupportedReason } from '@/lib/audio/vocal-filter';
 import { useTranslation } from '@/lib/i18n/translations';
-import { IconWithFallback } from '@/components/ui/handmade-icon';
 
 // ===================== AUDIO EFFECTS BUTTON =====================
 
@@ -204,7 +203,7 @@ export function AudioEffectsPanel({
                     className={`px-2 py-1 text-xs rounded-md border transition-all ${voiceFx.mode === id ? 'bg-cyan-500/30 border-cyan-400 text-white' : 'bg-white/10 border-white/10 text-white/70 hover:bg-white/20'}`}
                     data-testid={`voice-fx-mode-${id}`}
                   >
-                    <IconWithFallback id={`fx-${id}`} emoji={emoji} className="h-[1.35em] w-[1.35em] align-[-0.28em]" /> {t(labelKey)}
+                    {emoji} {t(labelKey)}
                   </button>
                 ))}
               </div>

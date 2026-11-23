@@ -6,7 +6,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useGameStore } from '@/lib/game/store';
 import { useTranslation } from '@/lib/i18n/translations';
 import { ACHIEVEMENT_DEFINITIONS, getRarityColor } from '@/lib/game/achievements';
-import { IconWithFallback } from '@/components/ui/handmade-icon';
 import { getXPLevel } from '@/lib/game/daily-challenge';
 
 export function AchievementsScreen() {
@@ -147,7 +146,7 @@ export function AchievementsScreen() {
                 <CardContent className="pt-4">
                   <div className="text-center mb-2">
                     <span className="text-3xl" style={{ filter: isUnlocked ? 'none' : 'grayscale(100%)' }}>
-                      <IconWithFallback id={achievement.id} emoji={achievement.icon} className="h-10 w-10" />
+                      {achievement.icon}
                     </span>
                   </div>
                   <h3 className="font-semibold text-sm text-center" style={{ color: isUnlocked ? rarityColor : 'inherit' }}>

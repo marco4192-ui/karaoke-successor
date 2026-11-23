@@ -4,7 +4,6 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import type { GameState, MobileView } from '../mobile-types';
 import { useTranslation } from '@/lib/i18n/translations';
 import { ACHIEVEMENT_DEFINITIONS, getRarityColor } from '@/lib/game/achievements';
-import { IconWithFallback } from '@/components/ui/handmade-icon';
 
 // ===================== Props =====================
 
@@ -361,7 +360,7 @@ export function MirrorAchievementsLite({
                               style={{ filter: isUnlocked ? 'none' : 'grayscale(100%)' }}
                               aria-hidden
                             >
-                              <IconWithFallback id={achievement.id} emoji={achievement.icon} className="h-8 w-8" />
+                              {achievement.icon}
                             </span>
                             {!isUnlocked && (
                               <span className="absolute -bottom-1.5 -right-2 text-[11px]" aria-label={tOr(t, 'achievementsScreen.locked', 'Gesperrt')}>🔒</span>

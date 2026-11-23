@@ -31,7 +31,6 @@ export function GeneralTab({
       {/* R28: Einleitungstext */}
       <SettingsIntroCard
         icon="⚙️"
-        handmadeId="settings-gear"
         title={tx('settings.tabGeneral')}
         description={tx('settingsIntros.general')}
         testId="settings-intro-general"

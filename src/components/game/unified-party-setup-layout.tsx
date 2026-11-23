@@ -11,7 +11,6 @@ import { useQRCode } from '@/hooks/use-qr-code';
 import { useCompanionHttpsInfo } from '@/hooks/use-companion-https-info';
 import { QrWlanHint } from '@/components/qr-wlan-hint';
 import type { PartyGameConfig, GameSettingConfig } from './unified-party-setup.types';
-import { HandmadeIcon } from '@/components/ui/handmade-icon';
 
 // ===================== SETTING CONTROL =====================
 
@@ -227,7 +226,7 @@ export function SettingsPanel({
   return (
     <Card className="bg-white/5 border-white/10 mb-6">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2"><span className="text-xl"><HandmadeIcon id="settings-gear" className="h-[1.3em] w-[1.3em] align-[-0.25em]" /></span>{t('unifiedSetup.gameSettings')}</CardTitle>
+        <CardTitle className="flex items-center gap-2"><span className="text-xl">⚙️</span>{t('unifiedSetup.gameSettings')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {config.settings.map(s => (

@@ -7,7 +7,6 @@ import { getAllSongs, getNonDuetSongs, filterSongs } from '@/lib/game/song-libra
 import { recordMatchResult, getEffectiveDifficulty } from '@/lib/game/tournament';
 import { useTranslation } from '@/lib/i18n/translations';
 import { shuffleArray } from '@/lib/utils';
-import { IconWithFallback } from '@/components/ui/handmade-icon';
 import { TournamentBracketView, TournamentResultsScreen } from '@/components/game/tournament-screen';
 import { BattleRoyaleGameView } from '@/components/game/battle-royale-screen';
 import { PtmGameScreen } from '@/components/game/ptm-game-screen';
@@ -1033,7 +1032,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       {screen === 'game' && rmsGameMode === 'rate-my-song' && party.rateMySongCurrentChallenge && !challengeOverlayDismissed && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
           <div className="bg-gradient-to-br from-purple-900/90 to-pink-900/90 border border-purple-500/30 rounded-2xl p-8 max-w-md text-center animate-fade-in">
-            <div className="text-5xl mb-4"><IconWithFallback id={party.rateMySongCurrentChallenge.id} emoji={party.rateMySongCurrentChallenge.icon} className="h-16 w-16" /></div>
+            <div className="text-5xl mb-4">{party.rateMySongCurrentChallenge.icon}</div>
             <h2 className="text-xl font-bold text-white mb-2">
               {t(`rateMySong.challenges.${party.rateMySongCurrentChallenge.id}.title`)}
             </h2>

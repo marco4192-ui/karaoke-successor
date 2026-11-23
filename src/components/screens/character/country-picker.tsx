@@ -16,8 +16,6 @@ import {
   getCountryDisplayName,
   getSortedCountryOptions,
 } from './country-options';
-import { HandmadeIcon } from '@/components/ui/handmade-icon';
-import { handmadeIcon } from '@/lib/game/handmade-icons';
 
 /**
  * Small country flag that renders a crisp image (flagcdn.com) and gracefully
@@ -64,28 +62,15 @@ const FLAG_EMOJI_PATTERN = /^[\u{1F1E6}-\u{1F1FF}]{2}$/u;
  * image instead (via CountryFlagImage, which keeps the emoji as offline
  * fallback). Any other text (🎤, ⭐, plain strings, …) is passed through
  * unchanged, so callers can wrap arbitrary icon fields safely.
- *
- * R95: Wenn eine `id` übergeben wird und dafür eine handgemachte Grafik
- * existiert (siehe lib/game/handmade-icons.ts), wird diese statt des Emojis
- * angezeigt — die Grafik skaliert mit der Schriftgröße wie ein Emoji.
  */
 export function FlagAwareEmoji({
   text,
-  id,
   flagClassName = 'h-4 w-6',
-  imgClassName = '',
 }: {
   text: string;
-  /** Optionale stabile Spiel-ID (Challenge-/Daily-/Modus-ID) für die handgemachte Grafik. */
-  id?: string;
   /** Size classes for the rendered flag image (default h-4 w-6 = 16×24px). */
   flagClassName?: string;
-  /** Zusätzliche Klassen für die handgemachte Grafik (z. B. feste Größe). */
-  imgClassName?: string;
 }) {
-  if (id && handmadeIcon(id)) {
-    return <HandmadeIcon id={id} className={imgClassName} />;
-  }
   const value = typeof text === 'string' ? text.trim() : '';
   if (FLAG_EMOJI_PATTERN.test(value)) {
     const code = [...value]
