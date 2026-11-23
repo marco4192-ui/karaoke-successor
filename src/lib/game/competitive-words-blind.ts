@@ -49,14 +49,17 @@ export interface CompetitiveSettings {
   missingWordsGranularity: 'word' | 'passage' | 'both';
   /** Escalating mode: frequency increases per round */
   escalating: boolean;
-  /** Song selection mode */
-  // TODO: Implement distinct 'random' selection logic (currently same as 'smart')
+  /** Song selection mode ('random' and 'smart' both pick a random unplayed
+   *  song — pickSmartSong() — so the two labels are cosmetic only) */
   songSelection: 'random' | 'smart';
 }
 
-// TODO: The following fields need to be updated during gameplay:
-// totalNotesHit, totalNotesMissed, currentStreak, maxStreak,
-// lastHiddenMiss, streakBonusTotal, perfectBonusTotal, comebackBonusTotal
+// Player cumulative stats actually maintained by finishCompetitiveRound():
+// totalScore, totalBonusPoints, roundsPlayed, roundScores, roundBonuses,
+// playedSongIds. The note/streak detail fields below (totalNotesHit,
+// totalNotesMissed, maxStreak, lastHiddenMiss, streak/perfect/comeback bonus
+// totals) are initialized but NOT updated during gameplay — scores already
+// include the real-time per-note bonus tracking (blindBonusPoints).
 interface CompetitivePlayer {
   id: string;
   name: string;
@@ -425,9 +428,6 @@ export function finishCompetitiveRound(
 /** Base bonus per missing word */
 const MW_BASE_BONUS = 50;
 
-/** Base bonus per blind note */
-const BLIND_BASE_BONUS = 30;
-
 /** Bonus multiplier for 3+ streak */
 const STREAK_MULTIPLIER = 1.5;
 
@@ -437,9 +437,11 @@ const COMEBACK_MULTIPLIER = 1.5;
 /** Minimum streak length for streak bonus */
 const STREAK_THRESHOLD = 3;
 
-// TODO: Wire calculateMissingWordsBonus into game flow handlers
 /**
  * Calculate bonus points for a missing word hit.
+ * Wired into use-game-flow-handlers.ts as the END-OF-ROUND estimate for
+ * missing-words rounds (no real-time per-word tracking in that mode —
+ * unlike blind mode, which tracks blindBonusPoints live per note).
  * @param isPerfect - Whether the hit was "Perfect" (not just "Good")
  * @param currentStreak - Consecutive hidden word hits before this one
  * @param lastWasMiss - Whether the previous hidden word was missed
@@ -473,38 +475,11 @@ export function calculateMissingWordsBonus(
   return { base, perfect, streak, comeback, total };
 }
 
-// TODO: Wire calculateBlindBonus into game flow handlers
-/**
- * Calculate bonus points for a blind note hit.
- * @param isPerfect - Whether the hit was "Perfect"
- * @param currentStreak - Consecutive blind note hits
- * @param lastWasMiss - Whether the previous blind note was missed
- */
-export function calculateBlindBonus(
-  isPerfect: boolean,
-  currentStreak: number,
-  lastWasMiss: boolean
-): { base: number; perfect: number; streak: number; comeback: number; total: number } {
-  const base = BLIND_BASE_BONUS;
-  let perfect = 0;
-  let streak = 0;
-  let comeback = 0;
-
-  if (isPerfect) {
-    perfect = base;
-  }
-
-  if (currentStreak > 0 && (currentStreak + 1) >= STREAK_THRESHOLD && (currentStreak + 1) % STREAK_THRESHOLD === 0) {
-    streak = Math.round(base * (STREAK_MULTIPLIER - 1));
-  }
-
-  if (lastWasMiss) {
-    comeback = Math.round(base * (COMEBACK_MULTIPLIER - 1));
-  }
-
-  const total = base + perfect + streak + comeback;
-  return { base, perfect, streak, comeback, total };
-}
+// NOTE (R99): calculateBlindBonus() was removed — dead code. Blind-mode
+// bonuses are tracked in REAL TIME during gameplay (per-note, accumulated
+// in blindBonusPoints and already included in the live score; see
+// use-game-flow-handlers.ts, which separates base score and bonus at round
+// end to avoid double-counting). No consumer ever called this function.
 
 /**
  * End the series early ("End Series" button on the between-rounds

@@ -127,8 +127,10 @@ export function updateRateMySongPlayerStats(
   return stats;
 }
 
-// TODO: Wire into results processing to enable crowd_favorite/centurion achievements
-/** Add audience rating count to a player's stats (called per audience vote) */
+/** Add audience rating count to a player's stats (called per audience vote).
+ *  R99: wired into rate-my-song-results.tsx with the REAL rater count
+ *  (RateMySongRating.ratingCount) — feeds crowd_favorite (10+) and
+ *  centurion (100+) achievements. */
 export function addAudienceRatingToStats(playerId: string, count: number = 1): void {
   const allStats = loadAllPlayerStats();
   const stats = allStats.find(s => s.playerId === playerId);

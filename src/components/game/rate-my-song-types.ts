@@ -26,6 +26,10 @@ export interface RateMySongRating {
   playerName: string;
   playerColor: string;
   rating: number;
+  /** Number of distinct audience members whose ratings fed into `rating`
+   *  (R99: enables the crowd_favorite/centurion achievements to count real
+   *  audience votes instead of performances). Defaults to 1. */
+  ratingCount?: number;
   categories?: {
     voice: number;
     stage: number;

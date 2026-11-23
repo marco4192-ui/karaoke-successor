@@ -166,7 +166,8 @@ export interface BattleRoyaleSettings {
   medleyMode: boolean;
   medleySnippets: number;
   difficulty: Difficulty;
-  // TODO: Wire eliminationAnimation setting to UI toggle
+  /** Elimination cinematic (danger-zone camera effects). R99: wired to a
+   *  toggle in the Battle Royale setup screen. */
   eliminationAnimation: boolean;
 
   // Song selection (#2)

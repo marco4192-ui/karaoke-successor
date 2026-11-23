@@ -65,7 +65,8 @@ export function RateMySongResultsScreen({
         playerName: r.playerName,
         playerColor: r.playerColor,
         rating: r.rating,
-        ratingCount: 1,
+        // R99: real number of audience raters (was hardcoded 1)
+        ratingCount: r.ratingCount ?? 1,
       };
       addRateMySongEntry(entryBase);
       addDailyRateMySongEntry(entryBase);
@@ -84,7 +85,10 @@ export function RateMySongResultsScreen({
         songGenre || '',
       );
 
-      addAudienceRatingToStats(r.playerId, 1);
+      // R99: count REAL audience votes (not just performances) — this is
+      // what the crowd_favorite (10+) and centurion (100+) achievements
+      // are defined on.
+      addAudienceRatingToStats(r.playerId, r.ratingCount ?? 1);
 
       setPlayerStatsMap(prev => {
         const next = new Map(prev);
@@ -618,6 +622,42 @@ export function RateMySongSeriesResultsScreen({ seriesHistory, onEnd }: RateMySo
     return best;
   }, [seriesHistory]);
 
+  // R99: "Funniest Moment" — highest entertainment-category rating of the
+  // evening (only available when categories were enabled; replaces the
+  // former static placeholder).
+  const funniestMoment = useMemo(() => {
+    let best: { name: string; entertainment: number } | null = null;
+    for (const round of seriesHistory) {
+      for (const r of round) {
+        const e = r.categories?.entertainment;
+        if (e !== undefined && (!best || e > best.entertainment)) {
+          best = { name: r.playerName, entertainment: e };
+        }
+      }
+    }
+    return best;
+  }, [seriesHistory]);
+
+  // R99: "Biggest Surprise" — largest positive deviation of a round rating
+  // from the player's own baseline (their other rounds this evening; players
+  // with a single round use the evening's average). Needs a gap of >= 0.5
+  // rating points to count as a surprise at all.
+  const biggestSurprise = useMemo(() => {
+    const all = seriesHistory.flat();
+    if (all.length < 2) return null;
+    const eveningAvg = all.reduce((s, r) => s + r.rating, 0) / all.length;
+    let best: { name: string; delta: number } | null = null;
+    for (const r of all) {
+      const others = all.filter(o => o.playerId === r.playerId && o !== r);
+      const baseline = others.length > 0
+        ? others.reduce((s, o) => s + o.rating, 0) / others.length
+        : eveningAvg;
+      const delta = r.rating - baseline;
+      if (!best || delta > best.delta) best = { name: r.playerName, delta };
+    }
+    return best && best.delta >= 0.5 ? best : null;
+  }, [seriesHistory]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-amber-900/20 to-gray-900 text-white p-4 md:p-8 flex items-center justify-center">
       <div className="max-w-lg w-full text-center">
@@ -750,17 +790,17 @@ export function RateMySongSeriesResultsScreen({ seriesHistory, onEnd }: RateMySo
                 </div>
               </div>
             )}
-            {/* Funniest Moment */}
-            {/* TODO: Implement real "Funniest Moment" based on audience reactions or ratings */}
+            {/* Funniest Moment — R99: real data (highest entertainment rating)
+                when categories were enabled, otherwise the former fallback */}
             <div className="p-3 rounded-xl bg-pink-500/10 border border-pink-500/30">
               <div className="text-xs text-pink-400 font-semibold">{t('rateMySong.awardFunniest')}</div>
-              <div className="text-sm text-gray-300 mt-1">🎉 {winner?.name || t('rateMySong.voteSongOfEvening')}</div>
+              <div className="text-sm text-gray-300 mt-1">🎉 {funniestMoment ? `${funniestMoment.name} · ${funniestMoment.entertainment.toFixed(1)}` : winner?.name || t('rateMySong.voteSongOfEvening')}</div>
             </div>
-            {/* Biggest Surprise */}
-            {/* TODO: Implement real "Biggest Surprise" based on score deviation from expected */}
+            {/* Biggest Surprise — R99: real data (largest positive deviation
+                vs. own baseline this evening), otherwise the former fallback */}
             <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/30">
               <div className="text-xs text-purple-400 font-semibold">{t('rateMySong.awardBiggestSurprise')}</div>
-              <div className="text-sm text-gray-300 mt-1">🎊 {t('rateMySong.songOfTheEvening')}</div>
+              <div className="text-sm text-gray-300 mt-1">🎊 {biggestSurprise ? biggestSurprise.name : t('rateMySong.songOfTheEvening')}</div>
             </div>
           </div>
         </div>

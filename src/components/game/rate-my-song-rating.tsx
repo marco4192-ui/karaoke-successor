@@ -146,6 +146,11 @@ export function RateMySongRatingScreen({
   const handleSubmit = () => {
     const ratings: RateMySongRating[] = singingPlayers.map(singer => {
       const singerId = singer.id;
+      // R99: number of distinct audience members who rated this singer
+      // ('__host__' pseudo-rater counts as 1 when there is no audience).
+      const ratingCount = categoriesEnabled
+        ? Object.keys(categoryRatings[singerId] || {}).length
+        : Object.keys(audienceRatings[singerId] || {}).length;
       if (categoriesEnabled) {
         const cats = getCategoryAverage(singerId);
         return {
@@ -153,6 +158,7 @@ export function RateMySongRatingScreen({
           playerName: singer.name,
           playerColor: singer.color,
           rating: cats ? calcWeightedTotal(cats) : 5.0,
+          ratingCount: Math.max(1, ratingCount),
           categories: cats || undefined,
           challengeMastered: challengesEnabled ? challengeMastery[singerId] : undefined,
           betPoints: betRange ? (
@@ -167,6 +173,7 @@ export function RateMySongRatingScreen({
         playerName: singer.name,
         playerColor: singer.color,
         rating: getAverageForSinger(singerId),
+        ratingCount: Math.max(1, ratingCount),
         challengeMastered: challengesEnabled ? challengeMastery[singerId] : undefined,
         betPoints: betRange ? (
           getAverageForSinger(singerId) < 5.0 && betRange === 'under' ? 1 :

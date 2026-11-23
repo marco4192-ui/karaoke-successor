@@ -287,7 +287,9 @@ export function ShareButton({
   const handleShare = useCallback(() => {
     if (!winner) return;
 
-    // TODO: Show cumulative max combo across series rounds in share text
+    // Best combo across the series: players' maxCombo is tracked live on the
+    // persistent MedleyPlayer (monotonically increasing across all rounds —
+    // see medley-game-hook), so this max() IS the cumulative series best.
     const bestCombo = Math.max(...players.map(p => p.maxCombo));
     const text = [
       t('medley.shareHeader'),

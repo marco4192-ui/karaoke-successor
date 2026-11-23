@@ -78,7 +78,8 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
   // Core settings
   const [roundDuration, setRoundDuration] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.roundDuration);
   const [finalRoundDuration, setFinalRoundDuration] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.finalRoundDuration);
-  const [medleyMode, setMedleyMode] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.medleyMode);
+  const [medleyMode, setMedleyMode] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.medleyMode); // R99: eliminationAnimation toggle wired below
+  const [eliminationAnimation, setEliminationAnimation] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.eliminationAnimation);
   const [medleySnippets, setMedleySnippets] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.medleySnippets);
   const [error, setError] = useState<string | null>(null);
 
@@ -273,6 +274,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
       roundDuration,
       finalRoundDuration,
       medleyMode,
+      eliminationAnimation,
       difficulty,
       songSelection,
       noRepeatProtection,
@@ -419,6 +421,22 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
               className={medleyMode ? 'bg-purple-500 hover:bg-purple-600' : 'border-white/20'}
             >
               {medleyMode ? t('battleRoyale.on') : t('battleRoyale.off')}
+            </Button>
+          </div>
+
+          {/* R99: Elimination animation — cinematic camera/danger-zone effects
+              during the elimination countdown (was always-on, now a setting) */}
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="font-medium">{t('battleRoyale.eliminationAnimation')}</label>
+              <p className="text-sm text-white/60">{t('battleRoyale.eliminationAnimationDesc')}</p>
+            </div>
+            <Button
+              variant={eliminationAnimation ? 'default' : 'outline'}
+              onClick={() => setEliminationAnimation(!eliminationAnimation)}
+              className={eliminationAnimation ? 'bg-purple-500 hover:bg-purple-600' : 'border-white/20'}
+            >
+              {eliminationAnimation ? t('battleRoyale.on') : t('battleRoyale.off')}
             </Button>
           </div>
           {medleyMode && (
