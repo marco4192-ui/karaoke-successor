@@ -177,6 +177,9 @@ export interface BattleRoyaleModeSettings extends BaseModeSettings {
   roundDuration?: number;
   finalRoundDuration?: number;
   medleyMode?: boolean;
+  /** R99: elimination cinematic (danger-zone camera effects) — toggle in the
+   *  unified party setup; mapped to BattleRoyaleSettings in start-battle-royale. */
+  eliminationAnimation?: boolean;
   songSelection?: 'random' | 'vote';
   noRepeatProtection?: boolean;
   grandFinaleBestOf?: 1 | 3 | 5;

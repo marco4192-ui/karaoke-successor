@@ -144,6 +144,9 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
       { key: 'escalatingDifficulty', label: 'Escalating Difficulty', description: 'Difficulty increases every 3 rounds', labelKey: 'modeSettings.escalatingDifficulty', descriptionKey: 'modeSettings.escalatingDifficultyDesc', type: 'toggle', defaultValue: false },
       { key: 'shrinkingTimer', label: 'Shrinking Timer', description: 'Rounds get shorter over time', labelKey: 'modeSettings.shrinkingTimer', descriptionKey: 'modeSettings.shrinkingTimerDesc', type: 'toggle', defaultValue: false },
       { key: 'noRepeatProtection', label: 'No-Repeat Protection', description: 'Prevent recently played songs', labelKey: 'modeSettings.noRepeatProtection', descriptionKey: 'modeSettings.noRepeatProtectionDesc', type: 'toggle', defaultValue: true },
+      // R99: elimination cinematic — dramatic camera/danger-zone effects during
+      // the elimination countdown (was hardcoded always-on)
+      { key: 'eliminationAnimation', label: 'Elimination Cinematic', description: 'Dramatic camera & danger-zone effects during the elimination countdown', labelKey: 'modeSettings.eliminationAnimation', descriptionKey: 'modeSettings.eliminationAnimationDesc', type: 'toggle', defaultValue: true },
     ],
     songSelectionOptions: ['random', 'vote', 'medley'],
     supportsCompanionApp: true,

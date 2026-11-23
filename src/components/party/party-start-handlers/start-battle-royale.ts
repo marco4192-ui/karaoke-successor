@@ -10,6 +10,7 @@ export async function startBattleRoyale(ctx: StartHandlerContext): Promise<void>
     shrinkingTimer?: boolean; shrinkFactor?: number; minRoundDuration?: number;
     showNoteHighway?: boolean;
     showVideoBackground?: boolean; countdownDuration?: number;
+    eliminationAnimation?: boolean;
   };
   // User rule 6.3: the song-selection METHOD drives the round format —
   // 'medley' plays medley rounds (30s snippets), 'random'/'vote' play
@@ -51,7 +52,7 @@ export async function startBattleRoyale(ctx: StartHandlerContext): Promise<void>
     medleyMode: isMedleySelection,
     medleySnippets: 3,
     difficulty: result.difficulty,
-    eliminationAnimation: true,
+    eliminationAnimation: s.eliminationAnimation ?? true, // R99: unified-setup toggle
     // Internal per-round picker: vote keeps the voting phase; medley and
     // random pick directly (medley rounds bundle several snippets).
     songSelection: selectionMethod === 'vote' ? 'vote' : 'random',

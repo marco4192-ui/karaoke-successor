@@ -9,14 +9,11 @@ import {
   getActivePlayers,
 } from '@/lib/game/battle-royale';
 import { useBattleRoyaleGame } from '@/hooks/use-battle-royale-game';
-import { BattleRoyaleSetupScreen } from './battle-royale/setup-screen';
 import { WinnerView } from './battle-royale/winner-view';
 import { RoundSetupView } from './battle-royale/round-setup-view';
 import { PlayingView } from './battle-royale/playing-view';
 import { VotingView } from './battle-royale/voting-view';
 import { GrandFinaleIntro } from './battle-royale/grand-finale-intro';
-
-export { BattleRoyaleSetupScreen };
 
 interface BattleRoyaleGameViewProps {
   game: BattleRoyaleGame;
