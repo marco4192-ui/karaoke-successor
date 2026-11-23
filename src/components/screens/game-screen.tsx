@@ -322,8 +322,8 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
             isBlindSection={g.gameState.isBlindSection}
             isBlindHardcore={g.gameState.blindHardcore}
             hardcoreMissingWords={g.gameState.hardcoreMissingWords}
-            p1PlayerName={g.song?.duetPlayerNames?.[0] || g.gameState.players[0]?.name || t('prominentScore.player1')}
-            p2PlayerName={g.song?.duetPlayerNames?.[1] || g.gameState.players[1]?.name || t('prominentScore.player2')}
+            p1PlayerName={g.gameState.players[0]?.name || g.song?.duetPlayerNames?.[0] || t('prominentScore.player1')}
+            p2PlayerName={g.gameState.players[1]?.name || g.song?.duetPlayerNames?.[1] || t('prominentScore.player2')}
           />
         ) : (
           <NoteHighway

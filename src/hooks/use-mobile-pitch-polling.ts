@@ -124,6 +124,33 @@ export function useMobilePitchPolling(
       setMobilePitch(pitchData);
     };
 
+    // R95/2b: dedup must hide RENDER CHURN, not LIVENESS. A steady note with
+    // steady volume (phone AGC!) produces byte-identical frames for seconds;
+    // the old dedup skipped applyFrame entirely, so the 500ms TTL sweep
+    // nulled the frame mid-note — the stream looked dead while the phone
+    // was singing (constant-frame companion streams scored ZERO, sustained
+    // notes tore off). Identical frames now refresh the stored timestamp so
+    // the sweep sees the stream is alive.
+    const refreshLiveness = (frame: MobilePitchData) => {
+      const target = pitchRefStable.current;
+      if (target) {
+        const cur = target.current;
+        if (cur && cur.note != null && typeof frame.timestamp === 'number') {
+          target.current = { ...cur, timestamp: frame.timestamp };
+        }
+        return;
+      }
+      // State mode: throttled refresh (~3 Hz) — keeps the TTL alive without
+      // per-frame re-renders (the whole point of the dedup).
+      const cur = mobilePitchStateRef.current;
+      if (
+        cur && cur.note != null && typeof frame.timestamp === 'number' &&
+        Date.now() - (typeof cur.timestamp === 'number' ? cur.timestamp : 0) > 300
+      ) {
+        setMobilePitch({ ...cur, timestamp: frame.timestamp });
+      }
+    };
+
     const staleSweepInterval = setInterval(() => {
       if (aborted) return;
       const target = pitchRefStable.current;
@@ -174,6 +201,10 @@ export function useMobilePitchPolling(
       if (serialized !== lastPitchRef.current) {
         lastPitchRef.current = serialized;
         applyFrame(pitchData);
+      } else {
+        // R95/2b: identical frame — still mark the stream as live (see
+        // refreshLiveness) so the TTL sweep keeps a sustained note alive.
+        refreshLiveness(pitchData);
       }
       setHasMobileClient(true);
     });
@@ -228,6 +259,9 @@ export function useMobilePitchPolling(
             if (serialized !== lastPitchRef.current) {
               lastPitchRef.current = serialized;
               applyFrame(processed);
+            } else {
+              // R95/2b: identical frame — keep the TTL alive (see socket path)
+              refreshLiveness(processed);
             }
             setHasMobileClient(true);
           }

@@ -15,6 +15,13 @@ import {
   downloadScoreCard,
   shareScoreCard,
   copyScoreImageToClipboard,
+  // R95/4: Rival-Card (Duell/Duett) — dieselben reinen Bausteine, die die
+  // Desktop-ShareBox nutzt; die Companion zeigt sie jetzt ebenfalls.
+  renderRivalScoreCardCanvas,
+  downloadRivalScoreCard,
+  shareRivalScoreCard,
+  copyRivalScoreImageToClipboard,
+  type RivalCardOptions,
 } from '@/lib/game/share-results';
 import { ShortsCreator } from '@/components/social/shorts-creator';
 import { safeAlert } from '@/lib/safe-dialog';
@@ -59,7 +66,8 @@ const VALID_DIFFICULTIES: readonly Difficulty[] = ['easy', 'medium', 'hard'];
 export function MirrorResultsLite({ gameResults, onSendDesktopCommand, profile }: MirrorResultsLiteProps) {
     const { t } = useTranslation();
     // R60/4: Welches Share-Overlay offen ist (null = keins).
-    const [shareOverlay, setShareOverlay] = useState<null | 'card' | 'video'>(null);
+    // R95/4: 'rival' — Rival-Card (Duell/Duett) wie in der Desktop-ShareBox.
+    const [shareOverlay, setShareOverlay] = useState<null | 'card' | 'video' | 'rival'>(null);
 
     const handleCommand = useCallback(
       (cmd: string) => {
@@ -160,6 +168,101 @@ export function MirrorResultsLite({ gameResults, onSendDesktopCommand, profile }
         return null;
       }
     }, [scoreEntry]);
+
+    // ═══ R95/4: Rival-Card für Duelle/Duette ═══
+    // Der Desktop rendert die Rival-Card seit R93f in seiner ShareBox; die
+    // Companion bekam bisher nur die persönliche Karte. Die Daten (players[]
+    // + gameMode) liefert der Desktop-Payload bereits mit — hier fehlte nur
+    // das Rendering. Perspektive: Der EIGENE Eintrag links, der Gegner rechts
+    // (jeder Duellant sieht sich selbst auf der ersten Position).
+    const isMultiplayerResult = !!gameResults
+      && (gameMode === 'duel' || gameMode === 'duet')
+      && (gameResults.players?.length ?? 0) >= 2;
+    const opponentEntry = useMemo(() => {
+      if (!isMultiplayerResult) return null;
+      const list = gameResults?.players ?? [];
+      const others = ownEntry ? list.filter((p) => p !== ownEntry) : list.slice(1);
+      return others[0] ?? null;
+    }, [isMultiplayerResult, gameResults?.players, ownEntry]);
+
+    const rivalOpts = useMemo<RivalCardOptions | null>(() => {
+      if (!isMultiplayerResult || !opponentEntry) return null;
+      return {
+        isDraw: ownScore === opponentEntry.score,
+        mode: gameMode === 'duet' ? 'duet' : 'duel',
+      };
+    }, [isMultiplayerResult, opponentEntry, ownScore, gameMode]);
+
+    // Gegner-HighscoreEntry (gleiche Basis wie scoreEntry) für Rival-Card.
+    const rivalOpponentEntry = useMemo<HighscoreEntry | null>(() => {
+      if (!opponentEntry || !gameResults) return null;
+      const oppRating: Rating = RATING_LEVELS.includes(opponentEntry.rating as Rating)
+        ? opponentEntry.rating as Rating
+        : 'okay';
+      return {
+        id: 'rival',
+        playerId: opponentEntry.playerId || 'p2',
+        playerName: opponentEntry.playerName || tOr(t, 'prominentScore.player2', 'Player 2'),
+        playerAvatar: opponentEntry.playerAvatar ?? undefined,
+        playerColor: opponentEntry.playerColor || '#a78bfa',
+        songId: gameResults.songId || '',
+        songTitle: gameResults.songTitle,
+        artist: gameResults.songArtist,
+        score: opponentEntry.score,
+        accuracy: opponentEntry.accuracy,
+        maxCombo: opponentEntry.maxCombo,
+        difficulty,
+        gameMode,
+        rating: oppRating,
+        rankTitle: '',
+        playedAt: gameResults.playedAt,
+      };
+    }, [opponentEntry, gameResults, difficulty, gameMode, t]);
+
+    const rivalPreviewUrl = useMemo<string | null>(() => {
+      if (!scoreEntry || !rivalOpponentEntry || !rivalOpts) return null;
+      try {
+        const canvas = renderRivalScoreCardCanvas(
+          createShareableCard(scoreEntry),
+          createShareableCard(rivalOpponentEntry),
+          rivalOpts,
+        );
+        return canvas.toDataURL('image/png');
+      } catch {
+        return null;
+      }
+    }, [scoreEntry, rivalOpponentEntry, rivalOpts]);
+
+    const handleRivalShare = useCallback(async () => {
+      if (!scoreEntry || !rivalOpponentEntry || !rivalOpts) return;
+      haptic();
+      const a = createShareableCard(scoreEntry);
+      const b = createShareableCard(rivalOpponentEntry);
+      const ok = await shareRivalScoreCard(a, b, rivalOpts);
+      if (!ok) {
+        safeAlert(tOr(t, 'shareSection.sharingNotSupported', 'Teilen nicht unterstützt. Karte wurde stattdessen heruntergeladen.'));
+        downloadRivalScoreCard(a, b, rivalOpts);
+      }
+    }, [scoreEntry, rivalOpponentEntry, rivalOpts, t]);
+
+    const handleRivalDownload = useCallback(() => {
+      if (!scoreEntry || !rivalOpponentEntry || !rivalOpts) return;
+      haptic();
+      downloadRivalScoreCard(createShareableCard(scoreEntry), createShareableCard(rivalOpponentEntry), rivalOpts);
+    }, [scoreEntry, rivalOpponentEntry, rivalOpts]);
+
+    const handleRivalCopyImage = useCallback(async () => {
+      if (!scoreEntry || !rivalOpponentEntry || !rivalOpts) return;
+      haptic();
+      const ok = await copyRivalScoreImageToClipboard(
+        createShareableCard(scoreEntry),
+        createShareableCard(rivalOpponentEntry),
+        rivalOpts,
+      );
+      safeAlert(ok
+        ? tOr(t, 'shareSection.imageCopied', 'Punktekarte kopiert!')
+        : tOr(t, 'shareSection.imageCopyFailed', 'Bild kopieren fehlgeschlagen'));
+    }, [scoreEntry, rivalOpponentEntry, rivalOpts, t]);
 
     // Web-Share-API nur anbieten, wenn der Browser sie kennt (iOS/Android:
     // ja; Desktop-WebViews: teils) — sonst nur Download/Kopieren.
@@ -292,6 +395,24 @@ export function MirrorResultsLite({ gameResults, onSendDesktopCommand, profile }
               <span className="text-sm">{tOr(t, 'shareSection.videoShort', 'Video-Short')}</span>
             </button>
           </div>
+          {/* R95/4: Rival-Card (⚔️) bei Duell/Duett — gleiche Karte wie in der
+              Desktop-ShareBox (eigener Score links, Gegner rechts, Gewinner-
+              Hervorhebung beim Duell, 🎤-Badge beim Duett). */}
+          {isMultiplayerResult && rivalOpts && (
+            <button
+              onClick={() => { haptic(); setShareOverlay('rival'); }}
+              data-testid="mirror-results-share-rival"
+              className={
+                'w-full flex items-center justify-center gap-2 rounded-xl p-4 ' +
+                'bg-amber-500/10 border border-amber-400/30 text-amber-300 ' +
+                'font-semibold active:scale-[0.97] transition-transform'
+              }
+            >
+              <span className="text-sm">
+                {tOr(t, 'shareSection.rivalCard', gameMode === 'duet' ? '🎤 Duett-Karte' : '⚔️ Duell-Karte')}
+              </span>
+            </button>
+          )}
         </div>
 
         {/* ── Action Buttons ── */}
@@ -397,6 +518,81 @@ export function MirrorResultsLite({ gameResults, onSendDesktopCommand, profile }
               {canCopyImage && (
                 <button
                   onClick={handleCardCopyImage}
+                  className={
+                    'flex items-center justify-center gap-1.5 rounded-xl p-3.5 text-xs font-semibold ' +
+                    'bg-green-500/15 border border-green-400/40 text-green-300 ' +
+                    'active:scale-[0.97] transition-transform'
+                  }
+                >
+                  <span>{tOr(t, 'shareSection.copyImage', 'Bild kopieren')}</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════ R95/4: ⚔️ RIVAL-CARD OVERLAY (Duell/Duett) — gleiche
+            Photo-Booth-Struktur wie die persönliche Karte, Preview/Aktionen
+            laufen über die Rival-Renderer/-Helfer ═══════════ */}
+        {shareOverlay === 'rival' && (
+          <div className="fixed inset-0 z-[60] bg-black/95 flex flex-col" data-testid="mirror-results-rival-overlay">
+            {/* Header */}
+            <div className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-white/10">
+              <button
+                onClick={() => { haptic(); setShareOverlay(null); }}
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 text-white text-xl active:scale-95 transition-transform"
+                aria-label={tOr(t, 'mobile.mirrorCancel', 'Abbrechen')}
+                data-testid="mirror-results-rival-close"
+              >
+                {'\u2715'}
+              </button>
+              <p className="text-sm font-semibold text-white">
+                {tOr(t, 'shareSection.rivalCard', gameMode === 'duet' ? '🎤 Duett-Karte' : '⚔️ Duell-Karte')}
+              </p>
+            </div>
+
+            {/* WYSIWYG-Preview — genau das PNG, das geteilt/geladen wird */}
+            <div className="flex-1 min-h-0 overflow-y-auto kz-scroll px-4 py-3 flex items-center justify-center">
+              {rivalPreviewUrl ? (
+                <img
+                  src={rivalPreviewUrl}
+                  alt={`${tOr(t, 'shareSection.rivalCard', 'Duell-Karte')} — ${gameResults.songTitle}`}
+                  className="max-w-full max-h-full object-contain rounded-xl border border-white/10 shadow-lg"
+                />
+              ) : (
+                <p className="text-sm text-white/40 px-6 text-center">
+                  {tOr(t, 'shareSection.imageCopyFailed', 'Vorschau nicht verfügbar — nutze Download.')}
+                </p>
+              )}
+            </div>
+
+            {/* Aktionen */}
+            <div className={'shrink-0 grid gap-2 px-4 pt-2 pb-6 ' + (canShare ? 'grid-cols-3' : 'grid-cols-2')}>
+              {canShare && (
+                <button
+                  onClick={handleRivalShare}
+                  className={
+                    'flex items-center justify-center gap-1.5 rounded-xl p-3.5 text-xs font-semibold ' +
+                    'bg-amber-500/15 border border-amber-400/40 text-amber-300 ' +
+                    'active:scale-[0.97] transition-transform'
+                  }
+                >
+                  <span>{tOr(t, 'shareSection.shareScore', 'Teilen')}</span>
+                </button>
+              )}
+              <button
+                onClick={handleRivalDownload}
+                className={
+                  'flex items-center justify-center gap-1.5 rounded-xl p-3.5 text-xs font-semibold ' +
+                  'bg-purple-500/15 border border-purple-400/40 text-purple-300 ' +
+                  'active:scale-[0.97] transition-transform'
+                }
+              >
+                <span>{tOr(t, 'shareSection.downloadCard', 'Karte herunterladen')}</span>
+              </button>
+              {canCopyImage && (
+                <button
+                  onClick={handleRivalCopyImage}
                   className={
                     'flex items-center justify-center gap-1.5 rounded-xl p-3.5 text-xs font-semibold ' +
                     'bg-green-500/15 border border-green-400/40 text-green-300 ' +

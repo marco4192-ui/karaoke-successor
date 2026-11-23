@@ -116,8 +116,13 @@ export class PitchDetectorManager {
         }
 
         // Create a dedicated AnalyserNode for this player
+        // R95/2: 4096 (was 2048) — parity with the primary detector
+        // (R94-5). Players sharing one desktop mic (duel/duet on the same
+        // device) previously kept the dropout-prone short window: sustained
+        // notes jittered and failed YIN more often, which the user measured
+        // as scoring gaps. Same window on every path = same scoring basis.
         const analyser = sharedCtx.createAnalyser();
-        analyser.fftSize = 2048;
+        analyser.fftSize = 4096;
         analyser.smoothingTimeConstant = 0.5;
 
         if (stereoChannel !== undefined && stereoChannel >= 0) {

@@ -48,7 +48,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode, preselectMode, on
   const [songsLoading, setSongsLoading] = useState(true);
   const [loadedSongs, setLoadedSongs] = useState<Song[]>([]);
   
-  const { setDifficulty, gameState, addToQueue, queue, activeProfileId, profiles, setGameMode, highscores, setActiveProfile, addPlayer } = useGameStore();
+  const { setDifficulty, gameState, addToQueue, queue, activeProfileId, profiles, setGameMode, highscores, setActiveProfile, addPlayer, setPlayers } = useGameStore();
   const storeDifficulty = gameState.difficulty;
   
   // View state
@@ -331,6 +331,13 @@ export function LibraryScreen({ onSelectSong, initialGameMode, preselectMode, on
     if (startOptions.mode === 'duel' && startOptions.players.length < 2) return;
     if (startOptions.mode === 'duet' && startOptions.players.length < 2) return;
     
+    // R95/1: Die Spielerliste VOR dem Befüllen leeren — addPlayer ist ein
+    // Upsert (existierende Spieler behalten ihren Index, neue werden hinten
+    // angehängt) und resetGame() behält players. Ohne Clear überlebte die
+    // Reihenfolge des VORHERIGEN Spiels und überdeckte die Overlay-Zuweisung
+    // (zugewiesener "Player 1" erschien im Spiel als "Player 2"). Alle
+    // anderen Startpfade (Queue, Party, Turnier, Daily) leeren bereits.
+    setPlayers([]);
     const addPlayers = (playerIds: string[]) => playerIds.forEach(id => { const p = profiles.find(x => x.id === id); if (p && p.isActive !== false) addPlayer(p); });
     if (startOptions.partyMode && startOptions.players.length > 0) addPlayers(startOptions.players);
     else if (startOptions.mode === 'single') { const pid = startOptions.players[0] || activeProfileId; if (pid) addPlayers([pid]); }

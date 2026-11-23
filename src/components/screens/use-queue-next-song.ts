@@ -16,6 +16,11 @@ export interface QueueItemInfo {
   addedBy: string;
   gameMode?: 'single' | 'duel' | 'duet';
   isFromCompanion: boolean;
+  // R95/1: Partner eines Duell-/Duett-Queue-Items (Server-QueueItem führt
+  // partnerId/partnerName mit) — nötig, um beim "Nächster Song"-Start beide
+  // Spieler ins Spiel zu übernehmen.
+  partnerId?: string;
+  partnerName?: string;
 }
 
 /**
@@ -49,6 +54,8 @@ export function useQueueNextSong(onPlayAgain: () => void) {
               addedBy: nextItem.addedBy,
               gameMode: nextItem.gameMode || 'single',
               isFromCompanion: true,
+              partnerId: nextItem.partnerId,
+              partnerName: nextItem.partnerName,
             });
           }
         }
@@ -176,12 +183,21 @@ export function useQueueNextSong(onPlayAgain: () => void) {
       setGameMode('standard');
     }
 
-    // Add active player
+    // R95/1: Spielerliste leeren (wie alle Startpfade) und BEIDE Spieler
+    // eines Duell-/Duett-Queue-Items übernehmen — vorher wurde nur das
+    // aktive Profil hinzugefügt, der Partner fiel unter den Tisch und die
+    // P2-Anzeige fiel auf generische Namen zurück.
+    useGameStore.getState().setPlayers([]);
     if (activeProfileId) {
       const profile = profiles.find(p => p.id === activeProfileId);
       if (profile) {
         addPlayer(profile);
       }
+    }
+    const partnerId = nextQueueItem.partnerId;
+    if (partnerId) {
+      const partnerProfile = profiles.find(p => p.id === partnerId);
+      if (partnerProfile) addPlayer(partnerProfile);
     }
 
     onPlayAgain();

@@ -162,7 +162,6 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
 
   // Get active profile for display
   const activeProfile = profiles.find(p => p.id === activeProfileId);
-  const player2Profile = player2Result ? profiles.find(p => p.id === player2Result.playerId) : null;
   // R93: player identity — resolved from the RESULT ENTRY's playerId (the
   // authoritative singer of this game), falling back to the live store
   // players (covers companion players without a desktop profile) and the
@@ -223,8 +222,8 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
             isDuet={isDuet}
             playerResult={playerResult}
             player2Result={player2Result}
-            activeProfileName={activeProfile?.name || ''}
-            player2ProfileName={player2Profile?.name}
+            activeProfileName={player1Name}
+            player2ProfileName={player2Name}
             duetPlayerNames={song.duetPlayerNames}
             playerLabel={t('resultsScreen.player')}
             drawLabel={t('results.draw')}
@@ -255,8 +254,8 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           <ResultsStatsPanel
             playerResult={playerResult}
             player2Result={player2Result}
-            player1Name={activeProfile?.name || t('resultsScreen.player')}
-            player2Name={player2Profile?.name}
+            player1Name={player1Name}
+            player2Name={player2Name}
             isDuel={isDuel}
             maxScore={MAX_POINTS_PER_SONG}
             durationSeconds={results.duration}

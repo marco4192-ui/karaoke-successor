@@ -85,15 +85,45 @@ export function useMobilePitchDetection({
   // ADAPTIV, damit AGC-Anhebung stummer Fernfeld-Phasen (Original-Gesang
   // zwischen den eigenen Phrasen) das Gate nicht unterlaufen kann:
   //   gate = max(MIN_GATE, ambientFloor · GAIN_FACTOR)
-  //   ambientFloor = EMA der Unter-Gate-Pegel (nur auf Ambient-Frames
-  //   aktualisiert — singt man selbst, wandert der Boden NICHT mit)
+  //   ambientFloor = EMA der Unter-Gate-Pegel + Konstanz-Tracking (R95/3)
   // Hysterese (release bei 0.6·gate) verhindert Flackern an der Grenze; auf
   // gegatete Frames wird note=null gesendet/gemappt — das Desktop-Scoring
   // sieht „singt nicht“, der Original-Gesang wird nicht mehr gewertet.
-  const CLOSE_RANGE_MIN_GATE = 0.07;    // min(1, rms·5)-Skala: absolutes Minimum
+  //
+  // ═══ R95/3 — Empfindlichkeits-Kalibrierung („Companion zu empfindlich“) ═══
+  // Nutzer-Messung: Musik aus den Lautsprechern wurde (auch laut) als
+  // Gesang gewertet; selbst leises Singen mit 2 m Handyabstand wurde
+  // zuverlässig erkannt. Zwei Ursachen:
+  //  1. autoGainControl:true hob das Fernfeld um 20–30 dB an und einebnet
+  //     genau die Nah/Fern-Physik, auf der das Gate gebaut ist → AGC JETZT
+  //     OFF (wie der Desktop-Recording-Pfad, microphone-manager). Leises
+  //     2-m-Singen landet damit physikalisch UNTER jedem sinnvollen Gate.
+  //  2. CLOSE_RANGE_MIN_GATE 0.07 war zu niedrig — Lautsprecher-Musik ohne
+  //     AGC erreicht typischerweise volume 0.03–0.2 → angehoben auf 0.12
+  //     (leises Singen in der Hand: 0.15–0.3, bleibt sicher darüber).
+  //  3. Floor-Deadlock: Das EMA lernte NUR auf Unter-Gate-Frames — laute
+  //     Musik (dauerhaft ÜBER dem Gate) frierte den Boden bei 0.02 ein und
+  //     ging für immer durch. NEU: Konstanz-Tracking — Musik hat einen
+  //     konstanten Pegel (Variationskoeffizient CV < 0.22 über 4 s), Gesang
+  //     schwankt dynamisch (Silben-Onsets, Atem, Vibrato → CV hoch). Erst
+  //     nach ≥3 s konstantem Pegel wandert der Boden langsam Richtung
+  //     Musikpegel (Deckel 0.30), das Gate folgt → laute Musik wird
+  //     gegatet, Gesang in der Hand (CV hoch) wird nie verfolgt.
+  const CLOSE_RANGE_MIN_GATE = 0.12;    // min(1, rms·5)-Skala: absolutes Minimum
   const CLOSE_RANGE_GAIN_FACTOR = 1.8;  // Faktor über dem adaptiven Boden
   const ambientFloorRef = useRef(0.02);
   const wasLocalRef = useRef(false);
+  // R95/3 — Konstanz-Tracking (Musikerkennung für den adaptiven Boden)
+  const volumeWindowRef = useRef<Array<{ v: number; t: number }>>([]);
+  const lastVariableRef = useRef(0);        // letzter Zeitpunkt mit Gesangs-Dynamik
+  const lastFloorRiseRef = useRef(0);       // Drossel des Boden-Anstiegs
+  const CV_WINDOW_MS = 4000;                // Beobachtungsfenster für CV
+  const CV_WINDOW_MIN_SAMPLES = 30;         // ~1 s Daten, bevor CV aussagekräftig
+  const CV_THRESHOLD = 0.22;                // Musik ≈ CV<0.22; Gesang deutlich darüber
+  const CONSTANCY_MIN_MS = 3000;            // 3 s konstanter Pegel = Musik, kein Zufall
+  const FLOOR_RISE_INTERVAL_MS = 500;       // Boden-Anstieg nur alle 0,5 s
+  const FLOOR_RISE_RATE = 0.05;             // ~10 s bis zur Annäherung an Musikpegel
+  const FLOOR_CEILING = 0.30;               // Gate max 1.8·0.30=0.54 — Handgesang bleibt drüber
   // R65 — YIN-Confidence-Receiver (vorab allokiert, rAF-Loop ohne GC-Druck):
   // gegatete Frames erhalten clarity 0, echte Frames die ehrliche YIN-
   // Periodizität — vormals wurde immer clarity: 0 gesendet.
@@ -269,7 +299,14 @@ export function useMobilePitchDetection({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true,
+          // R95/3: AGC OFF — das Handy ist ein NAHFELD-Mikro (in der Hand).
+          // AGC hob das Fernfeld (Lautsprecher-Musik, 2-m-Stimmen) um
+          // 20–30 dB an und hob leises Fern-Singen ÜBER das Close-Range-Gate
+          // („jeder Ton wurde einwandfrei erkannt“). Ohne AGC beträgt der
+          // Nah/Fern-Abstand wieder 15–30 dB — die physikalische Basis des
+          // Gates. Der Desktop-Spiel-Pfad nutzt AGC bewusst weiter (dort
+          // gleicht AGC distanz-leises Singen an, es gibt kein Nahfeld-Gate).
+          autoGainControl: false,
         },
       });
       mediaStreamRef.current = stream;
@@ -306,6 +343,10 @@ export function useMobilePitchDetection({
       // den ersten Sekunden auf das Raum-Ambiente ein.
       ambientFloorRef.current = 0.02;
       wasLocalRef.current = false;
+      // R95/3 — Konstanz-Tracker ebenfalls pro Session zurücksetzen
+      volumeWindowRef.current = [];
+      lastVariableRef.current = performance.now();
+      lastFloorRiseRef.current = 0;
 
       // Reset batch state for this session
       pitchBatchRef.current = [];
@@ -376,6 +417,46 @@ export function useMobilePitchDetection({
         if (!hasSignalRef.current && sum > 0) {
           hasSignalRef.current = true;
           setHasSignal(true);
+        }
+
+        // ═══ R95/3 — Konstanz-Tracking: laute Musik vom Boden lernen ═══
+        // Das R65-EMA lernte den Ambient-Boden nur auf UNTER-Gate-Frames —
+        // dauerhaft laute Musik (immer über dem Gate) frierte den Boden bei
+        // 0.02 ein und wurde nie gegatet. Musik ist pegel-konstant, Gesang
+        // dynamisch: Variationskoeffizient (CV=σ/µ) über ein 4-s-Fenster
+        // trennt zuverlässig. Erst nach ≥3 s Konstanz wandert der Boden
+        // langsam (alle 500 ms, 5 %) Richtung konstanten Pegel — Gesang
+        // (Silben/Atem ⇒ CV hoch) setzt lastVariableRef laufend zurück und
+        // wird NIE verfolgt. Deckel 0.30 → Gate maximal 0.54; Handgesang
+        // (typ. 0.3–1.0 ohne AGC) bleibt über dem Gate.
+        const cvNow = performance.now();
+        const cvWin = volumeWindowRef.current;
+        cvWin.push({ v: volume, t: cvNow });
+        while (cvWin.length > 2 && cvNow - cvWin[0].t > CV_WINDOW_MS) cvWin.shift();
+        if (cvWin.length >= CV_WINDOW_MIN_SAMPLES) {
+          let cvMean = 0;
+          for (let i = 0; i < cvWin.length; i++) cvMean += cvWin[i].v;
+          cvMean /= cvWin.length;
+          let cvVar = 0;
+          for (let i = 0; i < cvWin.length; i++) {
+            const d = cvWin[i].v - cvMean;
+            cvVar += d * d;
+          }
+          const cv = Math.sqrt(cvVar / cvWin.length) / Math.max(cvMean, 1e-6);
+          if (cv > CV_THRESHOLD) {
+            lastVariableRef.current = cvNow;
+          } else if (
+            cvNow - lastVariableRef.current >= CONSTANCY_MIN_MS &&
+            cvMean > ambientFloorRef.current &&
+            cvNow - lastFloorRiseRef.current >= FLOOR_RISE_INTERVAL_MS
+          ) {
+            lastFloorRiseRef.current = cvNow;
+            const target = Math.min(cvMean, FLOOR_CEILING);
+            ambientFloorRef.current = Math.min(
+              FLOOR_CEILING,
+              ambientFloorRef.current + (target - ambientFloorRef.current) * FLOOR_RISE_RATE
+            );
+          }
         }
         
         const frequency = yinPitchDetection(buffer, yinBuffer, audioContextRef.current.sampleRate, DIFFICULTY_PITCH_CONFIGS[difficultyRef.current].yinThreshold, yinConfidenceRef.current);

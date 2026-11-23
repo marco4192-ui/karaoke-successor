@@ -37,6 +37,14 @@ export class PitchDetector {
   // Configuration
   private config: PitchDetectorConfig;
 
+  // R95/2: noise/volume gate with HYSTERESIS. The previous hard threshold
+  // flutters at the boundary: quiet singing right at the gate level produced
+  // alternating null/valid frames — visible as scoring dropouts on clearly
+  // sung tones and as "no evaluation at all" phases. The companion phone's
+  // close-range gate has used attack/release hysteresis since R65 (release
+  // at 0.6×gate); this port gives the desktop mic the same behavior.
+  private gateOpen = false;
+
   // Pitch stability tracking
   private pitchStabilizer: PitchStabilizer;
 
@@ -155,7 +163,11 @@ export class PitchDetector {
           const fallbackConstraints: MediaTrackConstraints = {
             echoCancellation: true,
             noiseSuppression: true,
-            autoGainControl: false,
+            // R95/2: AGC stays ON in the retry paths too — the primary path
+            // enables it for companion parity (R94-5); a fallback mic without
+            // AGC loses quiet singing below the gates (asymmetric dropouts
+            // depending on which code path opened the device).
+            autoGainControl: true,
             deviceId: { ideal: deviceId },
           };
           this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: fallbackConstraints });
@@ -198,7 +210,8 @@ export class PitchDetector {
             audio: {
               echoCancellation: true,
               noiseSuppression: true,
-              autoGainControl: false,
+              // R95/2: AGC parity (see OverconstrainedError retry above)
+              autoGainControl: true,
             },
           });
 
@@ -341,12 +354,14 @@ export class PitchDetector {
 
     this.onPitchDetected = callback;
     this.isListening = true;
+    this.gateOpen = false; // R95/2: fresh gate state per session
     this.pitchStabilizer.reset();
     this.detect();
   }
 
   stop(): void {
     this.isListening = false;
+    this.gateOpen = false; // R95/2: reset hysteresis state
     if (this.animationFrame !== null) {
       cancelAnimationFrame(this.animationFrame);
       this.animationFrame = null;
@@ -389,24 +404,28 @@ export class PitchDetector {
     const VOLUME_AMPLIFICATION = 5;
     const volume = Math.min(1, rms * VOLUME_AMPLIFICATION);
 
-    // Noise gate check — convert dB threshold to RMS for comparison
-    if (this.config.noiseGateEnabled) {
-      const rmsThreshold = Math.pow(10, this.config.noiseGateThreshold / 20);
-      if (rms < rmsThreshold) {
-        this.onPitchDetected?.({
-          frequency: null,
-          note: null,
-          rawNote: null,
-          clarity: 0,
-          volume,
-        });
-        this.animationFrame = requestAnimationFrame(() => this.detect());
-        return;
-      }
+    // ── R95/2: combined noise-gate + volume gate WITH hysteresis ──
+    // Both legacy checks compared RMS against a hard threshold (noise gate
+    // in dB, volume threshold in amplified units). Effectively the stricter
+    // of the two applied — preserved here as max(). The hysteresis releases
+    // at 0.6× the opening threshold (same factor as the companion's
+    // close-range gate): once the gate is open, brief level dips (breaths,
+    // vibrato, syllable onsets) no longer produce isolated null frames that
+    // punched holes into held notes.
+    const GATE_RELEASE_FACTOR = 0.6;
+    const noiseGateRms = this.config.noiseGateEnabled
+      ? Math.pow(10, this.config.noiseGateThreshold / 20)
+      : 0;
+    const volumeGateRms = this.config.volumeThreshold / 5;
+    const openThreshold = Math.max(noiseGateRms, volumeGateRms);
+    const closeThreshold = openThreshold * GATE_RELEASE_FACTOR;
+    if (this.gateOpen ? rms >= closeThreshold : rms >= openThreshold) {
+      this.gateOpen = true;
+    } else {
+      this.gateOpen = false;
     }
 
-    // Volume threshold check (configurable)
-    if (rms < this.config.volumeThreshold / 5) {
+    if (!this.gateOpen) {
       this.onPitchDetected?.({
         frequency: null,
         note: null,
@@ -466,7 +485,9 @@ export class PitchDetector {
         clarity: 0,
         volume,
       });
-      // Reset stability on no pitch
+      // Reset stability on no pitch — but ONLY the history, the gate state
+      // stays open (hysteresis above): a single YIN flicker must not slam
+      // the gate shut on a clearly audible tone.
       this.pitchStabilizer.reset();
     }
 

@@ -9,6 +9,7 @@ import { useGameResults } from '@/hooks/use-game-results';
 import { playSongMedia, scheduleMediaWatchdog } from '@/hooks/use-media-playback';
 import { computeGameElapsedMs, buildP2PitchResult, getEffectiveSongEnd } from '@/hooks/game-loop-utils';
 import { getVisibleNotes, NOTE_WINDOW } from '@/lib/game/note-utils';
+import { DIFFICULTY_PITCH_CONFIGS, KARAOKE_DEFAULT_CONFIG } from '@/lib/audio/pitch-config';
 import type { TimingData } from '@/components/screens/game-screen-types';
 import type { Note, LyricLine } from '@/types/game';
 
@@ -36,6 +37,12 @@ interface UseGameLoopOptions {
   setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>;
   // Pitch detector
   pitchResult: PitchDetectionResult | null;
+  /** R95/2: LIVE per-frame detector results, written synchronously by the
+   * detector callback (never coalesced by React). When provided, the game
+   * loop reads THIS ref instead of the state-synced copy — under render
+   * load the React roundtrip silently dropped intermediate frames and
+   * produced "no evaluation at all" phases on clearly sung tones. */
+  detectorPitchRef?: React.MutableRefObject<PitchDetectionResult | null>;
   initialize: () => Promise<boolean>;
   start: () => void;
   stop: () => void;
@@ -133,6 +140,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     start,
     stop,
     setPitchDifficulty,
+    detectorPitchRef,
     p1CompanionRef,
     mobilePitchRef,
     setCurrentTime,
@@ -225,11 +233,25 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   // counted them as lost ticks → combo breaks + lost perfect/golden bonuses
   // ("Aussetzer zerstören Boni für komplette Noten"). Bridged SYMMETRICALLY
   // for BOTH input sources (desktop mic + companion phone) so the scoring
-  // basis is identical. Same 200 ms / 0.04 volume as BR.
+  // basis is identical. Same 200 ms as BR.
+  //
+  // R95/2: the hold's audibility check is now COUPLED to the mic gate of
+  // the active difficulty instead of a fixed 0.04: the old fixed value sat
+  // ABOVE the easy/medium gate levels, leaving a dead zone where frames
+  // passed the mic gates (audible tone, YIN flickered) but the hold refused
+  // to bridge → ticks lost on held notes. The audible level mirrors the
+  // detector's gate hysteresis (release at 0.6× the opening threshold): a
+  // nulled frame counts as audible while it would still pass the OPEN gate.
   const PITCH_HOLD_MS = 200;
-  const PITCH_HOLD_MIN_VOLUME = 0.04;
+  const PITCH_HOLD_GATE_RELEASE = 0.6;
   const p1LastValidPitchRef = useRef<{ note: number; at: number } | null>(null);
   const p2LastValidPitchRef = useRef<{ note: number; at: number } | null>(null);
+  // Live difficulty for the gate computation (the game loop effect must not
+  // depend on difficulty — it would restart the rAF chain mid-song).
+  const holdDifficultyRef = useRef(difficulty);
+  useEffect(() => {
+    holdDifficultyRef.current = difficulty;
+  }, [difficulty]);
 
   // ── Result generation hook (extracted) ──
   const { generateResults, playersRef } = useGameResults({
@@ -716,20 +738,37 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       // content) — a nulled companion ref (stale TTL) must not fall through
       // to the closed desktop detector, or the hold below could not bridge.
       const p1FromCompanion = !!p1CompanionRef?.current;
+      // R95/2: prefer the LIVE detector ref (synchronous per-frame writes)
+      // over the state-synced copy — see detectorPitchRef docs above.
       const rawP1Pitch: PitchDetectionResult | null = p1FromCompanion
         ? ((mobilePitchRef?.current ?? null) as unknown as PitchDetectionResult | null)
-        : pitchResultRef.current;
+        : (detectorPitchRef?.current ?? pitchResultRef.current);
 
       // R94-5: pitch-hold — bridge dropouts up to 200 ms with the last valid
       // note (synthetic frame: checkNoteHits gates on frequency truthiness).
       // Desktop mic: only while still audible (BR semantics); companion:
       // time window alone (phone frames carry no reliable volume).
+      // R95/2: "audible" mirrors the detector's gate hysteresis — the gate
+      // releases at 0.6× its opening threshold, so a nulled frame whose
+      // volume would still pass the OPEN gate is an audible tone whose YIN
+      // merely flickered (bridge it), while frames below the release level
+      // are real silence (don't bridge). Closes the old dead zone where the
+      // fixed 0.04 sat above the easy/medium gate levels.
       let currentPitch: PitchDetectionResult | null = rawP1Pitch;
       if (rawP1Pitch && rawP1Pitch.note != null) {
         p1LastValidPitchRef.current = { note: rawP1Pitch.note, at: now };
       } else {
+        // Effective mic gate on the amplified volume scale (rms × 5), same
+        // computation as pitch-detector.ts (max of noise gate and volume
+        // threshold), scaled by the gate release factor. Cheap enough to
+        // compute inline — only runs on frames without a valid note.
+        const holdCfg = DIFFICULTY_PITCH_CONFIGS[holdDifficultyRef.current] ?? KARAOKE_DEFAULT_CONFIG;
+        const holdGateLevel = Math.max(
+          holdCfg.noiseGateEnabled ? Math.pow(10, holdCfg.noiseGateThreshold / 20) * 5 : 0,
+          holdCfg.volumeThreshold
+        ) * PITCH_HOLD_GATE_RELEASE;
         const lastValid = p1LastValidPitchRef.current;
-        const stillAudible = p1FromCompanion || (rawP1Pitch?.volume ?? 0) >= PITCH_HOLD_MIN_VOLUME;
+        const stillAudible = p1FromCompanion || (rawP1Pitch?.volume ?? 0) >= holdGateLevel;
         if (lastValid && stillAudible && now - lastValid.at <= PITCH_HOLD_MS) {
           currentPitch = {
             frequency: 440 * Math.pow(2, (lastValid.note - 69) / 12),

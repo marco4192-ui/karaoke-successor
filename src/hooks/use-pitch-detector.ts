@@ -12,6 +12,31 @@ export function usePitchDetector() {
   const [pitchResult, setPitchResult] = useState<PitchDetectionResult | null>(null);
   const detectorRef = useRef<PitchDetector | null>(null);
   const initializingRef = useRef(false);
+  // ── R95/2: frame-loss fix — direct ref write + throttled display state ──
+  // Every detector frame (~60 Hz) previously went through React state
+  // (setPitchResult → render → effect → ref sync in use-game-loop). Under
+  // render load (NoteHighway redraws) React coalesces those updates, so the
+  // game loop only ever saw the LAST frame per commit — intermediate frames
+  // were silently dropped and produced unevaluated ticks ("no rating at
+  // all" phases on clearly sung tones). The companion path already writes
+  // straight into a ref (R60). Now the desktop does too:
+  //   • pitchResultRef: written SYNCHRONOUSLY on every frame — the scoring
+  //     loop reads this and never loses a frame to React scheduling.
+  //   • setPitchResult: throttled to ~20 Hz — enough for volume meters and
+  //     pitch indicators, and it cuts game-screen re-renders by 2/3, which
+  //     frees the main thread for the detector's and game loop's rAFs.
+  const pitchResultRef = useRef<PitchDetectionResult | null>(null);
+  const lastStateEmitRef = useRef(0);
+  const DISPLAY_STATE_INTERVAL_MS = 50;
+
+  const handleDetectorResult = useCallback((result: PitchDetectionResult) => {
+    pitchResultRef.current = result;
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    if (now - lastStateEmitRef.current >= DISPLAY_STATE_INTERVAL_MS) {
+      lastStateEmitRef.current = now;
+      setPitchResult(result);
+    }
+  }, []);
   // The REAL browser deviceId the active detector was opened with (after
   // internal-id resolution). Used by switchMicrophone to skip the expensive
   // destroy/re-init round-trip when the requested mic is ALREADY open —
@@ -79,9 +104,7 @@ export function usePitchDetector() {
         // eslint-disable-next-line no-console
         console.log(`[PitchDetector] switchMicrophone: device already active (${resolvedId ?? 'default'}) — skipping re-init`);
         if (!detectorRef.current.isDetectorListening()) {
-          detectorRef.current.start((result) => {
-            setPitchResult(result);
-          });
+          detectorRef.current.start(handleDetectorResult);
           setIsListening(true);
         }
         return true;
@@ -103,9 +126,7 @@ export function usePitchDetector() {
         setPitchDetectorInstance(fresh);
 
         // Start the fresh detection loop, THEN close the old device.
-        fresh.start((result) => {
-          setPitchResult(result);
-        });
+        fresh.start(handleDetectorResult);
         old?.destroy();
 
         setIsInitialized(true);
@@ -128,7 +149,9 @@ export function usePitchDetector() {
       setError(msg);
       return false;
     }
-  }, []);
+    // handleDetectorResult is stable (empty deps) — listing it keeps the
+    // linter satisfied without ever changing this callback's identity.
+  }, [handleDetectorResult]);
 
   const start = useCallback(() => {
     if (!detectorRef.current) {
@@ -137,17 +160,19 @@ export function usePitchDetector() {
       return;
     }
 
-    detectorRef.current.start((result) => {
-      setPitchResult(result);
-    });
+    detectorRef.current.start(handleDetectorResult);
     setIsListening(true);
-  }, []);
+  }, [handleDetectorResult]);
 
   const stop = useCallback(() => {
     if (!detectorRef.current) return;
 
     detectorRef.current.stop();
     setIsListening(false);
+    // Clear BOTH the display state and the live ref (immediately, not
+    // throttled — the next game must not see a stale frame).
+    pitchResultRef.current = null;
+    lastStateEmitRef.current = 0;
     setPitchResult(null);
   }, []);
 
@@ -172,6 +197,10 @@ export function usePitchDetector() {
     isListening,
     error,
     pitchResult,
+    /** Live per-frame results (synchronous, never coalesced by React) —
+     * feed this to the scoring loop; `pitchResult` is the throttled
+     * display-only state. */
+    pitchResultRef,
     initialize,
     switchMicrophone,
     start,

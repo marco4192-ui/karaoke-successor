@@ -108,7 +108,7 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
   const escalating = usePartyStore(s =>
     s.competitiveGame?.settings?.escalating ?? !!(s.unifiedSetupResult?.settings as Record<string, unknown> | undefined)?.escalating
   );
-  const { pitchResult, initialize: initializePitch, start: startPitchDetector, stop, setDifficulty: setPitchDifficulty } = usePitchDetector();
+  const { pitchResult, pitchResultRef: detectorPitchRef, initialize: initializePitch, start: startPitchDetector, stop, setDifficulty: setPitchDifficulty } = usePitchDetector();
 
   // ── R51/Bug11 — P1 singt über die Companion-App ──
   // Wurde im Queue-Item / Start-Modal „Companion-App" als Gesangs-Gerät für
@@ -604,6 +604,7 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     isPlaying,
     setIsPlaying,
     pitchResult,
+    detectorPitchRef,
     initialize,
     start,
     stop,
