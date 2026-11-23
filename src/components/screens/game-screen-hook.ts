@@ -1,10 +1,13 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { useNoteScoring } from '@/hooks/use-note-scoring';
 import { useGameSettings } from '@/hooks/use-game-settings';
 import { useModeWarningCues } from '@/hooks/use-mode-warning-cues';
+import { usePitchShift } from '@/hooks/use-pitch-shift';
+import { getPitchShiftUnsupportedReason, PITCH_SHIFT_MAX_SEMITONES } from '@/lib/audio/pitch-shift';
+import { StorageKeys, getNumber, setItem } from '@/lib/storage';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import {
@@ -311,6 +314,38 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     midiMusicActive,
     songAudioUrl: midiMusicActive ? null : (effectiveSong?.audioUrl ?? null),
     nativeAudioEnabled: nativeAudio.enabled,
+  });
+
+  // ── R105: Song pitch shift (Tonhöhen-Verstellung, −12..+12 semitones) ──
+  // Transposes the song's key without changing the tempo (AudioWorklet DSP
+  // on the shared media graph). Persisted so the choice survives sessions;
+  // clamped to ±12 and disabled (pristine bypass) for media that cannot enter
+  // the Web Audio graph (MIDI synth / platform players / cross-origin).
+  const [pitchShiftSemitones, setPitchShiftSemitonesState] = useState(() => {
+    const stored = getNumber(StorageKeys.PITCH_SHIFT_SEMITONES, 0);
+    return Math.round(Math.min(PITCH_SHIFT_MAX_SEMITONES, Math.max(-PITCH_SHIFT_MAX_SEMITONES, Number.isFinite(stored) ? stored : 0)));
+  });
+  const setPitchShiftSemitones = useCallback((value: number) => {
+    const clamped = Math.round(Math.min(PITCH_SHIFT_MAX_SEMITONES, Math.max(-PITCH_SHIFT_MAX_SEMITONES, Number.isFinite(value) ? value : 0)));
+    setPitchShiftSemitonesState(clamped);
+    setItem(StorageKeys.PITCH_SHIFT_SEMITONES, String(clamped));
+  }, []);
+  const resetPitchShift = useCallback(() => setPitchShiftSemitones(0), [setPitchShiftSemitones]);
+
+  const pitchShiftUnsupportedReason = useMemo(
+    () => getPitchShiftUnsupportedReason({
+      midiMusicActive,
+      songAudioUrl: midiMusicActive ? null : (effectiveSong?.audioUrl ?? null),
+      nativeAudioEnabled: nativeAudio.enabled,
+    }),
+    [midiMusicActive, effectiveSong?.audioUrl, nativeAudio.enabled],
+  );
+  // Only engage the Web Audio chain when a shift is actually possible —
+  // otherwise the element stays on its pristine native path.
+  const pitchShiftEngageable = pitchShiftSemitones !== 0 && !pitchShiftUnsupportedReason;
+  const { unavailable: pitchShiftRuntimeUnavailable } = usePitchShift({
+    element: pitchShiftEngageable ? audioRef.current : null,
+    semitones: pitchShiftEngageable ? pitchShiftSemitones : 0,
   });
 
   // SAFETY: Ensure at least one player exists before game starts
@@ -892,6 +927,14 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     setVocalFilterAmount,
     /** null = vocal filter available; otherwise the reason it is not. */
     vocalFilterUnsupportedReason,
+    /** R105: song pitch shift in semitones (−12..+12, persisted; 0 = off). */
+    pitchShiftSemitones,
+    setPitchShiftSemitones,
+    resetPitchShift,
+    /** null = pitch shift available; otherwise the reason it is not. */
+    pitchShiftUnsupportedReason,
+    /** True when engaging failed at runtime (chain could not be built). */
+    pitchShiftRuntimeUnavailable,
     /** Voice FX Studio (feature idea #16) — persisted settings + availability. */
     voiceFx,
     setVoiceFx,

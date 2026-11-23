@@ -6,6 +6,7 @@ import { useNoteScoring } from '@/hooks/use-note-scoring';
 import { useGameMedia } from '@/hooks/use-game-media';
 import { useParticleEmitter } from '@/components/game/visual-effects';
 import { useGameAudioEffects } from '@/hooks/use-game-audio-effects';
+import { getPitchShiftUnsupportedReason } from '@/lib/audio/pitch-shift';
 import { useNativeAudio } from '@/hooks/use-native-audio';
 import type { PracticeModeConfig } from '@/lib/game/practice-mode';
 import { CHALLENGE_MODES } from '@/lib/game/player-progression';
@@ -142,6 +143,14 @@ export interface GameScreenHookReturn {
   setVocalFilterAmount: (val: number) => void;
   /** null = vocal filter available; otherwise the reason it is not. */
   vocalFilterUnsupportedReason: ReturnType<typeof useGameAudioEffects>['vocalFilterUnsupportedReason'];
+  /** R105: song pitch shift in semitones (−12..+12, persisted; 0 = off). */
+  pitchShiftSemitones: number;
+  setPitchShiftSemitones: (val: number) => void;
+  resetPitchShift: () => void;
+  /** null = pitch shift available; otherwise the reason it is not. */
+  pitchShiftUnsupportedReason: ReturnType<typeof getPitchShiftUnsupportedReason>;
+  /** True when engaging the Web Audio chain failed at runtime. */
+  pitchShiftRuntimeUnavailable: boolean;
   /** Voice FX Studio (feature idea #16) — persisted settings (pitch correction, harmonizer, voice effects). */
   voiceFx: ReturnType<typeof useGameAudioEffects>['voiceFx'];
   /** Update Voice FX settings (partial merge, persisted + applied to the engine). */

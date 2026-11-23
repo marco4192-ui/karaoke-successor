@@ -25,6 +25,62 @@ const cache = new WeakMap<
   { context: AudioContext; source: MediaElementAudioSourceNode; gain: GainNode }
 >();
 
+// ---------------------------------------------------------------------------
+// Shared media guards (R105: moved here from vocal-filter.ts so pitch-shift.ts
+// and future consumers reuse the exact same safety checks)
+// ---------------------------------------------------------------------------
+
+/**
+ * True when the element's current media is same-origin (safe for Web Audio).
+ * Cross-origin media through createMediaElementSource outputs SILENCE, so
+ * such elements must never enter the Web Audio graph.
+ */
+export function isSameOriginMedia(el: HTMLMediaElement): boolean {
+  try {
+    const src = el.currentSrc || el.src;
+    if (!src) return true;
+    const url = new URL(src, window.location.href);
+    // blob: URLs carry the creating origin in their path.
+    if (url.protocol === 'blob:') return true;
+    if (url.protocol === 'data:') return true;
+    return url.origin === window.location.origin;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Detect the MIDI/KAR synth adapter (midi-audio-element.ts): it is a plain
+ * object cast to HTMLAudioElement — NOT a DOM node, has no media element
+ * source (its audio is synthesized in its own Web Audio engine). Duck-typed
+ * via the `engine` property the adapter exposes for the bridge; a real
+ * <audio> element never has one. (Belt-and-suspenders: also reject anything
+ * that is not an actual HTMLMediaElement instance.)
+ */
+export function isSynthAdapterElement(el: HTMLMediaElement): boolean {
+  if (typeof (el as { engine?: unknown }).engine !== 'undefined') return true;
+  if (
+    typeof window !== 'undefined'
+    && typeof window.HTMLMediaElement === 'function'
+    && !(el instanceof window.HTMLMediaElement)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/** Same-origin check on a raw media URL string (UI availability probe). */
+export function isCompatibleMediaUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url, window.location.href);
+    if (parsed.protocol === 'blob:') return true;
+    if (parsed.protocol === 'data:') return true;
+    return parsed.origin === window.location.origin;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Return (and lazily create) a shared AudioContext + MediaElementSourceNode
  * (+ unity GainNode) for the given media element.

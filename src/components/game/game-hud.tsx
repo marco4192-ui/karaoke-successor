@@ -3,7 +3,183 @@
 import type { AudioEffectsEngine, AudioEffectPreset, VoiceFxSettings, VoiceFxMode } from '@/lib/audio/audio-effects';
 import { PRESET_LABELS } from '@/lib/audio/audio-effects';
 import type { VocalFilterUnsupportedReason } from '@/lib/audio/vocal-filter';
+import type { PitchShiftUnsupportedReason } from '@/lib/audio/pitch-shift';
 import { useTranslation } from '@/lib/i18n/translations';
+
+// ===================== PITCH SHIFT BUTTON (R105) =====================
+
+interface PitchShiftButtonProps {
+  onClick: () => void;
+  /** Current transposition — shown on the button badge when ≠ 0. */
+  semitones: number;
+  /** null = available; otherwise the medium-based reason it is not. */
+  unsupportedReason: PitchShiftUnsupportedReason | null;
+}
+
+export function PitchShiftButton({ onClick, semitones, unsupportedReason }: PitchShiftButtonProps) {
+  const { t } = useTranslation();
+  const active = semitones !== 0 && !unsupportedReason;
+  const label = unsupportedReason
+    ? `${t('gameHud.pitchShift')} — ${t('gameHud.pitchShiftUnavailableShort')}`
+    : active
+      ? `${t('gameHud.pitchShift')}: ${semitones > 0 ? '+' : ''}${semitones}`
+      : t('gameHud.pitchShift');
+
+  return (
+    <button
+      onClick={onClick}
+      className={`fixed bottom-56 right-4 z-30 w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+        unsupportedReason
+          ? 'bg-white/5 opacity-50 cursor-not-allowed'
+          : active
+            ? 'bg-purple-500/40 hover:bg-purple-500/60 ring-1 ring-purple-400/60'
+            : 'bg-white/10 hover:bg-white/20'
+      }`}
+      title={label}
+      data-testid="game-hud-pitch-shift-button"
+      aria-label={label}
+    >
+      <span className="text-xl leading-none">🎚️</span>
+      {active && (
+        <span
+          className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-purple-500 text-white text-[10px] font-bold flex items-center justify-center"
+          data-testid="game-hud-pitch-shift-badge"
+        >
+          {semitones > 0 ? `+${semitones}` : semitones}
+        </span>
+      )}
+    </button>
+  );
+}
+
+// ===================== PITCH SHIFT PANEL (R105) =====================
+
+interface PitchShiftPanelProps {
+  show: boolean;
+  /** Current transposition in semitones. */
+  semitones: number;
+  /** Absolute limit (±12). */
+  max: number;
+  /** null = available; otherwise the medium-based reason it is not. */
+  unsupportedReason: PitchShiftUnsupportedReason | null;
+  /** True when engaging the Web Audio chain failed at runtime. */
+  runtimeUnavailable: boolean;
+  onSemitonesChange: (_value: number) => void;
+  onReset: () => void;
+  onClose: () => void;
+}
+
+export function PitchShiftPanel({
+  show,
+  semitones,
+  max,
+  unsupportedReason,
+  runtimeUnavailable,
+  onSemitonesChange,
+  onReset,
+  onClose,
+}: PitchShiftPanelProps) {
+  const { t } = useTranslation();
+  if (!show) return null;
+
+  const reasonKey: Record<PitchShiftUnsupportedReason, string> = {
+    midi: 'gameHud.pitchShiftReasonMidi',
+    platform: 'gameHud.pitchShiftReasonPlatform',
+    crossorigin: 'gameHud.pitchShiftReasonCrossOrigin',
+    native: 'gameHud.pitchShiftReasonNative',
+  };
+
+  const valueLabel = semitones === 0
+    ? t('gameHud.pitchShiftOff')
+    : t(semitones === 1 || semitones === -1 ? 'gameHud.pitchShiftSemitone' : 'gameHud.pitchShiftSemitones')
+        .replace('{n}', `${semitones > 0 ? '+' : ''}${semitones}`);
+
+  return (
+    <div
+      className="fixed bottom-72 right-4 z-40 w-64 bg-gray-800/95 rounded-xl p-4 border border-white/20"
+      data-testid="pitch-shift-panel"
+      role="dialog"
+      aria-label={t('gameHud.pitchShiftLabel')}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-white">🎚️ {t('gameHud.pitchShiftLabel')}</h3>
+        <button
+          onClick={onClose}
+          className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 text-white/70 text-xs"
+          aria-label="Close"
+          data-testid="pitch-shift-panel-close"
+        >
+          ✕
+        </button>
+      </div>
+
+      {unsupportedReason ? (
+        <div className="text-xs text-red-300/90 leading-relaxed" data-testid="pitch-shift-unavailable">
+          ⚠️ {t('gameHud.pitchShiftUnavailableShort')}
+          <p className="mt-1 text-white/50">{t(reasonKey[unsupportedReason])}</p>
+        </div>
+      ) : (
+        <>
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <button
+              onClick={() => onSemitonesChange(semitones - 1)}
+              disabled={semitones <= -max}
+              className="w-10 h-10 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 text-white text-lg font-bold"
+              aria-label="Minus one semitone"
+              data-testid="pitch-shift-minus"
+            >
+              −
+            </button>
+            <div className="text-center min-w-0 flex-1" data-testid="pitch-shift-value">
+              <div className={`text-2xl font-black ${semitones === 0 ? 'text-white/60' : 'text-purple-300'}`}>
+                {semitones > 0 ? `+${semitones}` : semitones}
+              </div>
+              <div className="text-[11px] text-white/50 truncate">{valueLabel}</div>
+            </div>
+            <button
+              onClick={() => onSemitonesChange(semitones + 1)}
+              disabled={semitones >= max}
+              className="w-10 h-10 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 text-white text-lg font-bold"
+              aria-label="Plus one semitone"
+              data-testid="pitch-shift-plus"
+            >
+              +
+            </button>
+          </div>
+
+          <input
+            type="range"
+            min={-max}
+            max={max}
+            step={1}
+            value={semitones}
+            onChange={(e) => onSemitonesChange(parseInt(e.target.value, 10))}
+            className="w-full accent-purple-400 h-1.5 mb-3"
+            aria-label={t('gameHud.pitchShiftLabel')}
+            data-testid="pitch-shift-slider"
+          />
+
+          <button
+            onClick={onReset}
+            disabled={semitones === 0}
+            className="w-full py-2 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 text-white/80 text-xs font-medium mb-2"
+            data-testid="pitch-shift-reset"
+          >
+            ↺ {t('gameHud.pitchShiftReset')}
+          </button>
+
+          <p className="text-[11px] text-white/40 leading-snug">{t('gameHud.pitchShiftHint')}</p>
+
+          {runtimeUnavailable && (
+            <p className="mt-2 text-[11px] text-amber-300/80 leading-snug" data-testid="pitch-shift-runtime-failed">
+              ⚠️ {t('gameHud.pitchShiftRuntimeFailed')}
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
 
 // ===================== AUDIO EFFECTS BUTTON =====================
 

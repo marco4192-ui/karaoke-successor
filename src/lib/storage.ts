@@ -63,6 +63,8 @@ export const StorageKeys = {
   VOCAL_FILTER_AMOUNT: 'karaoke-vocal-filter-amount',
   /** Voice FX Studio settings (mode, mixes, harmony, correction — JSON) */
   VOICE_FX_SETTINGS: 'karaoke-voice-fx-settings',
+  /** R105: song pitch shift in semitones (−12..+12, 0 = off) — survives sessions */
+  PITCH_SHIFT_SEMITONES: 'karaoke-pitch-shift-semitones',
   YOUTUBE_QUALITY: 'karaoke-youtube-quality',
   AUTO_FULLSCREEN: 'karaoke-auto-fullscreen',
 

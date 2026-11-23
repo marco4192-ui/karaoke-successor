@@ -68,7 +68,7 @@
  *   element — no manual lifecycle needed beyond clearVocalRemoval.
  */
 
-import { getSharedMediaSource } from './shared-media-source';
+import { getSharedMediaSource, isSameOriginMedia, isSynthAdapterElement, isCompatibleMediaUrl } from './shared-media-source';
 
 /** Why the vocal filter cannot be applied for the current song/medium. */
 export type VocalFilterUnsupportedReason =
@@ -105,58 +105,9 @@ const requestedAmounts = new WeakMap<HTMLMediaElement, number>();
 // ---------------------------------------------------------------------------
 // Guards
 // ---------------------------------------------------------------------------
-
-/**
- * True when the element's current media is same-origin (safe for Web Audio).
- * Mirrors the private isSameOriginMedia guard in loudness.ts: cross-origin
- * media through createMediaElementSource outputs SILENCE, so such elements
- * must never enter the Web Audio graph.
- */
-function isSameOriginMedia(el: HTMLMediaElement): boolean {
-  try {
-    const src = el.currentSrc || el.src;
-    if (!src) return true;
-    const url = new URL(src, window.location.href);
-    // blob: URLs carry the creating origin in their path.
-    if (url.protocol === 'blob:') return true;
-    if (url.protocol === 'data:') return true;
-    return url.origin === window.location.origin;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Detect the MIDI/KAR synth adapter (midi-audio-element.ts): it is a plain
- * object cast to HTMLAudioElement — NOT a DOM node, has no media element
- * source (its audio is synthesized in its own Web Audio engine). Duck-typed
- * via the `engine` property the adapter exposes for the bridge; a real
- * <audio> element never has one. (Belt-and-suspenders: also reject anything
- * that is not an actual HTMLMediaElement instance.)
- */
-function isSynthAdapterElement(el: HTMLMediaElement): boolean {
-  if (typeof (el as { engine?: unknown }).engine !== 'undefined') return true;
-  if (
-    typeof window !== 'undefined'
-    && typeof window.HTMLMediaElement === 'function'
-    && !(el instanceof window.HTMLMediaElement)
-  ) {
-    return true;
-  }
-  return false;
-}
-
-/** Same-origin check on a raw media URL string (UI availability probe). */
-function isCompatibleMediaUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url, window.location.href);
-    if (parsed.protocol === 'blob:') return true;
-    if (parsed.protocol === 'data:') return true;
-    return parsed.origin === window.location.origin;
-  } catch {
-    return false;
-  }
-}
+// R105: the three guard helpers (isSameOriginMedia, isSynthAdapterElement,
+// isCompatibleMediaUrl) moved to shared-media-source.ts and are imported at
+// the top — shared 1:1 with pitch-shift.ts.
 
 export interface VocalFilterSupportInput {
   /** True when the song's music is the Web Audio MIDI synth (fake element). */
@@ -277,7 +228,14 @@ export async function setVocalRemoval(
       const wetGain = context.createGain();
       wetGain.gain.value = 0;
 
-      source.connect(splitter);
+      // R105: the wet path taps the SHARED gain (post pitch-shift insert, post
+      // loudness boost) instead of the raw source — otherwise a song with an
+      // active pitch shift would mix a transposed dry path with an untransposed
+      // wet path (audibly wrong when both features run together). Trade-off:
+      // the loudness boost now also applies to the wet share (previously it
+      // deliberately bypassed the boost). (`gain` is the shared gain node —
+      // `chain` is only assigned below.)
+      gain.connect(splitter);
       splitter.connect(g0, 0);
       splitter.connect(gInv, 1);
       // L on both merger inputs, −R on both merger inputs → [L−R, L−R].
