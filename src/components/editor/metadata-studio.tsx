@@ -28,72 +28,41 @@
  *             changes game-local only (wiped by the library reset — hint shown)
  *
  * Engine is the shared factual pipeline (R2 cache → R6 database lookup).
+ *
+ * Architecture: this component owns the configuration state and the derived
+ * scopes/plans; the heavy lifting lives in dedicated modules (see
+ * ./metadata-studio/): useStudioEngine (fill/verify run + apply loops),
+ * useManualEditing (correction list + direct edit mode), useManualPreview
+ * (audio preview), ManualReviewList / ManualEditPanel / ApplyAllWarning
+ * (list UIs + warning modal).
  */
 
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Song } from '@/types/game';
-import { updateSong, updateSongs, getSongByIdWithLyrics } from '@/lib/game/song-library';
-import { normalizeLanguage, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
-import { persistSongMetadataToTxt } from '@/lib/editor/persist-metadata';
 import {
-  harmonizeSongs,
-  HarmonizeSuggestion,
-  HarmonizeProgress,
-  HarmonizeStats,
-} from '@/lib/editor/harmonize-client';
-import { setCachedHarmonize } from '@/lib/editor/harmonize-cache';
+  planRuleHarmonization,
+  planRuleLanguageHarmonization,
+  ruleHarmonizer,
+} from '@/lib/editor/rule-harmonizer';
 import {
   SuggestionRow,
   countApplicableSongs,
 } from '@/components/editor/harmonize-shared';
-import {
-  planRuleHarmonization,
-  planRuleLanguageHarmonization,
-  planManualGenreReview,
-  ruleHarmonizer,
-  RuleHarmonizeJobState,
-} from '@/lib/editor/rule-harmonizer';
 import { useCustomTaxonomy } from '@/hooks/use-custom-taxonomy';
 import { useMetadataRules } from '@/hooks/use-metadata-rules';
-import { ensureSongUrls } from '@/lib/game/song-url-restore';
-import { applyPreviewVolume, clearLoudnessGain, createSongMediaFallback } from '@/lib/audio/loudness';
-import { ChevronDown, ChevronRight, Play, SkipForward, Square, BadgeCheck } from 'lucide-react';
+import { ChevronDown, ChevronRight, BadgeCheck } from 'lucide-react';
+import { useRuleHarmonizerState } from './metadata-studio/use-rule-harmonizer-state';
+import { useManualPreview } from './metadata-studio/use-manual-preview';
+import { useStudioEngine } from './metadata-studio/use-studio-engine';
+import { useManualEditing } from './metadata-studio/use-manual-editing';
+import { SegButton, FieldToggle } from './metadata-studio/studio-ui-atoms';
+import { ManualReviewList } from './metadata-studio/manual-review-list';
+import { ManualEditPanel } from './metadata-studio/manual-edit-panel';
+import { ApplyAllWarning } from './metadata-studio/apply-all-warning';
+import type { MetadataStudioProps } from './metadata-studio/types';
 
-export type StudioScope = 'all' | 'selection';
-export type StudioMode = 'fill' | 'rule' | 'manual' | 'verify';
-export type StudioWriteTarget = 'txt' | 'local';
-
-interface MetadataStudioProps {
-  songs: Song[];
-  /** Current multi-selection (select mode) — live counts in the scope toggle. */
-  selectedIds: Set<string>;
-  /** Expanded state is lifted so the floating select bar can open the studio. */
-  open: boolean;
-  onToggle: () => void;
-  /** Incremented when opened from the select bar → re-focus the "selection" scope. */
-  selectionFocusToken?: number;
-  /** Select mode is live (song cards show checkboxes) — the Select-Songs
-   *  button inside the studio toggles it (user request: the button belongs
-   *  to the studio, placed next to Run). */
-  selectMode: boolean;
-  onToggleSelectMode: () => void;
-  /** Clears the whole multi-selection (Deselect button next to Select-Songs). */
-  onClearSelection: () => void;
-  onApplied: () => void;
-  t: (key: string) => string;
-}
-
-/** Subscribe to the singleton rule-harmonizer background job state. */
-function useRuleHarmonizerState(): RuleHarmonizeJobState {
-  const [state, setState] = useState<RuleHarmonizeJobState>(() => ruleHarmonizer.getState());
-  useEffect(() => {
-    const unsubscribe = ruleHarmonizer.subscribe(() => setState(ruleHarmonizer.getState()));
-    setState(ruleHarmonizer.getState());
-    return unsubscribe;
-  }, []);
-  return state;
-}
+export type { StudioScope, StudioMode, StudioWriteTarget } from './metadata-studio/types';
 
 export function MetadataStudio({
   songs,
@@ -108,10 +77,10 @@ export function MetadataStudio({
   t,
 }: MetadataStudioProps) {
   // ── Configuration ──
-  const [scope, setScope] = useState<StudioScope>('all');
+  const [scope, setScope] = useState<'all' | 'selection'>('all');
   const [fields, setFields] = useState({ genre: true, language: true, year: true });
-  const [mode, setMode] = useState<StudioMode>('fill');
-  const [writeTarget, setWriteTarget] = useState<StudioWriteTarget>('txt');
+  const [mode, setMode] = useState<'fill' | 'rule' | 'manual' | 'verify'>('fill');
+  const [writeTarget, setWriteTarget] = useState<'txt' | 'local'>('txt');
 
   // R20: genre vocabulary = built-in list + user-defined entries from
   // Settings → Metadaten Studio (reactive — the dropdowns here update the
@@ -128,43 +97,6 @@ export function MetadataStudio({
   useEffect(() => {
     if (selectionFocusToken > 0) setScope('selection');
   }, [selectionFocusToken]);
-
-  // ── Suggestion engine state (moved from the old batch flow + cards) ──
-  const [suggestions, setSuggestions] = useState<HarmonizeSuggestion[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [showWarning, setShowWarning] = useState(false);
-  const [progress, setProgress] = useState<HarmonizeProgress | null>(null);
-  const [stats, setStats] = useState<HarmonizeStats | null>(null);
-  const [applyProgress, setApplyProgress] = useState<{ done: number; total: number } | null>(null);
-  const [fileErrors, setFileErrors] = useState<number | null>(null);
-  const [localAppliedInfo, setLocalAppliedInfo] = useState<number | null>(null);
-  // R60: how many songs the last verify run NEWLY marked as verified (✓ badge
-  // info line under the run summary; null = nothing marked / no run).
-  const [markedVerifiedInfo, setMarkedVerifiedInfo] = useState<number | null>(null);
-  const [warmupProgress, setWarmupProgress] = useState<{ done: number; total: number } | null>(null);
-  const warmupPromiseRef = useRef<Promise<void> | null>(null);
-  const isMountedRef = useRef(true);
-
-  // ── Run-job control (loading banner: phase, elapsed, abort) ──
-  const abortRef = useRef<AbortController | null>(null);
-  const [runStartedAt, setRunStartedAt] = useState<number | null>(null);
-  const [elapsedSec, setElapsedSec] = useState(0);
-
-  // 1 Hz elapsed-time ticker while the analysis job runs
-  useEffect(() => {
-    if (runStartedAt === null) return;
-    setElapsedSec(Math.round((Date.now() - runStartedAt) / 1000));
-    const id = window.setInterval(() => {
-      setElapsedSec(Math.round((Date.now() - runStartedAt) / 1000));
-    }, 1000);
-    return () => window.clearInterval(id);
-  }, [runStartedAt]);
-
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => { isMountedRef.current = false; };
-  }, []);
 
   // ── Scope / mode helpers ──
   const selectedSongs = useMemo(
@@ -224,34 +156,6 @@ export function MetadataStudio({
   );
   const ruleLanguagePlanCount = rulePlan.length - ruleGenrePlanCount;
 
-  /** Session-scoped skip set (user feedback: harmonize must also run WITHOUT
-   *  an assignment — skipped songs keep their pseudo-genre for now). */
-  const [skippedManualIds, setSkippedManualIds] = useState<ReadonlySet<string>>(new Set());
-
-  /** Manual review plan (rule mode): songs with pseudo-genres ("AI",
-   *  "Oldies", "A Cappella", "TV"…) that no logical rule can map — minus the
-   *  session-skipped ones (kept as-is, user feedback point 2). */
-  const manualReview = useMemo(() => {
-    if (mode !== 'rule') return [];
-    return planManualGenreReview(scopeSongs).filter(m => !skippedManualIds.has(m.songId));
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- see rulePlan above (R50 rule-change reactivity)
-  }, [mode, scopeSongs, skippedManualIds, rulesVersion]);
-  /** Songs the user skipped this session (info line + restore link). */
-  const skippedManualCount = useMemo(
-    () => skippedManualIds.size,
-    [skippedManualIds],
-  );
-  /** user's genre pick per song (songId → main genre) in the correction list. */
-  const [manualPicks, setManualPicks] = useState<Record<string, string>>({});
-  const [manualApplyProgress, setManualApplyProgress] = useState<{ done: number; total: number } | null>(null);
-
-  // ── Manual edit mode (R5-1) ──
-  /** Per-song edited values (songId → raw input strings). An edit only
-   *  counts as "changed" when it differs from the current value (see
-   *  manualUpdatesFor) — unchanged entries are never applied. */
-  const [manualEdits, setManualEdits] = useState<Record<string, { genre?: string; language?: string; year?: string }>>({});
-  const [manualEditApplyProgress, setManualEditApplyProgress] = useState<{ done: number; total: number } | null>(null);
-
   /** Full song lookup for the manual-review preview (items only carry
    *  title/artist/genre — playback needs the media URLs). */
   const songById = useMemo(() => {
@@ -260,265 +164,53 @@ export function MetadataStudio({
     return map;
   }, [songs]);
 
-  // ── Manual-review audio preview ──
-  // Lets the user LISTEN to a song before picking a main genre (user request:
-  // a title alone doesn't reveal the genre of "Comedy"/"AI"/"Oldies" songs,
-  // and researching each one externally isn't practical).
-  const [manualPreviewId, setManualPreviewId] = useState<string | null>(null);
-  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
-  const previewStopTimerRef = useRef<number | null>(null);
-  /** Generation counter — invalidates in-flight async previews after stop. */
-  const previewGenRef = useRef(0);
+  // ── Hooks: audio preview, suggestion engine, manual editing ──
+  const { manualPreviewId, toggleManualPreview, stopManualPreview } = useManualPreview(songById);
 
-  const stopManualPreview = useCallback(() => {
-    previewGenRef.current++;
-    if (previewStopTimerRef.current !== null) {
-      window.clearTimeout(previewStopTimerRef.current);
-      previewStopTimerRef.current = null;
-    }
-    const audio = previewAudioRef.current;
-    if (audio) {
-      clearLoudnessGain(audio); // R49: reset a possible boost gain node
-      audio.pause();
-      audio.removeAttribute('src');
-      audio.load(); // release media resources
-      previewAudioRef.current = null;
-    }
-    setManualPreviewId(null);
-  }, []);
+  const engine = useStudioEngine({ songs, runSubset, scope, mode, fields, writeTarget, rulePlan, t, onApplied });
+  const {
+    suggestions, setSuggestions,
+    isLoading,
+    error,
+    showWarning, setShowWarning,
+    progress,
+    stats, setStats,
+    applyProgress,
+    fileErrors, setFileErrors,
+    localAppliedInfo, setLocalAppliedInfo,
+    markedVerifiedInfo,
+    warmupProgress,
+    runStartedAt,
+    elapsedSec,
+    handleRunClick,
+    handleAbortRun,
+    handleMarkCorrect,
+    handleApplySingle,
+    handleApplyAll,
+    handleRuleStart,
+  } = engine;
 
-  /** Play / stop a 30-second preview of a manual-review song. Audio-URL
-   *  first (restored via ensureSongUrls in Tauri), video container fallback
-   *  (mp4/webm audio track plays fine in an <audio> element). */
-  const toggleManualPreview = useCallback(async (songId: string) => {
-    if (manualPreviewId === songId) {
-      stopManualPreview();
-      return; // toggle off
-    }
-    stopManualPreview();
-    const generation = previewGenRef.current;
-    const song = songById.get(songId);
-    if (!song) return;
-
-    let target = song;
-    if (!target.audioUrl) {
-      try { target = await ensureSongUrls(song); } catch { /* keep original */ }
-    }
-    if (generation !== previewGenRef.current) return; // cancelled meanwhile
-
-    const src = target.audioUrl || target.videoUrl || target.videoBackground;
-    if (!src) return;
-
-    const audio = new Audio();
-    // R49: preview-volume setting + 89 dB loudness normalization — this
-    // preview previously played at a hardcoded 0.5, ignoring both the setting
-    // and the normalization that game playback uses.
-    // R58: unconditional (no toggle) + fallback resolver for analysis fetches.
-    applyPreviewVolume(
-      audio,
-      target.id,
-      src,
-      () => generation === previewGenRef.current && previewAudioRef.current === audio,
-      createSongMediaFallback(target, target.audioUrl === src ? 'audio' : 'video'),
-    );
-    audio.src = src;
-    previewAudioRef.current = audio;
-
-    const startTime = target.previewStart && target.previewStart > 0
-      ? target.previewStart
-      : target.preview?.startTime
-        ? target.preview.startTime / 1000
-        : 0;
-
-    const startPlay = () => {
-      if (generation !== previewGenRef.current || previewAudioRef.current !== audio) return;
-      try {
-        if (startTime > 0 && Number.isFinite(audio.duration) && audio.duration >= startTime) {
-          audio.currentTime = startTime;
-        }
-      } catch { /* seeking unsupported — play from 0 */ }
-      audio.play().catch(() => {
-        if (previewAudioRef.current === audio) stopManualPreview();
-      });
-    };
-    audio.addEventListener('loadedmetadata', startPlay, { once: true });
-    audio.addEventListener('ended', () => {
-      if (previewAudioRef.current !== audio) return;
-      previewAudioRef.current = null;
-      if (previewStopTimerRef.current !== null) {
-        window.clearTimeout(previewStopTimerRef.current);
-        previewStopTimerRef.current = null;
-      }
-      setManualPreviewId(null);
-    });
-
-    setManualPreviewId(songId);
-
-    // Auto-stop after the preview window (same default as the library preview)
-    const durationSec = target.previewDuration && target.previewDuration > 0
-      ? target.previewDuration
-      : target.preview?.duration
-        ? target.preview.duration / 1000
-        : 30;
-    previewStopTimerRef.current = window.setTimeout(() => stopManualPreview(), durationSec * 1000);
-  }, [manualPreviewId, songById, stopManualPreview]);
-
-  // Release audio resources when the studio unmounts
-  useEffect(() => () => stopManualPreview(), [stopManualPreview]);
-
-  /** Skip one manual-review song (keeps its genre as-is for this session). */
-  const skipManualSong = useCallback((songId: string) => {
-    setSkippedManualIds(prev => {
-      const next = new Set(prev);
-      next.add(songId);
-      return next;
-    });
-    setManualPicks(prev => {
-      if (!(songId in prev)) return prev;
-      const next = { ...prev };
-      delete next[songId];
-      return next;
-    });
-    if (manualPreviewId === songId) stopManualPreview();
-  }, [manualPreviewId, stopManualPreview]);
-
-  /** Apply the manual genre corrections (same write path as the rule job:
-   *  txt-first when txt is the target, else game-local). */
-  const handleApplyManualPicks = useCallback(async () => {
-    const picks = manualReview.filter(item => manualPicks[item.songId]);
-    if (picks.length === 0) return;
-    setManualApplyProgress({ done: 0, total: picks.length });
-    let done = 0;
-    let applied = 0;
-    for (const item of picks) {
-      // R60: a manual genre correction is a HUMAN override — it invalidates
-      // the verified badge (the check verdict no longer matches the value).
-      const updates: Partial<Song> = { genre: manualPicks[item.songId], metadataVerifiedAt: undefined };
-      try {
-        if (writeTarget === 'txt') {
-          const result = await persistSongMetadataToTxt(item.songId, updates);
-          if (result.success) {
-            updateSong(item.songId, updates);
-            applied++;
-          }
-        } else {
-          updateSong(item.songId, updates);
-          applied++;
-        }
-      } catch { /* counted as not applied */ }
-      done++;
-      if (!isMountedRef.current) return;
-      setManualApplyProgress({ done, total: picks.length });
-      await new Promise(resolve => setTimeout(resolve, 0)); // yield to UI
-    }
-    // Drop the corrected rows from the list
-    setManualPicks(prev => {
-      const next = { ...prev };
-      for (const item of picks) delete next[item.songId];
-      return next;
-    });
-    setManualApplyProgress(null);
-    if (isMountedRef.current && applied > 0) {
-      setLocalAppliedInfo(prev => prev == null ? applied : prev + applied);
-      onApplied();
-    }
-  }, [manualReview, manualPicks, writeTarget, onApplied]);
-
-  // ── Manual edit mode (R5-1) ──
-
-  /** Effective manual edits for one song: normalized values for the ACTIVE
-   *  fields that DIFFER from the current value. Empty, implausible (year
-   *  outside 1900–2100) or unchanged entries are skipped silently — only
-   *  real changes are applied. */
-  const manualUpdatesFor = useCallback((
-    song: Song,
-  ): { genre?: string; language?: string; year?: number } => {
-    const edit = manualEdits[song.id];
-    if (!edit) return {};
-    const updates: { genre?: string; language?: string; year?: number } = {};
-    if (fields.genre && edit.genre) {
-      const next = normalizeGenreName(edit.genre);
-      if (next && next !== song.genre) updates.genre = next;
-    }
-    if (fields.language && edit.language?.trim()) {
-      const next = normalizeLanguage(edit.language.trim());
-      if (next && next !== song.language) updates.language = next;
-    }
-    if (fields.year && edit.year?.trim()) {
-      const parsed = Number(edit.year.trim());
-      if (Number.isFinite(parsed) && parsed >= 1900 && parsed <= 2100 && parsed !== song.year) {
-        updates.year = parsed;
-      }
-    }
-    return updates;
-  }, [manualEdits, fields]);
-
-  /** Songs with at least one changed field — drives the "X von Y" counter
-   *  and the Apply button state. */
-  const manualEditChangedCount = useMemo(
-    () => scopeSongs.reduce(
-      (count, song) => (Object.keys(manualUpdatesFor(song)).length > 0 ? count + 1 : count),
-      0,
-    ),
-    [scopeSongs, manualUpdatesFor],
-  );
-
-  /** Apply ALL changed manual edits (same write path as handleApplyManualPicks:
-   *  txt-first when txt is the target — the library is only updated when the
-   *  txt write succeeded; local target just updates the game library). */
-  const handleApplyManualEdits = useCallback(async () => {
-    const pending = scopeSongs
-      .map(song => ({ songId: song.id, updates: manualUpdatesFor(song) as Partial<Song> }))
-      .filter(item => Object.keys(item.updates).length > 0);
-    if (pending.length === 0) return;
-
-    setManualEditApplyProgress({ done: 0, total: pending.length });
-    let done = 0;
-    let applied = 0;
-    let failedFiles = 0;
-    const appliedIds: string[] = [];
-
-    for (const item of pending) {
-      try {
-        // R60: manual metadata edits invalidate the verified badge.
-        const updates: Partial<Song> = { ...item.updates, metadataVerifiedAt: undefined };
-        if (writeTarget === 'txt') {
-          const result = await persistSongMetadataToTxt(item.songId, updates);
-          if (result.success) {
-            updateSong(item.songId, updates);
-            applied++;
-            appliedIds.push(item.songId);
-          } else {
-            failedFiles++;
-          }
-        } else {
-          updateSong(item.songId, updates);
-          applied++;
-          appliedIds.push(item.songId);
-        }
-      } catch { failedFiles++; /* counted as not applied */ }
-      done++;
-      if (!isMountedRef.current) return;
-      setManualEditApplyProgress({ done, total: pending.length });
-      await new Promise(resolve => setTimeout(resolve, 0)); // yield to UI
-    }
-
-    if (!isMountedRef.current) return;
-    // Drop the applied edits (failed txt writes stay editable for a retry)
-    setManualEdits(prev => {
-      const next = { ...prev };
-      for (const id of appliedIds) delete next[id];
-      return next;
-    });
-    setManualEditApplyProgress(null);
-    setFileErrors(failedFiles > 0 ? failedFiles : null);
-    if (applied > 0) {
-      if (writeTarget === 'local') {
-        setLocalAppliedInfo(prev => prev == null ? applied : prev + applied);
-      }
-      onApplied();
-    }
-  }, [scopeSongs, manualUpdatesFor, writeTarget, onApplied]);
+  const {
+    manualReview,
+    skippedManualCount,
+    setSkippedManualIds,
+    manualPicks,
+    setManualPicks,
+    manualApplyProgress,
+    handleApplyManualPicks,
+    skipManualSong,
+    manualEdits,
+    setManualEdits,
+    manualEditApplyProgress,
+    manualUpdatesFor,
+    manualEditChangedCount,
+    handleApplyManualEdits,
+  } = useManualEditing({
+    mode, scopeSongs, rulesVersion, fields, writeTarget, onApplied,
+    manualPreviewId, stopManualPreview,
+    noteLocalApplied: engine.noteLocalApplied,
+    setFileErrors: engine.setFileErrors,
+  });
 
   const ruleJob = useRuleHarmonizerState();
   const ruleRunning = ruleJob.status === 'running';
@@ -532,395 +224,6 @@ export function MetadataStudio({
   const ruleDoneVisible =
     (ruleJob.status === 'done' || ruleJob.status === 'aborted') &&
     ruleJob.total > 0 && !ruleDoneDismissed;
-
-  /** Null out fields the user deselected; fill mode keeps only EMPTY fields,
-   *  verify mode (R59) only PRESENT ones — cached entries from the other
-   *  mode can never leak a suggestion into the wrong mode. */
-  const filterSuggestions = useCallback((
-    list: HarmonizeSuggestion[],
-  ): HarmonizeSuggestion[] => (
-    list.map(s => ({
-      ...s,
-      suggestedGenre: fields.genre && (mode === 'verify' ? !!s.currentGenre : !s.currentGenre) ? s.suggestedGenre : null,
-      suggestedLanguage: fields.language && (mode === 'verify' ? !!s.currentLanguage : !s.currentLanguage) ? s.suggestedLanguage : null,
-      suggestedYear: fields.year && (mode === 'verify' ? s.currentYear != null : s.currentYear == null) ? s.suggestedYear : null,
-    })).filter(s => s.suggestedGenre || s.suggestedLanguage || s.suggestedYear)
-  ), [fields, mode]);
-
-  // ── Lyrics warm-up (only needed when writing txt files) ──
-  const startLyricsWarmup = useCallback((list: Song[]) => {
-    const total = list.length;
-    if (total === 0) return;
-    let index = 0;
-    let done = 0;
-    setWarmupProgress({ done: 0, total });
-
-    const worker = async () => {
-      while (index < total) {
-        const song = list[index++];
-        try { await getSongByIdWithLyrics(song.id); } catch { /* best-effort */ }
-        done++;
-        if (isMountedRef.current) setWarmupProgress({ done, total });
-      }
-    };
-
-    warmupPromiseRef.current = Promise.all(
-      Array.from({ length: Math.min(4, total) }, () => worker()),
-    ).then(() => { if (isMountedRef.current) setWarmupProgress(null); });
-  }, []);
-
-  // ── Run (fill / verify modes — factual pipeline) ──
-
-  const handleRun = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    setSuggestions([]);
-    setFileErrors(null);
-    setLocalAppliedInfo(null);
-    setMarkedVerifiedInfo(null);
-    setStats(null);
-    setProgress(null);
-    setRunStartedAt(Date.now());
-
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    if (writeTarget === 'txt') startLyricsWarmup(runSubset);
-
-    try {
-      const result = await harmonizeSongs(
-        runSubset.map(s => ({
-          id: s.id, title: s.title, artist: s.artist,
-          genre: s.genre ?? null, language: s.language ?? null, year: s.year ?? null,
-        })),
-        {
-          onProgress: setProgress,
-          signal: controller.signal,
-          // R59: verify mode checks the EXISTING values (field toggles ride
-          // along so only active fields burn lookups/quota)
-          ...(mode === 'verify' ? { verify: true, verifyFields: fields } : {}),
-        },
-      );
-      if (!isMountedRef.current) return;
-      setProgress(null);
-
-      if (result.stats.aborted) {
-        // User cancelled — neutral state, no error banner
-        setSuggestions([]);
-        setStats(null);
-        return;
-      }
-
-      const filtered = filterSuggestions(result.suggestions);
-      if (result.success || filtered.length > 0) {
-        setSuggestions(filtered);
-        setStats(result.stats);
-      } else {
-        setError(result.error || t('editor.aiBatchError'));
-      }
-
-      // ── R60/R62: mark verified songs (✓ badge in the editor library) ──
-      // Songs the verify run ANALYZED and found NOTHING to correct get
-      // metadataVerifiedAt — same persistence primitive as applied
-      // suggestions (updateSong → localStorage + IndexedDB; the flag is app
-      // state, not txt metadata, so no txt write happens here). Aborted runs
-      // mark nothing. R62: fields without a source verdict no longer block
-      // the badge — corrected AND already-correct songs both reach ✓, so a
-      // complete verify run can verify the whole library (100% reachable).
-      if (mode === 'verify' && result.verifiedOkIds.length > 0) {
-        const now = Date.now();
-        updateSongs(result.verifiedOkIds.map(id => ({ songId: id, updates: { metadataVerifiedAt: now } })));
-        const previouslyVerified = new Set(runSubset.filter(s => s.metadataVerifiedAt).map(s => s.id));
-        const newlyVerified = result.verifiedOkIds.filter(id => !previouslyVerified.has(id)).length;
-        if (newlyVerified > 0) setMarkedVerifiedInfo(newlyVerified);
-        onApplied(); // refresh the editor grid so the badges appear immediately
-      }
-    } catch (e) {
-      if (!isMountedRef.current) return;
-      if (controller.signal.aborted) return; // aborted fetch — not an error
-      setError(e instanceof Error ? e.message : t('editor.aiBatchError'));
-    } finally {
-      abortRef.current = null;
-      if (isMountedRef.current) {
-        setIsLoading(false);
-        setProgress(null);
-        setRunStartedAt(null);
-      }
-    }
-  }, [runSubset, mode, writeTarget, startLyricsWarmup, filterSuggestions, t, onApplied]);
-
-  /** User-facing Run click: guards an empty selection / nothing to fill or
-   *  verify (mode-specific message, R59). */
-  const handleRunClick = useCallback(() => {
-    if (runSubset.length === 0) {
-      setError(scope === 'selection'
-        ? t('editor.aiBatchSelectFirstDesc')
-        : mode === 'verify'
-          ? t('editor.studioVerifyNothing')
-          : t('editor.studioNothingToFill'));
-      return;
-    }
-    void handleRun();
-  }, [runSubset, mode, scope, t, handleRun]);
-
-  /** Cancel the running analysis job (orderly abort after the current chunk). */
-  const handleAbortRun = useCallback(() => {
-    abortRef.current?.abort();
-  }, []);
-
-  // ── R63: "Daten sind korrekt" — verify mode's 100% path ──
-  // A verify run badges every song it found NOTHING to correct, but songs
-  // with OPEN suggestions could never reach the ✓ badge: the only way out
-  // was applying a correction the user might consider WRONG (classic case:
-  // iTunes says "Pop"/"Volksmusik" where the German karaoke library
-  // correctly says "Schlager"). This handler overrules the open
-  // suggestions — the user declares "my data is already correct":
-  //  - the song gets metadataVerifiedAt (✓ badge) WITHOUT changing values
-  //  - a user-override cache entry (all-null suggestions, verifiedOk,
-  //    verifySemantics 2, full field coverage) replaces the suggesting
-  //    entry under the CURRENT values' key → future verify runs serve the
-  //    verdict from the cache instead of re-listing the rejected suggestion
-  //  - the row(s) leave the suggestion list
-  // Editing a value later still drops the badge (R60-E invalidation) and
-  // the changed key means a fresh check on the next run — nothing freezes.
-  const handleMarkCorrect = useCallback((songIds: string[]) => {
-    if (songIds.length === 0) return;
-    const now = Date.now();
-    updateSongs(songIds.map(id => ({ songId: id, updates: { metadataVerifiedAt: now } })));
-    const songsById = new Map(songs.map(s => [s.id, s] as const));
-    for (const id of songIds) {
-      const song = songsById.get(id);
-      if (!song) continue;
-      setCachedHarmonize(
-        {
-          title: song.title,
-          artist: song.artist,
-          genre: song.genre ?? null,
-          language: song.language ?? null,
-          year: song.year ?? null,
-        },
-        {
-          suggestedGenre: null,
-          suggestedLanguage: null,
-          suggestedYear: null,
-          genreConfidence: 0,
-          languageConfidence: 0,
-          yearConfidence: 0,
-          genreReason: '',
-          languageReason: '',
-          yearReason: '',
-          source: 'ai',
-          verifiedOk: true,
-          verifiedFields: { genre: true, language: true, year: true },
-          verifySemantics: 2,
-        },
-      );
-    }
-    const idSet = new Set(songIds);
-    setSuggestions(prev => prev.filter(s => !idSet.has(s.songId)));
-    setMarkedVerifiedInfo(prev => (prev ?? 0) + songIds.length);
-    onApplied(); // refresh the editor grid so the badges appear immediately
-  }, [songs, onApplied]);
-
-  // ── Apply (single field row ✓) ──
-  const handleApplySingle = useCallback(async (
-    songId: string,
-    field: 'genre' | 'language' | 'year',
-    value: string | number,
-  ) => {
-    const normalized = field === 'genre'
-      ? normalizeGenreName(String(value))
-      : field === 'language'
-        ? normalizeLanguage(String(value))
-        : Number(value);
-    const updates: Partial<Song> = { [field]: normalized };
-
-    // R60: applying a verify correction brings the song in line with the
-    // source — when this was the LAST open field of the song, it counts as
-    // verified now (badge). Only in verify mode; a fill apply never sets
-    // the flag (the other existing values were not checked). Riding in the
-    // same updates object keeps the flag exactly in sync with the write
-    // (txt failure ⇒ no value ⇒ no badge).
-    if (mode === 'verify') {
-      const row = suggestions.find(s => s.songId === songId);
-      const otherFieldOpen = field === 'genre'
-        ? !!(row && (row.suggestedLanguage || row.suggestedYear))
-        : field === 'language'
-          ? !!(row && (row.suggestedGenre || row.suggestedYear))
-          : !!(row && (row.suggestedGenre || row.suggestedLanguage));
-      if (!otherFieldOpen) updates.metadataVerifiedAt = Date.now();
-    }
-
-    if (writeTarget === 'txt') {
-      // TXT FIRST (1.a): the library is ONLY updated when the txt write
-      // succeeded — no more "genre set but not in the txt".
-      const fileOk = await persistSongMetadataToTxt(songId, updates);
-      if (!isMountedRef.current) return;
-      if (fileOk.success) {
-        updateSong(songId, updates);
-      } else {
-        setFileErrors(prev => (prev ?? 0) + 1);
-        return;
-      }
-    } else {
-      // Game-local only — wiped by the library reset (hint shown above).
-      updateSong(songId, updates);
-    }
-
-    setSuggestions(prev => prev
-      .map(s => s.songId === songId
-        ? { ...s, ...(field === 'genre' ? { suggestedGenre: null } : field === 'language' ? { suggestedLanguage: null } : { suggestedYear: null }) }
-        : s)
-      .filter(s => s.suggestedGenre || s.suggestedLanguage || s.suggestedYear));
-    // Last open row applied → drop the run summary too (the fill stats line
-    // and the verify all-OK banner would otherwise show stale numbers, R59).
-    queueMicrotask(() => {
-      if (!isMountedRef.current) return;
-      setSuggestions(current => {
-        if (current.length === 0) setStats(null);
-        return current;
-      });
-    });
-    onApplied();
-  }, [writeTarget, mode, suggestions, onApplied]);
-
-  // ── Apply all (threshold-aware, respects fields + write target) ──
-  const handleApplyAll = useCallback(async () => {
-    const list = suggestions;
-    if (list.length === 0) return;
-
-    if (writeTarget === 'txt' && warmupPromiseRef.current) {
-      try { await warmupPromiseRef.current; } catch { /* best-effort */ }
-    }
-
-    setApplyProgress({ done: 0, total: list.length });
-    setFileErrors(0);
-    let failedFiles = 0;
-    let processed = 0;
-    let localApplied = 0;
-    const failed: HarmonizeSuggestion[] = [];
-
-    for (const s of list) {
-      const updates: Partial<Song> = {};
-      if (s.suggestedGenre) {
-        updates.genre = normalizeGenreName(s.suggestedGenre);
-      }
-      if (s.suggestedLanguage) {
-        updates.language = normalizeLanguage(s.suggestedLanguage);
-      }
-      if (s.suggestedYear && s.suggestedYear !== s.currentYear) {
-        updates.year = s.suggestedYear;
-      }
-
-      // R60 (verify mode): every open field of this song is being applied
-      // → the song now matches the sources and counts as verified (badge).
-      if (mode === 'verify' && Object.keys(updates).length > 0) {
-        const allFieldsCovered =
-          (!s.suggestedGenre || updates.genre !== undefined) &&
-          (!s.suggestedLanguage || updates.language !== undefined) &&
-          (!s.suggestedYear || updates.year !== undefined);
-        if (allFieldsCovered) updates.metadataVerifiedAt = Date.now();
-      }
-
-      if (Object.keys(updates).length > 0) {
-        if (writeTarget === 'txt') {
-          const fileOk = await persistSongMetadataToTxt(s.songId, updates);
-          if (fileOk.success) {
-            updateSong(s.songId, updates);
-          } else {
-            failedFiles++;
-            failed.push(s);
-          }
-        } else {
-          updateSong(s.songId, updates);
-          localApplied++;
-        }
-      }
-      processed++;
-      if (!isMountedRef.current) return;
-      setApplyProgress({ done: processed, total: list.length });
-    }
-
-    if (!isMountedRef.current) return;
-    setApplyProgress(null);
-    setFileErrors(failedFiles > 0 ? failedFiles : null);
-    if (localApplied > 0) setLocalAppliedInfo(localApplied);
-    setSuggestions(failed);
-    setShowWarning(false);
-    setStats(null);
-    onApplied();
-  }, [suggestions, mode, writeTarget, onApplied]);
-
-  // ── Rule mode ──
-  const handleRuleStart = useCallback(async () => {
-    if (rulePlan.length === 0) return;
-    if (writeTarget === 'txt') {
-      // Background job (module singleton) — keeps running when the studio
-      // closes; the RuleHarmonizeStatusBar shows progress.
-      await ruleHarmonizer.start(rulePlan);
-      if (isMountedRef.current) onApplied();
-    } else {
-      // Game-local: simple sequential loop, no txt writes
-      setApplyProgress({ done: 0, total: rulePlan.length });
-      let done = 0;
-      for (const item of rulePlan) {
-        // Field-aware: genre items write genre, language items language.
-        // R60: rule-based rewrites invalidate the verified badge.
-        updateSong(item.songId, item.field === 'language'
-          ? { language: item.newLanguage, metadataVerifiedAt: undefined }
-          : { genre: item.newGenre, metadataVerifiedAt: undefined });
-        done++;
-        if (!isMountedRef.current) return;
-        setApplyProgress({ done, total: rulePlan.length });
-        await new Promise(resolve => setTimeout(resolve, 0)); // yield to UI
-      }
-      setApplyProgress(null);
-      setLocalAppliedInfo(rulePlan.length);
-      onApplied();
-    }
-  }, [rulePlan, writeTarget, onApplied]);
-
-  // ── Small UI atoms ──
-  const segButton = (
-    active: boolean, onClick: () => void, label: React.ReactNode, testId: string, color = 'violet',
-  ) => (
-    <button
-      onClick={onClick}
-      data-testid={testId}
-      className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all border ${
-        active
-          ? color === 'violet'
-            ? 'bg-violet-500/20 border-violet-500/60 text-violet-200'
-            : color === 'cyan'
-              ? 'bg-cyan-500/20 border-cyan-500/60 text-cyan-200'
-              : color === 'amber'
-                ? 'bg-amber-500/20 border-amber-500/60 text-amber-200'
-                : 'bg-emerald-500/20 border-emerald-500/60 text-emerald-200'
-          : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white/80'
-      }`}
-    >
-      {label}
-    </button>
-  );
-
-  const fieldToggle = (key: 'genre' | 'language' | 'year', icon: string) => (
-    <button
-      onClick={() => setFields(prev => ({ ...prev, [key]: !prev[key] }))}
-      aria-pressed={fields[key]}
-      data-testid={`studio-field-${key}`}
-      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all border ${
-        fields[key]
-          ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-200'
-          : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10'
-      }`}
-    >
-      <span>{icon}</span>
-      <span>{t(`editor.songInfoTab.${key}`)}</span>
-      {fields[key]
-        ? <span className="text-emerald-400">✓</span>
-        : <span className="text-white/30">○</span>}
-    </button>
-  );
 
   const applicableCount = countApplicableSongs(suggestions);
   const noFieldsSelected = !fields.genre && !fields.language && !fields.year;
@@ -967,34 +270,37 @@ export function MetadataStudio({
           {/* ── Scope ── */}
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[10px] uppercase tracking-wider text-white/40 w-16 flex-shrink-0">{t('editor.studioScope')}</span>
-            {segButton(scope === 'all', () => setScope('all'),
-              t('editor.studioScopeAll').replace('{n}', String(songs.length)), 'studio-scope-all')}
-            {segButton(scope === 'selection', () => setScope('selection'),
-              t('editor.studioScopeSelection').replace('{n}', String(selectedIds.size)), 'studio-scope-selection')}
+            <SegButton active={scope === 'all'} onClick={() => setScope('all')}
+              label={t('editor.studioScopeAll').replace('{n}', String(songs.length))} testId="studio-scope-all" />
+            <SegButton active={scope === 'selection'} onClick={() => setScope('selection')}
+              label={t('editor.studioScopeSelection').replace('{n}', String(selectedIds.size))} testId="studio-scope-selection" />
           </div>
 
           {/* ── Fields ── */}
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[10px] uppercase tracking-wider text-white/40 w-16 flex-shrink-0">{t('editor.studioFields')}</span>
-            {fieldToggle('genre', '🎸')}
-            {fieldToggle('language', '🌐')}
-            {fieldToggle('year', '📅')}
+            <FieldToggle active={fields.genre} onToggle={() => setFields(prev => ({ ...prev, genre: !prev.genre }))}
+              icon="🎸" label={t('editor.songInfoTab.genre')} testId="studio-field-genre" />
+            <FieldToggle active={fields.language} onToggle={() => setFields(prev => ({ ...prev, language: !prev.language }))}
+              icon="🌐" label={t('editor.songInfoTab.language')} testId="studio-field-language" />
+            <FieldToggle active={fields.year} onToggle={() => setFields(prev => ({ ...prev, year: !prev.year }))}
+              icon="📅" label={t('editor.songInfoTab.year')} testId="studio-field-year" />
           </div>
 
           {/* ── Mode ── */}
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[10px] uppercase tracking-wider text-white/40 w-16 flex-shrink-0">{t('editor.studioMode')}</span>
-            {segButton(mode === 'fill', () => setMode('fill'), t('editor.studioModeFill'), 'studio-mode-fill')}
-            {segButton(mode === 'rule', () => setMode('rule'), t('editor.studioModeRule'), 'studio-mode-rule', 'cyan')}
-            {segButton(mode === 'verify', () => setMode('verify'), `🔍 ${t('editor.studioModeVerify')}`, 'studio-mode-verify', 'emerald')}
-            {segButton(mode === 'manual', () => setMode('manual'), `✏️ ${t('editor.studioModeManual')}`, 'studio-mode-manual', 'amber')}
+            <SegButton active={mode === 'fill'} onClick={() => setMode('fill')} label={t('editor.studioModeFill')} testId="studio-mode-fill" />
+            <SegButton active={mode === 'rule'} onClick={() => setMode('rule')} label={t('editor.studioModeRule')} testId="studio-mode-rule" color="cyan" />
+            <SegButton active={mode === 'verify'} onClick={() => setMode('verify')} label={`🔍 ${t('editor.studioModeVerify')}`} testId="studio-mode-verify" color="emerald" />
+            <SegButton active={mode === 'manual'} onClick={() => setMode('manual')} label={`✏️ ${t('editor.studioModeManual')}`} testId="studio-mode-manual" color="amber" />
           </div>
 
           {/* ── Write target ── */}
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[10px] uppercase tracking-wider text-white/40 w-16 flex-shrink-0">{t('editor.studioWriteTarget')}</span>
-            {segButton(writeTarget === 'txt', () => setWriteTarget('txt'), '📄 ' + t('editor.studioWriteTxt'), 'studio-target-txt', 'cyan')}
-            {segButton(writeTarget === 'local', () => setWriteTarget('local'), '💾 ' + t('editor.studioWriteLocal'), 'studio-target-local', 'amber')}
+            <SegButton active={writeTarget === 'txt'} onClick={() => setWriteTarget('txt')} label={'📄 ' + t('editor.studioWriteTxt')} testId="studio-target-txt" color="cyan" />
+            <SegButton active={writeTarget === 'local'} onClick={() => setWriteTarget('local')} label={'💾 ' + t('editor.studioWriteLocal')} testId="studio-target-local" color="amber" />
           </div>
           {writeTarget === 'local' && (
             <p className="text-[10px] text-amber-300/70 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-1.5 leading-relaxed" data-testid="studio-local-hint">
@@ -1071,339 +377,53 @@ export function MetadataStudio({
             </div>
           )}
 
-          {/* ── Manual genre correction list (rule mode) ──
-              Songs with pseudo-genres ("AI", "Oldies", "A Cappella", "TV"…)
-              that no logical rule can map. The user picks the correct main
-              genre per song from the 23-genre dropdown, then applies — or
-              skips them (kept as-is). Rendered as long as there are open
-              items OR skipped ones (so the restore link stays reachable
-              even after "Skip all"). */}
+          {/* ── Manual genre correction list (rule mode) ── */}
           {mode === 'rule' && (manualReview.length > 0 || skippedManualCount > 0) && (
-            <div className="space-y-2 rounded-lg border border-amber-500/25 bg-amber-500/[0.06] p-3" data-testid="studio-manual-review">
-              {manualReview.length > 0 && (<>
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[11px] text-amber-300 font-medium">
-                  ✋ {t('editor.manualReviewCount').replace('{count}', String(manualReview.length))}
-                </p>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-white/40 tabular-nums">
-                    {Object.keys(manualPicks).filter(k => manualReview.some(m => m.songId === k)).length}/{manualReview.length}
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={manualReview.length === 0 || manualApplyProgress !== null}
-                    onClick={() => {
-                      stopManualPreview();
-                      setSkippedManualIds(prev => {
-                        const next = new Set(prev);
-                        for (const m of manualReview) next.add(m.songId);
-                        return next;
-                      });
-                      setManualPicks({});
-                    }}
-                    className="h-7 px-3 border-white/20 text-white/70 hover:bg-white/10 hover:text-white text-[11px]"
-                    title={t('editor.manualReviewSkipAllHint')}
-                    data-testid="studio-manual-skip-all"
-                  >
-                    ⏭️ {t('editor.manualReviewSkipAll')}
-                  </Button>
-                  <Button
-                    size="sm"
-                    disabled={manualApplyProgress !== null || Object.values(manualPicks).length === 0}
-                    onClick={handleApplyManualPicks}
-                    className="h-7 px-3 bg-amber-500 hover:bg-amber-400 text-black text-[11px] font-bold"
-                    data-testid="studio-manual-apply"
-                  >
-                    {manualApplyProgress
-                      ? `${manualApplyProgress.done}/${manualApplyProgress.total}`
-                      : t('editor.manualReviewApply')}
-                  </Button>
-                </div>
-              </div>
-              <p className="text-[10px] text-white/40 leading-relaxed">{t('editor.manualReviewDesc')}</p>
-              </>)}
-              {skippedManualCount > 0 && (
-                <p className="text-[10px] text-white/35 flex items-center gap-2 flex-wrap" data-testid="studio-manual-skipped-info">
-                  <span>⏭️ {t('editor.manualReviewSkippedInfo').replace('{count}', String(skippedManualCount))}</span>
-                  <button
-                    onClick={() => setSkippedManualIds(new Set())}
-                    className="underline underline-offset-2 hover:text-white/70 text-white/50 transition-colors"
-                    data-testid="studio-manual-restore"
-                  >
-                    {t('editor.manualReviewRestore')}
-                  </button>
-                </p>
-              )}
-              <div className="max-h-56 overflow-y-auto space-y-1.5 pr-1" data-testid="studio-manual-review-list">
-                {manualReview.map(item => {
-                  const previewSong = songById.get(item.songId);
-                  const hasAudio = !!(previewSong && (
-                    previewSong.audioUrl || previewSong.relativeAudioPath || previewSong.storedMedia
-                    || previewSong.videoUrl || previewSong.videoBackground || previewSong.relativeVideoPath
-                  ));
-                  const isPlaying = manualPreviewId === item.songId;
-                  return (
-                    <div
-                      key={item.songId}
-                      className={`flex flex-wrap sm:flex-nowrap items-center gap-2 bg-black/30 border rounded-lg px-2.5 py-1.5 transition-colors ${
-                        isPlaying ? 'border-cyan-400/50 bg-cyan-500/[0.06]' : 'border-white/10'
-                      }`}
-                    >
-                      {/* Listen-before-you-assign preview (user feedback point 1) */}
-                      <button
-                        onClick={() => void toggleManualPreview(item.songId)}
-                        disabled={!hasAudio}
-                        className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center border transition-all ${
-                          isPlaying
-                            ? 'bg-cyan-500/25 border-cyan-400/60 text-cyan-300'
-                            : hasAudio
-                              ? 'bg-white/5 border-white/15 text-white/60 hover:bg-cyan-500/15 hover:text-cyan-300 hover:border-cyan-400/40'
-                              : 'bg-white/5 border-white/10 text-white/20 cursor-not-allowed'
-                        }`}
-                        title={!hasAudio
-                          ? t('editor.manualReviewNoAudio')
-                          : isPlaying
-                            ? t('editor.manualReviewStopPreview')
-                            : t('editor.manualReviewPlay')}
-                        aria-label={`${isPlaying ? t('editor.manualReviewStopPreview') : t('editor.manualReviewPlay')}: ${item.title}`}
-                        data-testid={`studio-manual-play-${item.songId}`}
-                      >
-                        {isPlaying
-                          ? <Square className="w-3 h-3" />
-                          : <Play className="w-3 h-3 ml-0.5" />}
-                      </button>
-                      {/* Title + Artist */}
-                      <div className="flex-1 min-w-[140px] sm:min-w-[200px]">
-                        <p className="text-[11px] text-white/85 font-medium truncate" title={item.title}>{item.title}</p>
-                        <p className="text-[10px] text-white/40 truncate" title={item.artist}>{item.artist}</p>
-                      </div>
-                      {/* Current (pseudo) genre */}
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 border border-white/15 text-amber-200/90 whitespace-nowrap">
-                        {item.currentGenre}
-                      </span>
-                      <span className="text-white/30 text-[10px]">→</span>
-                      {/* Main genre dropdown (23 genres) */}
-                      <select
-                        value={manualPicks[item.songId] ?? ''}
-                        onChange={e => setManualPicks(prev => ({ ...prev, [item.songId]: e.target.value }))}
-                        className="bg-gray-800 border border-white/20 rounded-lg px-2 py-1 text-[11px] text-white focus:border-amber-500 focus:outline-none min-w-[110px]"
-                        aria-label={`${t('editor.manualReviewApply')}: ${item.title}`}
-                        data-testid={`studio-manual-select-${item.songId}`}
-                      >
-                        <option value="">{t('editor.manualReviewChoose')}</option>
-                        {allGenres.map(g => (
-                          <option key={g} value={g} className="bg-gray-800 text-white">{g}</option>
-                        ))}
-                      </select>
-                      {/* Skip — keep this song's genre as-is (user feedback point 2) */}
-                      <button
-                        onClick={() => skipManualSong(item.songId)}
-                        className="flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-white/30 hover:text-amber-300 hover:bg-amber-500/10 transition-colors"
-                        title={t('editor.manualReviewSkip')}
-                        aria-label={`${t('editor.manualReviewSkip')}: ${item.title}`}
-                        data-testid={`studio-manual-skip-${item.songId}`}
-                      >
-                        <SkipForward className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <ManualReviewList
+              manualReview={manualReview}
+              manualPicks={manualPicks}
+              onPickChange={(songId, genre) => setManualPicks(prev => ({ ...prev, [songId]: genre }))}
+              onSkipAll={() => {
+                stopManualPreview();
+                setSkippedManualIds(prev => {
+                  const next = new Set(prev);
+                  for (const m of manualReview) next.add(m.songId);
+                  return next;
+                });
+                setManualPicks({});
+              }}
+              onRestoreSkipped={() => setSkippedManualIds(new Set())}
+              skippedManualCount={skippedManualCount}
+              manualApplyProgress={manualApplyProgress}
+              onApply={handleApplyManualPicks}
+              onSkipSong={skipManualSong}
+              songById={songById}
+              allGenres={allGenres}
+              previewId={manualPreviewId}
+              onTogglePreview={songId => void toggleManualPreview(songId)}
+              t={t}
+            />
           )}
 
-          {/* ── Manual edit mode (R5-1) ──
-              Direct per-song editing for ALL songs in scope: the current
-              value + an editor side by side for every ACTIVE field (genre
-              dropdown, language/year free text). Changed inputs get an amber
-              ring; the Apply button in the header replaces the Run button. */}
+          {/* ── Manual edit mode (R5-1) ── */}
           {mode === 'manual' && (
-            <div className="space-y-2 rounded-lg border border-amber-500/25 bg-amber-500/[0.06] p-3" data-testid="manual-edit-panel">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <p className="text-[11px] text-amber-300 font-medium">
-                  ✏️ {t('editor.manualEditChangedCount')
-                    .replace('{changed}', String(manualEditChangedCount))
-                    .replace('{total}', String(scopeSongs.length))}
-                </p>
-                <Button
-                  size="sm"
-                  disabled={manualEditChangedCount === 0 || manualEditApplyProgress !== null}
-                  onClick={handleApplyManualEdits}
-                  title={manualEditChangedCount === 0 ? t('editor.manualEditNoChanges') : undefined}
-                  className="h-7 px-3 bg-amber-500 hover:bg-amber-400 text-black text-[11px] font-bold"
-                  data-testid="manual-edit-apply"
-                >
-                  {manualEditApplyProgress
-                    ? `${manualEditApplyProgress.done}/${manualEditApplyProgress.total}`
-                    : t('editor.manualReviewApply')}
-                </Button>
-              </div>
-              <p className="text-[10px] text-white/40 leading-relaxed">{t('editor.manualEditHint')}</p>
-              {scopeSongs.length === 0 ? (
-                <p className="text-[10px] text-white/40" data-testid="manual-edit-empty">
-                  ☑️ {t('editor.manualEditEmptyScope')}
-                </p>
-              ) : (
-                <div className="max-h-64 overflow-y-auto space-y-1.5 pr-1" data-testid="manual-edit-list">
-                  {scopeSongs.map(song => {
-                    const edit = manualEdits[song.id];
-                    const updates = manualUpdatesFor(song);
-                    const changedFields =
-                      (updates.genre !== undefined ? 1 : 0) +
-                      (updates.language !== undefined ? 1 : 0) +
-                      (updates.year !== undefined ? 1 : 0);
-                    return (
-                      <div
-                        key={song.id}
-                        data-testid={`manual-edit-row-${song.id}`}
-                        className={`flex flex-wrap sm:flex-nowrap items-center gap-x-2 gap-y-1.5 bg-black/30 border rounded-lg px-2.5 py-1.5 transition-colors ${
-                          manualPreviewId === song.id ? 'border-cyan-400/50 bg-cyan-500/[0.06]' : 'border-white/10'
-                        }`}
-                      >
-                        {/* Listen-before-you-edit preview (same as the rule-based
-                            manual review list — user request: parity). */}
-                        {(() => {
-                          const hasAudio = !!(
-                            song.audioUrl || song.relativeAudioPath || song.storedMedia
-                            || song.videoUrl || song.videoBackground || song.relativeVideoPath
-                          );
-                          const isPlaying = manualPreviewId === song.id;
-                          return (
-                            <button
-                              onClick={() => void toggleManualPreview(song.id)}
-                              disabled={!hasAudio}
-                              className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center border transition-all ${
-                                isPlaying
-                                  ? 'bg-cyan-500/25 border-cyan-400/60 text-cyan-300'
-                                  : hasAudio
-                                    ? 'bg-white/5 border-white/15 text-white/60 hover:bg-cyan-500/15 hover:text-cyan-300 hover:border-cyan-400/40'
-                                    : 'bg-white/5 border-white/10 text-white/20 cursor-not-allowed'
-                              }`}
-                              title={!hasAudio
-                                ? t('editor.manualReviewNoAudio')
-                                : isPlaying
-                                  ? t('editor.manualReviewStopPreview')
-                                  : t('editor.manualReviewPlay')}
-                              aria-label={`${isPlaying ? t('editor.manualReviewStopPreview') : t('editor.manualReviewPlay')}: ${song.title}`}
-                              data-testid={`manual-edit-play-${song.id}`}
-                            >
-                              {isPlaying
-                                ? <Square className="w-3 h-3" />
-                                : <Play className="w-3 h-3 ml-0.5" />}
-                            </button>
-                          );
-                        })()}
-                        {/* Title + Artist */}
-                        <div className="flex-1 min-w-[130px] sm:min-w-[180px]">
-                          <p className="text-[11px] text-white/85 font-medium truncate" title={song.title}>{song.title}</p>
-                          <p className="text-[10px] text-white/40 truncate" title={song.artist}>{song.artist}</p>
-                        </div>
-
-                        {/* Genre: current value + genre dropdown (23 genres) */}
-                        {fields.genre && (<>
-                          <span
-                            title={t('editor.manualEditCurrent')}
-                            className={`text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 border whitespace-nowrap ${
-                              song.genre ? 'border-white/15 text-amber-200/90' : 'border-white/10 text-white/30 italic'
-                            }`}
-                          >
-                            {song.genre || '—'}
-                          </span>
-                          <span className="text-white/30 text-[10px]">→</span>
-                          <select
-                            value={edit?.genre ?? ''}
-                            onChange={e => setManualEdits(prev => ({
-                              ...prev,
-                              [song.id]: { ...prev[song.id], genre: e.target.value },
-                            }))}
-                            className={`bg-gray-800 border rounded-lg px-2 py-1 text-[11px] text-white focus:outline-none min-w-[110px] ${
-                              updates.genre !== undefined
-                                ? 'border-amber-500/70 ring-1 ring-amber-500/40'
-                                : 'border-white/20 focus:border-amber-500'
-                            }`}
-                            aria-label={`${t('editor.songInfoTab.genre')}: ${song.title}`}
-                            data-testid={`manual-edit-genre-${song.id}`}
-                          >
-                            <option value="">{t('editor.manualReviewChoose')}</option>
-                            {allGenres.map(g => (
-                              <option key={g} value={g} className="bg-gray-800 text-white">{g}</option>
-                            ))}
-                          </select>
-                        </>)}
-
-                        {/* Language: current value + free text input */}
-                        {fields.language && (<>
-                          <span
-                            title={t('editor.manualEditCurrent')}
-                            className={`text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 border whitespace-nowrap ${
-                              song.language ? 'border-white/15 text-purple-200/90' : 'border-white/10 text-white/30 italic'
-                            }`}
-                          >
-                            {song.language || '—'}
-                          </span>
-                          <span className="text-white/30 text-[10px]">→</span>
-                          <input
-                            type="text"
-                            value={edit?.language ?? ''}
-                            onChange={e => setManualEdits(prev => ({
-                              ...prev,
-                              [song.id]: { ...prev[song.id], language: e.target.value },
-                            }))}
-                            placeholder={t('editor.songInfoTab.language')}
-                            className={`bg-gray-800 border rounded-lg px-2 py-1 text-[11px] text-white focus:outline-none w-28 ${
-                              updates.language !== undefined
-                                ? 'border-amber-500/70 ring-1 ring-amber-500/40'
-                                : 'border-white/20 focus:border-amber-500'
-                            }`}
-                            aria-label={`${t('editor.songInfoTab.language')}: ${song.title}`}
-                            data-testid={`manual-edit-language-${song.id}`}
-                          />
-                        </>)}
-
-                        {/* Year: current value + numeric input (4 digits) */}
-                        {fields.year && (<>
-                          <span
-                            title={t('editor.manualEditCurrent')}
-                            className={`text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 border whitespace-nowrap ${
-                              song.year ? 'border-white/15 text-emerald-200/90' : 'border-white/10 text-white/30 italic'
-                            }`}
-                          >
-                            {song.year || '—'}
-                          </span>
-                          <span className="text-white/30 text-[10px]">→</span>
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            maxLength={4}
-                            value={edit?.year ?? ''}
-                            onChange={e => setManualEdits(prev => ({
-                              ...prev,
-                              [song.id]: { ...prev[song.id], year: e.target.value.replace(/[^0-9]/g, '') },
-                            }))}
-                            placeholder={t('editor.songInfoTab.yearPlaceholder')}
-                            className={`bg-gray-800 border rounded-lg px-2 py-1 text-[11px] text-white focus:outline-none w-16 text-center ${
-                              updates.year !== undefined
-                                ? 'border-amber-500/70 ring-1 ring-amber-500/40'
-                                : 'border-white/20 focus:border-amber-500'
-                            }`}
-                            aria-label={`${t('editor.songInfoTab.year')}: ${song.title}`}
-                            data-testid={`manual-edit-year-${song.id}`}
-                          />
-                        </>)}
-
-                        {/* Changed-field count for this row (subtle amber) */}
-                        {changedFields > 0 && (
-                          <span className="text-[10px] text-amber-300 font-mono whitespace-nowrap">
-                            ✏️ {changedFields}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            <ManualEditPanel
+              scopeSongs={scopeSongs}
+              manualEdits={manualEdits}
+              onEditChange={(songId, field, value) => setManualEdits(prev => ({
+                ...prev,
+                [songId]: { ...prev[songId], [field]: value },
+              }))}
+              manualUpdatesFor={manualUpdatesFor}
+              changedCount={manualEditChangedCount}
+              applyProgress={manualEditApplyProgress}
+              onApply={handleApplyManualEdits}
+              fields={fields}
+              allGenres={allGenres}
+              previewId={manualPreviewId}
+              onTogglePreview={songId => void toggleManualPreview(songId)}
+              t={t}
+            />
           )}
 
           {/* ── Run / progress ── */}
@@ -1725,59 +745,14 @@ export function MetadataStudio({
 
           {/* ── Apply-all warning (txt mode modifies source files) ── */}
           {showWarning && (
-            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60]">
-              <div className="bg-gray-900 border border-white/20 rounded-xl p-5 max-w-md w-full mx-4 space-y-4 shadow-2xl">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xl">⚠️</span>
-                  </div>
-                  <div>
-                    <h3 className="text-white font-semibold text-sm">{t('editor.aiHarmonizeWarnTitle')}</h3>
-                    <p className="text-white/60 text-xs mt-0.5">{t('editor.aiHarmonizeWarnSubtitle')}</p>
-                  </div>
-                </div>
-
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-xs text-white/70 space-y-2">
-                  {writeTarget === 'txt' ? (
-                    <>
-                      <p>{t('editor.aiHarmonizeWarn1')}</p>
-                      <ul className="list-disc list-inside space-y-1 text-white/60">
-                        <li>{t('editor.aiHarmonizeWarn2')}</li>
-                        <li>{t('editor.aiHarmonizeWarn3')}</li>
-                        <li>{t('editor.aiHarmonizeWarn4')}</li>
-                      </ul>
-                    </>
-                  ) : (
-                    <p>{t('editor.studioWriteLocalWarn').replace('{count}', String(applicableCount))}</p>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2 text-xs text-white/50">
-                  <span className="px-2 py-0.5 rounded bg-white/10 font-mono">{applicableCount}</span>
-                  <span>{t('editor.aiHarmonizeWarnCount')}</span>
-                </div>
-
-                <div className="flex gap-2 pt-1">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowWarning(false)}
-                    disabled={!!applyProgress}
-                    className="flex-1 border-white/20 text-white/80 hover:bg-white/10 text-xs"
-                  >
-                    {t('editor.aiHarmonizeWarnCancel')}
-                  </Button>
-                  <Button
-                    onClick={handleApplyAll}
-                    disabled={!!applyProgress}
-                    className="flex-1 bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs"
-                  >
-                    {applyProgress
-                      ? `${applyProgress.done}/${applyProgress.total}`
-                      : t('editor.aiHarmonizeWarnConfirm')}
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <ApplyAllWarning
+              applicableCount={applicableCount}
+              writeTarget={writeTarget}
+              applyProgress={applyProgress}
+              onCancel={() => setShowWarning(false)}
+              onConfirm={handleApplyAll}
+              t={t}
+            />
           )}
 
           {/* R50: the big-batch confirmation was removed together with the
