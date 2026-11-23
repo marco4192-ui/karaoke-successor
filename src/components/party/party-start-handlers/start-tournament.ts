@@ -1,9 +1,12 @@
 import type { StartHandlerContext } from './types';
 import { createTournament, type TournamentPlayer, type TournamentSettings } from '@/lib/game/tournament';
+import type { GameModeSettingsMap } from '@/components/game/unified-party-setup.types';
 
 export async function startTournament(ctx: StartHandlerContext): Promise<void> {
   const { result, party, setScreen, toast, t } = ctx;
-  const s = result.settings as { maxPlayers?: number; shortMode?: boolean; tournamentType?: string; tiebreakMode?: string; dynamicDifficulty?: boolean; songSelectionMode?: string; seedingMode?: string; filterGenre?: string; filterLanguage?: string };
+  // R103: typed settings — BaseModeSettings carries the shared song filters
+  // (filterGenre/filterLanguage) the unified setup wrote at "Ready to Play".
+  const s = result.settings as GameModeSettingsMap['tournament'];
 
   const rawMaxPlayers = s.maxPlayers || 8;
   const shortMode = s.shortMode !== false;

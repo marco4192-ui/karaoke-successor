@@ -174,9 +174,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
   // the configured restrictions.
   const brSongPool = useMemo(() => {
     const all = getNonDuetSongs();
-    const s = party.unifiedSetupResult?.settings as
-      | { filterGenre?: string; filterLanguage?: string; filterCombined?: boolean; filterReleaseYear?: string; filterEra?: string; filterSearch?: string }
-      | undefined;
+    const s = party.unifiedSetupResult?.settings;
     const hasFilter = !!(
       s && (s.filterGenre || s.filterLanguage || s.filterReleaseYear || s.filterEra || s.filterSearch)
     );
@@ -194,6 +192,28 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
     // running game never runs out of songs mid-match.
     return filtered.length > 0 ? filtered : all;
   }, [party.unifiedSetupResult]);
+
+  // ── R103: shared tournament song pool ──
+  // One pipeline for BOTH random picks and the 3-song vote suggestions: the
+  // bracket's genre/language filters run through filterSongs() (normalized
+  // genre matching, "Others" language handling). The vote pool previously
+  // used strict string equality, so casing/alias differences between a
+  // song's genre and the filter value silently dropped it from voting.
+  const getTournamentPool = useCallback((): import('@/types/game').Song[] => {
+    let pool = getNonDuetSongs();
+    const bracket = usePartyStore.getState().tournamentBracket;
+    if (!bracket) return pool;
+    const genre = bracket.settings.filterGenre;
+    const lang = bracket.settings.filterLanguage;
+    if (genre && genre !== 'all' && lang && lang !== 'all') {
+      pool = filterSongs(pool, genre, lang, true);
+    } else if (genre && genre !== 'all') {
+      pool = filterSongs(pool, genre, 'all', true);
+    } else if (lang && lang !== 'all') {
+      pool = filterSongs(pool, 'all', lang, true);
+    }
+    return pool;
+  }, []);
 
   // ── Tournament starting-screen state (replaces the old 3-2-1 mic overlay) ──
   // After selecting the next pairing ("Start Next Match"), the mode starting
@@ -271,18 +291,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
     if (bracket && bracket.settings.songSelectionMode === 'vote') {
       // Pick 3 random songs for voting (same pool logic as pickTournamentSong)
       const usedIds = new Set(party.tournamentUsedSongIds);
-      const pool = getNonDuetSongs().filter(s => {
-        if (usedIds.has(s.id)) return false;
-        const genre = bracket.settings.filterGenre;
-        const lang = bracket.settings.filterLanguage;
-        if (genre && genre !== 'all') {
-          if (!s.genre || s.genre !== genre) return false;
-        }
-        if (lang && lang !== 'all') {
-          if (!s.language || s.language !== lang) return false;
-        }
-        return true;
-      });
+      const pool = getTournamentPool().filter(s => !usedIds.has(s.id));
       if (pool.length >= 3) {
         const shuffled = shuffleArray(pool).slice(0, 3);
         party.setTournamentVotingSongs(shuffled);
@@ -294,7 +303,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
     } else {
       startMatchWithMicOverlay(match);
     }
-  }, [party, startMatchWithMicOverlay]);
+  }, [party, startMatchWithMicOverlay, getTournamentPool]);
 
   // ── Companion "open duels" list: start a specific duel from a companion app ──
   // The companion sends `party_start_match:<matchId>` which arrives here as a
@@ -321,17 +330,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
     const bracket = party.tournamentBracket;
     if (!bracket) return null;
 
-    // #5 Apply genre/language filters
-    let pool = getNonDuetSongs();
-    const genre = bracket.settings.filterGenre;
-    const lang = bracket.settings.filterLanguage;
-    if (genre && genre !== 'all' && lang && lang !== 'all') {
-      pool = filterSongs(pool, genre, lang, true);
-    } else if (genre && genre !== 'all') {
-      pool = filterSongs(pool, genre, 'all', true);
-    } else if (lang && lang !== 'all') {
-      pool = filterSongs(pool, 'all', lang, true);
-    }
+    // #5 Apply genre/language filters (shared pool — see getTournamentPool)
+    let pool = getTournamentPool();
 
     // #2 Exclude already-used songs
     const usedIds = new Set(party.tournamentUsedSongIds);
@@ -356,7 +356,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
 
     party.addTournamentUsedSongId(chosen.id);
     return chosen;
-  }, [party]);
+  }, [party, getTournamentPool]);
 
   // ── Launch the selected tournament match (invoked by the starting screen's Start button) ──
   const launchTournamentMatch = useCallback(() => {

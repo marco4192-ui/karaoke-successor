@@ -81,26 +81,26 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
 
             const songs = getNonDuetSongs();
 
-            // Apply song filter — base settings (difficulty, filters) are shared across all modes
-            const baseSettings = result.settings as { filterGenre: string; filterLanguage: string; filterCombined: boolean; filterReleaseYear: string; filterEra?: string; filterSearch?: string };
+            // Apply song filter — base settings (difficulty, filters) are shared
+            // across all modes (typed via BaseModeSettings since R103)
             const filteredSongs = filterSongs(
               songs,
-              baseSettings.filterGenre,
-              baseSettings.filterLanguage,
-              baseSettings.filterCombined,
-              baseSettings.filterReleaseYear,
-              baseSettings.filterEra,
-              baseSettings.filterSearch
+              result.settings.filterGenre,
+              result.settings.filterLanguage,
+              result.settings.filterCombined,
+              result.settings.filterReleaseYear,
+              result.settings.filterEra,
+              result.settings.filterSearch,
             );
             // Store filters for next-round song selection in PTM
             if (party.selectedGameMode === 'pass-the-mic') {
               storeSongFilters({
-                filterGenre: baseSettings.filterGenre,
-                filterLanguage: baseSettings.filterLanguage,
-                filterCombined: String(baseSettings.filterCombined),
-                filterReleaseYear: baseSettings.filterReleaseYear,
-                filterEra: baseSettings.filterEra,
-                filterSearch: baseSettings.filterSearch,
+                filterGenre: result.settings.filterGenre,
+                filterLanguage: result.settings.filterLanguage,
+                filterCombined: String(result.settings.filterCombined),
+                filterReleaseYear: result.settings.filterReleaseYear,
+                filterEra: result.settings.filterEra,
+                filterSearch: result.settings.filterSearch,
               });
             }
 
