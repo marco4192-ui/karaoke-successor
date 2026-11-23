@@ -406,15 +406,110 @@ if (portableFiles.length > 0) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  Step 5: Verify dist/ splash page
+//  Step 5: Verify dist/ splash page (frontendDist-Placeholder)
 // ═══════════════════════════════════════════════════════════
 log('\n=== Step 5/5: Verifying splash page ===\n');
+
+// dist/index.html ist KEIN Build-Artefakt, sondern der in Git getrackte
+// frontendDist-Placeholder (tauri.conf.json -> build.frontendDist "../dist"):
+// Tauri bettet ihn als Startseite ein (Boot-Splash), bis lib.rs zum
+// gebuendelten Node-Server auf localhost:3000 navigiert. Fehlt der Ordner,
+// bricht `tauri build` mit kryptischem "Unable to find your web assets" ab
+// (CI-Ausfall nach R101: die Datei wurde faelschlich als "leerer Ballast-
+// Ordner" geloescht). Self-healing: fehlt sie, wird sie hier aus dem
+// eingebetteten Template (byte-identisch zum getrackten Original) neu
+// erzeugt, statt nur zu warnen — das deckt alle drei CI-Jobs ab, weil
+// prepare-bundle.mjs vor jedem tauri build laeuft.
+const SPLASH_HTML = `<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AfterTen Karaoke</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 40%, #0d0d2b 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    color: #fff;
+  }
+  .container { text-align: center; }
+
+  .icon {
+    font-size: 4.5rem;
+    margin-bottom: 1.25rem;
+    animation: float 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 20px rgba(255, 45, 149, 0.4));
+  }
+
+  .title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #ff2d95 0%, #ff6b9d 50%, #c850c0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 2.5rem;
+  }
+
+  .bar-track {
+    width: 220px;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+    margin: 0 auto 1.5rem;
+    overflow: hidden;
+    position: relative;
+  }
+  .bar-fill {
+    position: absolute;
+    left: 0; top: 0; height: 100%;
+    width: 35%;
+    background: linear-gradient(90deg, transparent, #ff2d95, #c850c0, transparent);
+    border-radius: 3px;
+    animation: sweep 1.6s ease-in-out infinite;
+  }
+
+  .hint {
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.25);
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-8px); }
+  }
+  @keyframes sweep {
+    0%   { left: -35%; }
+    100% { left: 100%; }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">&#x1F3A4;</div>
+    <div class="title">AfterTen Karaoke</div>
+    <div class="bar-track"><div class="bar-fill"></div></div>
+    <div class="hint">wird gestartet...</div>
+  </div>
+</body>
+</html>`;
 
 const distIndex = join(ROOT, 'dist', 'index.html');
 if (existsSync(distIndex)) {
   ok('dist/index.html exists');
 } else {
-  warn('dist/index.html not found');
+  mkdirSync(join(ROOT, 'dist'), { recursive: true });
+  writeFileSync(distIndex, SPLASH_HTML);
+  ok('dist/index.html was missing — recreated from embedded template');
 }
 
 // ═══════════════════════════════════════════════════════════
