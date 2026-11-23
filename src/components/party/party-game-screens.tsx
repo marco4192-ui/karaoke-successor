@@ -1060,6 +1060,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
         <RateMySongRatingScreen
           songTitle={rmsSong?.title || ''}
           songArtist={rmsSong?.artist || ''}
+          playMode={rms.playMode}
           singingPlayers={party.rateMySongPlayerIds.map(id => {
             const p = profiles.find(pr => pr.id === id);
             return { id, name: p?.name || t('game.player'), color: p?.color || '#FF6B6B' };
@@ -1139,6 +1140,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             result={rateMySongResult}
             songId={rms.songId}
             songGenre={rmsSong?.genre}
+            playMode={rms.playMode}
             categoriesEnabled={rms.categoriesEnabled}
             challengesEnabled={rms.challengesEnabled}
             seriesRound={rateMySongSeriesRound}

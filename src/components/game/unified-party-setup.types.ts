@@ -219,6 +219,8 @@ export interface RateMySongModeSettings extends BaseModeSettings {
   challengesEnabled?: boolean;
   bettingEnabled?: boolean;
   anonymousRating?: boolean;
+  /** R102: with 2 singers — sing TOGETHER (team score) instead of competing */
+  duetMode?: boolean;
 }
 
 /** Duel — no extra config settings */

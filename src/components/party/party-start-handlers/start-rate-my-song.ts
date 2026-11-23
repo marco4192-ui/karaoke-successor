@@ -9,7 +9,12 @@ export async function startRateMySong(ctx: StartHandlerContext): Promise<void> {
   const chosenSong = result.selectedSong ?? pickRandomSong(filteredSongs);
   if (!chosenSong) return;
   const duration = s.duration || 'normal';
-  const rateSettings = { playMode: result.players.length > 1 ? 'duel' as const : 'single' as const, duration: duration as 'short' | 'normal', songId: chosenSong.id };
+  // R102: play mode — the unified setup's duet toggle wins; otherwise 2
+  // singers default to a duel, 1 singer to single (previous behaviour).
+  const playMode = result.players.length > 1
+    ? (s.duetMode ? 'duet' as const : 'duel' as const)
+    : 'single' as const;
+  const rateSettings = { playMode, duration: duration as 'short' | 'normal', songId: chosenSong.id };
   const playerIds = result.players.map(p => p.id);
   party.setRateMySongSettings(rateSettings);
   party.setRateMySongPlayerIds(playerIds);

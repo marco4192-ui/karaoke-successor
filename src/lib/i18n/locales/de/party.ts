@@ -607,6 +607,8 @@ modeSettings: {
   challengesDesc: 'Zufällige Challenges vor jeder Runde',
   betting: 'Tippen',
   bettingDesc: 'Publikum kann vorhersagen',
+  rmsDuetMode: 'Duett statt Duell',
+  rmsDuetModeDesc: 'Zusammen als Team singen statt gegeneinander anzutreten',
   missingWordFrequency: 'Frequenz',
   missingWordFrequencyDesc: 'Wie viel Text versteckt wird',
   missingGranularity: 'Versteck-Modus',

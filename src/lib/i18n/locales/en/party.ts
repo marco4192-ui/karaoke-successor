@@ -630,6 +630,8 @@ export const partyTranslations = {
     challengesDesc: 'Random challenges before each round',
     betting: 'Betting',
     bettingDesc: 'Audience can predict',
+    rmsDuetMode: 'Duet instead of Duel',
+    rmsDuetModeDesc: 'Sing together as a team instead of competing',
     missingWordFrequency: 'Frequency',
     missingWordFrequencyDesc: 'How much text is hidden',
     missingGranularity: 'Hide Mode',

@@ -250,6 +250,8 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
       { key: 'categoriesEnabled', label: 'Categories', description: '4 rating categories instead of single score', labelKey: 'modeSettings.categories', descriptionKey: 'modeSettings.categoriesDesc', type: 'toggle', defaultValue: true },
       { key: 'challengesEnabled', label: 'Challenges', description: 'Random challenges before each round', labelKey: 'modeSettings.challenges', descriptionKey: 'modeSettings.challengesDesc', type: 'toggle', defaultValue: false },
       { key: 'bettingEnabled', label: 'Betting', description: 'Audience can predict', labelKey: 'modeSettings.betting', descriptionKey: 'modeSettings.bettingDesc', type: 'toggle', defaultValue: false },
+      // R102: with 2 singers — cooperative duet (team score) instead of duel
+      { key: 'duetMode', label: 'Duet instead of Duel', description: 'Sing together as a team instead of competing', labelKey: 'modeSettings.rmsDuetMode', descriptionKey: 'modeSettings.rmsDuetModeDesc', type: 'toggle', defaultValue: false },
     ],
     songSelectionOptions: ['random', 'library', 'vote'],
     supportsCompanionApp: true,

@@ -35,6 +35,7 @@ export function RateMySongResultsScreen({
   result,
   songId,
   songGenre,
+  playMode = 'single',
   categoriesEnabled = false,
   challengesEnabled = false,
   seriesRound,
@@ -198,6 +199,19 @@ export function RateMySongResultsScreen({
                     result.averageRating >= 5.0 ? 'text-orange-400' :
                     result.averageRating >= 3.0 ? 'text-red-400' : 'text-gray-400';
 
+  // ── R102: duel / duet specifics ──
+  const isDuel = playMode === 'duel' && result.ratings.length === 2;
+  const isDuet = playMode === 'duet' && result.ratings.length === 2;
+  // Ratings sorted by score (descending) so the 🥇🥈🥉 medals below reflect
+  // the actual outcome instead of the singer order.
+  const sortedRatings = useMemo(
+    () => [...result.ratings].sort((a, b) => b.rating - a.rating),
+    [result.ratings],
+  );
+  const duelWinner = isDuel && sortedRatings[0].rating > sortedRatings[1].rating
+    ? sortedRatings[0]
+    : null;
+
   // ── Wall of Fame: top 3 all-time players by best rating ──
   const allTimeRanking = useMemo(() => {
     const bestByPlayer = new Map<string, { playerId: string; playerName: string; bestRating: number }>();
@@ -239,13 +253,57 @@ export function RateMySongResultsScreen({
           </div>
         )}
 
-        <div className="text-6xl mb-4">🏆</div>
+        <div className="text-6xl mb-4">{isDuet ? '🤝' : '🏆'}</div>
         <h1 className="text-3xl font-bold mb-2">{t('rateMySong.ratingComplete')}</h1>
         <p className="text-gray-400 mb-2">{result.songTitle}</p>
+        {/* R102: duet — the big number is the TEAM score, show both singers */}
+        {isDuet && (
+          <div className="flex items-center justify-center gap-2 mb-1" data-testid="rms-duet-team-row">
+            {result.ratings.map((r, i) => (
+              <div key={r.playerId} className="flex items-center gap-2">
+                {i > 0 && <span className="text-white/40 font-bold">+</span>}
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: r.playerColor }}>
+                  {r.playerName.charAt(0).toUpperCase()}
+                </div>
+                <span className="text-sm text-white/70">{r.playerName}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {isDuet && <div className="text-xs uppercase tracking-wider text-pink-300 mb-1">🤝 {t('rateMySong.teamScore')}</div>}
         <div className={`text-5xl font-bold ${scoreColor} mb-6 animate-rms-score-reveal`}>
           {displayedScore.toFixed(1)}
           <span className="text-2xl text-gray-400"> / 10</span>
         </div>
+
+        {/* R102: DUEL — winner card (crown for the better singer, tie badge on equal scores) */}
+        {isDuel && (
+          <div className="mb-6 rounded-2xl border border-red-500/30 bg-gradient-to-r from-red-500/10 via-gray-800/40 to-cyan-500/10 p-4" data-testid="rms-duel-result">
+            <div className="text-center text-xs font-semibold uppercase tracking-wider text-red-300 mb-3">
+              ⚔️ {t('rateMySong.duelResult')}
+            </div>
+            {duelWinner ? (
+              <div className="text-center">
+                <div className="text-3xl mb-1">👑</div>
+                <div className="text-lg font-black" style={{ color: duelWinner.playerColor }}>
+                  {duelWinner.playerName}
+                </div>
+                <div className="text-sm text-white/60">{t('rateMySong.duelWins')}</div>
+                <div className="mt-2 text-sm font-mono text-white/70">
+                  {sortedRatings[0].rating.toFixed(1)} : {sortedRatings[1].rating.toFixed(1)}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center">
+                <div className="text-3xl mb-1">⚖️</div>
+                <div className="text-base font-bold text-white/80">{t('rateMySong.duelTied')}</div>
+                <div className="mt-2 text-sm font-mono text-white/70">
+                  {sortedRatings[0].rating.toFixed(1)} : {sortedRatings[1].rating.toFixed(1)}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {showConfetti && (
           <div className="fixed inset-0 pointer-events-none z-50">
@@ -280,9 +338,15 @@ export function RateMySongResultsScreen({
           </div>
         </div>
 
-        {/* Individual Ratings */}
+        {/* Individual Ratings — sorted by score (R102: medals match the
+            actual outcome; for duets these are the per-voice contributions) */}
         <div className="space-y-3 mb-6 text-left">
-          {result.ratings.map((r, i) => {
+          {isDuet && (
+            <div className="text-center text-xs uppercase tracking-wider text-pink-300/80 mb-1">
+              {t('rateMySong.duetIndividual')}
+            </div>
+          )}
+          {sortedRatings.map((r, i) => {
             const emoji = r.rating >= 9 ? '🌟' : r.rating >= 7 ? '⭐' : r.rating >= 5 ? '👍' : r.rating >= 3 ? '😐' : '💔';
             const stats = playerStatsMap.get(r.playerId);
             const avgRating = stats && stats.totalPerformances > 0

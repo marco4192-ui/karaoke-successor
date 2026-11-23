@@ -8,16 +8,19 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useTranslation } from '@/lib/i18n/translations';
 import type { RateMySongRating } from './rate-my-song-types';
 import type { RateMySongRatingScreenProps } from './rate-my-song-types';
-import { CATEGORY_WEIGHTS, CATEGORY_KEYS, type CategoryKey, calcWeightedTotal } from './rate-my-song-types';
+import { CATEGORY_WEIGHTS, CATEGORY_KEYS, type CategoryKey, type RateMySongPlayMode, calcWeightedTotal } from './rate-my-song-types';
 
 // ===================== RATING SCREEN =====================
-// TODO: Implement duel/duet-specific rating UI and scoring logic
+// R102: duel/duet-specific rating UI — duel shows a live VS scoreboard
+// (who is leading while the audience drags the sliders), duet shows a
+// live team score banner. Both reuse the per-singer sliders below.
 
 export function RateMySongRatingScreen({
   songTitle,
   songArtist,
   singingPlayers,
   allProfiles,
+  playMode = 'single',
   categoriesEnabled = false,
   anonymousRating = false,
   challengesEnabled = false,
@@ -187,6 +190,21 @@ export function RateMySongRatingScreen({
 
   const hasAudience = audienceProfiles.length > 0;
 
+  // ── R102: current score per singer (works in both slider modes) ──
+  const getLiveScore = (singerId: string): number => {
+    if (categoriesEnabled) {
+      const cats = getCategoryAverage(singerId);
+      return cats ? calcWeightedTotal(cats) : 5.0;
+    }
+    return getAverageForSinger(singerId);
+  };
+
+  const isDuel = playMode === 'duel' && singingPlayers.length === 2;
+  const isDuet = playMode === 'duet' && singingPlayers.length === 2;
+  const liveTeamScore = isDuet
+    ? singingPlayers.reduce((sum, s) => sum + getLiveScore(s.id), 0) / singingPlayers.length
+    : 0;
+
   const categoryLabels: Record<CategoryKey, { icon: string; label: string }> = {
     voice: { icon: '🎤', label: t('rateMySong.voice') },
     stage: { icon: '💃', label: t('rateMySong.stage') },
@@ -216,6 +234,72 @@ export function RateMySongRatingScreen({
               : t('rateMySong.pleaseRate')}
           </p>
         </div>
+
+        {/* R102: DUEL — live VS scoreboard (who is leading right now) */}
+        {isDuel && (() => {
+          const [a, b] = singingPlayers;
+          const scoreA = getLiveScore(a.id);
+          const scoreB = getLiveScore(b.id);
+          const diff = scoreA - scoreB;
+          return (
+            <div className="mb-6 rounded-2xl border border-red-500/30 bg-gradient-to-r from-red-500/10 via-gray-800/40 to-cyan-500/10 p-4" data-testid="rms-duel-banner">
+              <div className="text-center text-xs font-semibold uppercase tracking-wider text-red-300 mb-3">
+                ⚔️ {t('rateMySong.duelBanner')}
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <div className={`flex-1 text-center rounded-xl p-2 transition-all ${diff > 0 ? 'bg-red-500/20 ring-1 ring-red-400/50' : ''}`}>
+                  <div className="w-9 h-9 mx-auto rounded-full flex items-center justify-center text-sm font-bold mb-1" style={{ backgroundColor: a.color }}>
+                    {a.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="text-sm font-medium truncate">{a.name}</div>
+                  <div className="text-2xl font-black text-red-300">{scoreA.toFixed(1)}</div>
+                </div>
+                <div className="text-center shrink-0 px-2">
+                  <div className="text-xl font-black text-white/70">VS</div>
+                  <div className="text-[10px] font-medium mt-1 px-2 py-0.5 rounded-full bg-white/10 text-white/70 whitespace-nowrap">
+                    {Math.abs(diff) < 0.05
+                      ? t('rateMySong.duelTied')
+                      : `${(diff > 0 ? a : b).name} ${t('rateMySong.duelLeading')}`}
+                  </div>
+                </div>
+                <div className={`flex-1 text-center rounded-xl p-2 transition-all ${diff < 0 ? 'bg-cyan-500/20 ring-1 ring-cyan-400/50' : ''}`}>
+                  <div className="w-9 h-9 mx-auto rounded-full flex items-center justify-center text-sm font-bold mb-1" style={{ backgroundColor: b.color }}>
+                    {b.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="text-sm font-medium truncate">{b.name}</div>
+                  <div className="text-2xl font-black text-cyan-300">{scoreB.toFixed(1)}</div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* R102: DUET — live team score banner (one score for both) */}
+        {isDuet && (
+          <div className="mb-6 rounded-2xl border border-pink-500/30 bg-gradient-to-r from-pink-500/10 to-purple-500/10 p-4 text-center" data-testid="rms-duet-banner">
+            <div className="text-xs font-semibold uppercase tracking-wider text-pink-300 mb-2">
+              🤝 {t('rateMySong.duetBanner')}
+            </div>
+            <div className="flex items-center justify-center gap-3 mb-2">
+              {singingPlayers.map((s, i) => (
+                <div key={s.id} className="flex items-center gap-3">
+                  {i > 0 && <span className="text-white/40 font-bold">+</span>}
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: s.color }}>
+                      {s.name.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-sm text-white/80">{s.name}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="text-sm text-white/50 mb-1">{t('rateMySong.teamScore')}</div>
+            <div className="text-4xl font-black bg-gradient-to-r from-pink-300 to-purple-300 bg-clip-text text-transparent">
+              {liveTeamScore.toFixed(1)}<span className="text-lg text-white/40"> / 10</span>
+            </div>
+            <p className="text-xs text-white/40 mt-2">{t('rateMySong.duetHint')}</p>
+          </div>
+        )}
 
         {/* Challenge Display */}
         {challengesEnabled && currentChallenge && (
@@ -468,8 +552,9 @@ export function RateMySongRatingScreen({
           </div>
         )}
 
-        {/* Overall Average */}
-        {singingPlayers.length > 1 && (
+        {/* Overall Average — hidden for duel/duet (their banners above already
+            show the live combined/leading score) */}
+        {singingPlayers.length > 1 && !isDuel && !isDuet && (
           <div className="text-center mb-6 bg-purple-500/10 rounded-xl p-3 border border-purple-500/20">
             <span className="text-purple-300 font-medium">{t('rateMySong.overallAverage').replace('{n}', '')} </span>
             <span className="text-xl font-bold text-white">

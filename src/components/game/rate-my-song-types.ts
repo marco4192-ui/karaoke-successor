@@ -61,6 +61,8 @@ export interface RateMySongRatingScreenProps {
   songArtist: string;
   singingPlayers: Array<{ id: string; name: string; color: string }>;
   allProfiles: PlayerProfile[];
+  /** R102: play mode — drives the duel (VS) / duet (team) rating UI */
+  playMode?: RateMySongPlayMode;
   categoriesEnabled?: boolean;
   anonymousRating?: boolean;
   challengesEnabled?: boolean;
@@ -74,6 +76,8 @@ export interface RateMySongResultsScreenProps {
   result: RateMySongResult;
   songId?: string;
   songGenre?: string;
+  /** R102: play mode — duel shows a winner card, duet shows a team score */
+  playMode?: RateMySongPlayMode;
   categoriesEnabled?: boolean;
   challengesEnabled?: boolean;
   seriesRound?: number;
