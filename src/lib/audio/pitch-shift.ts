@@ -137,7 +137,10 @@ export async function setPitchShift(
     // cross-origin element would silence the playback):
     if (isSynthAdapterElement(element)) return false;
     if (!isSameOriginMedia(element)) return false;
-    if (typeof AudioWorkletNode === 'undefined' || !AudioContext?.prototype?.audioWorklet) {
+    // Feature detection: `in` instead of a property READ — `audioWorklet` is a
+    // native accessor whose getter throws "Illegal invocation" when the
+    // receiver is not a real AudioContext instance (e.g. AudioContext.prototype).
+    if (typeof AudioWorkletNode === 'undefined' || !('audioWorklet' in AudioContext.prototype)) {
       return false;
     }
 
@@ -193,8 +196,11 @@ export async function setPitchShift(
       chain.semitones = current;
     }
     return true;
-  } catch {
-    // Never break playback — the pitch shift simply stays off.
+  } catch (err) {
+    // Never break playback — the pitch shift simply stays off. Log the cause
+    // (diagnosing silent Web Audio failures is otherwise impossible).
+    // eslint-disable-next-line no-console
+    console.warn('[PitchShift] Could not engage pitch shift:', err);
     return false;
   }
 }
