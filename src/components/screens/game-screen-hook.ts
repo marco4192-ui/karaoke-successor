@@ -12,6 +12,7 @@ import {
   DEFAULT_WEBCAM_CONFIG,
   loadWebcamConfig,
   saveWebcamConfig,
+  getActiveWebcamStream,
 } from '@/components/game/webcam-background';
 import {
   useParticleEmitter,
@@ -546,6 +547,11 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     isWebcamActive: webcamConfig.enabled,
     getMicStream: useCallback(() => {
       try { return getPitchDetector().getMediaStream() || null; } catch { return null; }
+    }, []),
+    // R104: reuse the LIVE webcam stream from the background hook — the
+    // recorder must not open a second camera session on the same device.
+    getWebcamStream: useCallback(() => {
+      try { return getActiveWebcamStream(); } catch { return null; }
     }, []),
     onReplaySaved: useCallback((replay: { id: string }) => {
       setLastReplayId(replay.id);

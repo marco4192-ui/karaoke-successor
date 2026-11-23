@@ -25,6 +25,11 @@ interface UseReplayRecorderOptions {
   playerName: string;
   isWebcamActive: boolean;                  // whether webcam is currently active
   getMicStream: () => MediaStream | null;   // callback to get mic stream from PitchDetector
+  /** R104: supplies the SHARED webcam stream from the background hook.
+  *   When available the recorder reuses its video tracks instead of opening
+  *   a second getUserMedia session on the same camera. Tracks added this way
+  *   are NOT owned by the recorder and keep running after stopRecording. */
+  getWebcamStream?: () => MediaStream | null;
   onReplaySaved: (_replay: ReplayData) => void;
 }
 
@@ -87,6 +92,7 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
     playerName,
     isWebcamActive,
     getMicStream,
+    getWebcamStream,
     onReplaySaved,
   } = options;
 
@@ -129,27 +135,40 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
     // Add webcam video tracks if webcam is active (must complete before starting recorder)
     const useWebcam = isWebcamActive;
     const startRecorderWithStream = async (stream: MediaStream, hasWebcam: boolean) => {
+      let videoAdded = false;
       if (hasWebcam) {
-        try {
-          const webcamStream = await navigator.mediaDevices.getUserMedia({
-            video: { width: 1280, height: 720, facingMode: 'user' },
-            audio: false,
-          });
-          if (!isMountedRef.current) {
-            // Component unmounted during webcam acquisition — release stream
-            webcamStream.getTracks().forEach(t => t.stop());
-            startingRef.current = false;
-            return;
+        // R104: prefer the SHARED live stream (in-game webcam background).
+        // Reusing its tracks avoids a second getUserMedia session on the
+        // same camera (double bandwidth, flicker on exclusive cameras).
+        const sharedStream = getWebcamStream?.() ?? null;
+        if (sharedStream && sharedStream.getVideoTracks().length > 0) {
+          sharedStream.getVideoTracks().forEach(track => stream.addTrack(track));
+          videoAdded = true; // NOT owned — never stopped by this recorder
+        } else {
+          // Fallback: webcam enabled but no shared stream available (e.g. the
+          // background component has not started it yet) — open our own.
+          try {
+            const webcamStream = await navigator.mediaDevices.getUserMedia({
+              video: { width: 1280, height: 720, facingMode: 'user' },
+              audio: false,
+            });
+            if (!isMountedRef.current) {
+              // Component unmounted during webcam acquisition — release stream
+              webcamStream.getTracks().forEach(t => t.stop());
+              startingRef.current = false;
+              return;
+            }
+            webcamStreamRef.current = webcamStream;
+            webcamStream.getVideoTracks().forEach(track => stream.addTrack(track));
+            videoAdded = true;
+          } catch (_err) {
+            // eslint-disable-next-line no-console
+            console.warn('[ReplayRecorder] Could not get webcam for replay:', _err);
           }
-          webcamStreamRef.current = webcamStream;
-          webcamStream.getVideoTracks().forEach(track => stream.addTrack(track));
-        } catch (_err) {
-          // eslint-disable-next-line no-console
-          console.warn('[ReplayRecorder] Could not get webcam for replay:', _err);
         }
       }
 
-      const mimeType = selectMimeType(hasWebcam && webcamStreamRef.current !== null);
+      const mimeType = selectMimeType(hasWebcam && videoAdded);
       const recorderOptions: MediaRecorderOptions = {
         mimeType,
         videoBitsPerSecond: hasWebcam ? 2_500_000 : undefined,
@@ -189,7 +208,7 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
     };
 
     startRecorderWithStream(combinedStream, useWebcam);
-  }, [enabled, songId, isWebcamActive, getMicStream]);
+  }, [enabled, songId, isWebcamActive, getMicStream, getWebcamStream]);
 
   /**
    * Stop recording: collect all chunks, create a Blob, store in IndexedDB.

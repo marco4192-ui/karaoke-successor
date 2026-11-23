@@ -9,8 +9,8 @@ import type { WebcamBackgroundConfig, WebcamSizeMode } from './webcam-types';
 export type { WebcamSizeMode, WebcamPosition, WebcamFilter, WebcamBackgroundConfig } from './webcam-types';
 export { DEFAULT_WEBCAM_CONFIG, saveWebcamConfig, loadWebcamConfig } from './webcam-types';
 
-// Re-export hook
-export { useWebcamBackground } from './use-webcam-background';
+// Re-export hook (+ R104 shared-stream registry accessor)
+export { useWebcamBackground, getActiveWebcamStream } from './use-webcam-background';
 
 // Re-export UI components
 export { WebcamSettingsPanel, WebcamQuickControls, WebcamIcon } from './webcam-settings-panel';

@@ -4,6 +4,22 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 
 // ===================== Webcam Background Hook =====================
 
+// ── R104: shared active-stream registry ──
+// The replay recorder reuses the LIVE camera stream via getActiveWebcamStream()
+// instead of opening a SECOND getUserMedia session on the same device (which
+// doubled camera bandwidth and made exclusive cameras flicker or fail).
+let activeWebcamStream: MediaStream | null = null;
+
+/** The webcam stream currently owned by a mounted useWebcamBackground
+ *  instance (e.g. the in-game WebcamBackground), or null when off. */
+export function getActiveWebcamStream(): MediaStream | null {
+  return activeWebcamStream;
+}
+
+function registerActiveWebcamStream(stream: MediaStream | null): void {
+  activeWebcamStream = stream;
+}
+
 export function useWebcamBackground(deviceId: string | null = null) {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -45,6 +61,8 @@ export function useWebcamBackground(deviceId: string | null = null) {
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
       setStream(mediaStream);
       setHasPermission(true);
+      // R104: publish the live stream for reuse (replay recorder)
+      registerActiveWebcamStream(mediaStream);
       
       // Refresh device list after getting permission
       await refreshDevices();
@@ -71,6 +89,9 @@ export function useWebcamBackground(deviceId: string | null = null) {
   const stopWebcam = useCallback(() => {
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
+      // R104: clear the shared registry only if WE own the published stream
+      // (another hook instance may have started a newer one meanwhile)
+      if (getActiveWebcamStream() === stream) registerActiveWebcamStream(null);
       setStream(null);
     }
   }, [stream]);
@@ -87,7 +108,11 @@ export function useWebcamBackground(deviceId: string | null = null) {
   streamRef.current = stream;
   useEffect(() => {
     return () => {
-      streamRef.current?.getTracks().forEach(track => track.stop());
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        // R104: release the shared registry on unmount as well
+        if (getActiveWebcamStream() === streamRef.current) registerActiveWebcamStream(null);
+      }
     };
   }, []);
   
