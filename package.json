@@ -1,6 +1,6 @@
 {
-  "name": "nextjs_tailwind_shadcn_ts",
-  "version": "0.2.0",
+  "name": "afterten-karaoke",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\" && tsx server.ts 2>&1 | tee dev.log",

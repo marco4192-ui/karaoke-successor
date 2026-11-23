@@ -108,3 +108,11 @@ ai-provider.json
 /qa-test-song/
 /tmp-analysis/
 /scripts-tmp/
+
+# R100: QA-Testdateien (in Git-Historie recoverable)
+/public/qa-*.mp3
+/public/qa-*.mp4
+/public/qa-*.mid
+/public/qa-*.txt
+/public/qa-*.ass
+/qa-*.png
