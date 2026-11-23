@@ -102,3 +102,9 @@ ai-provider.json
 
 # R53: Companion cover disk cache (server-side, per machine)
 /db/companion-covers/
+
+# R98: QA/Analyse-Artefakte (lokal behalten, nie committen)
+/qa-shots/
+/qa-test-song/
+/tmp-analysis/
+/scripts-tmp/
