@@ -100,8 +100,15 @@ function findBestSnippetStart(
   snippetMs: number,
 ): number {
   const notes = song.lyrics.flatMap(l => l.notes);
-  if (notes.length === 0) return 10000; // fallback: 10 s
-
+  // R110 (user point 11): no lyrics → GAP-anchored fallback instead of the
+  // blind 10 s. Song summaries (PTM medley start) carry NO lyrics — the old
+  // fallback started every such snippet at 10 s: songs with GAP > 13 s ran a
+  // long instrumental intro before the first vocal note, songs with GAP <
+  // 10 s even SKIPPED the opening vocals. 3 s before the first-vocal anchor
+  // (GAP when no lyrics) makes singing start promptly in both cases.
+  if (notes.length === 0) {
+    return Math.max(0, (song.gap || 0) - 3000);
+  }
   // Find the effective note range
   const firstNoteTime = notes[0].startTime;
   const lastNoteTime = notes[notes.length - 1].startTime;
@@ -141,6 +148,17 @@ function findBestSnippetStart(
 }
 
 // ===================== MAIN GENERATOR =====================
+
+/** Options for generateMedleySnippets. */
+export interface GenerateMedleySnippetsOptions {
+  /** R110 (user point 11): PTM-medley mode — snippets without a
+   *  #MEDLEYSTARTBEAT always start ~3 s before the FIRST VOCAL NOTE (GAP
+   *  anchor when lyrics are unavailable) instead of using the smart
+   *  density positioning. Party snippets are short (30 s); the user rule is
+   *  "Gesang zeitnah", not "best chorus window" — a long instrumental intro
+   *  would spread the 2000-point budget over just a handful of notes. */
+  vocalStartFallback?: boolean;
+}
 
 /**
  * Pick songs from candidates, handling deduplication when library is small.
@@ -198,6 +216,7 @@ export function generateMedleySnippets(
   snippetDurationSec: number,
   genre?: string,
   language?: string,
+  options?: GenerateMedleySnippetsOptions,
 ): MedleySong[] {
   const snippetMs = snippetDurationSec * 1000;
 
@@ -230,8 +249,12 @@ export function generateMedleySnippets(
       return { song, startTime, endTime, duration: endTime - startTime };
     }
 
-    // Priority 3: Smart positioning (Feature #8)
-    const startTime = findBestSnippetStart(song, snippetMs);
+    // Priority 3: smart positioning (Feature #8) — or, in
+    // vocalStartFallback mode (R110/user point 11), the GAP/first-note
+    // anchor: vocals start within ~3 s, guaranteed.
+    const startTime = options?.vocalStartFallback
+      ? vocalAnchoredStart(song)
+      : findBestSnippetStart(song, snippetMs);
     const endTime = Math.min(startTime + snippetMs, song.duration);
 
     return {
@@ -241,6 +264,16 @@ export function generateMedleySnippets(
       duration: Math.min(snippetMs, song.duration - startTime),
     };
   });
+}
+
+/** R110 (user point 11): start ~3 s before the first vocal note — lyrics'
+ * first note when available, GAP otherwise. */
+function vocalAnchoredStart(song: Song): number {
+  const firstNote = song.lyrics?.[0]?.notes?.[0]?.startTime;
+  const anchor = typeof firstNote === 'number' && firstNote > 0
+    ? firstNote
+    : (song.gap || 0);
+  return Math.max(0, anchor - 3000);
 }
 
 /**

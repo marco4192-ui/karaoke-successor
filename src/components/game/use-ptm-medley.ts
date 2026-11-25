@@ -136,12 +136,23 @@ export function usePtmMedley({
   }, [isPlaying, isYouTube, videoRef]);
 
   // ── Medley preloading: preload next snippet's audio while current is playing ──
+  // R110 (user point 9): preloads the NEXT snippet's AUDIO and (separately)
+  // its background VIDEO. The per-snippet GameBackground remount used to cold-
+  // fetch the next song's video exactly at the player switch — decode +
+  // network on the main changeover moment was a main jank source ("ruckelig
+  // fast immer beim Spielerwechsel"). A warm browser cache makes the remount
+  // a fast local read.
   const preloadRef = useRef<HTMLAudioElement | null>(null);
+  const preloadVideoRef = useRef<HTMLVideoElement | null>(null);
   useEffect(() => {
     if (!isMedleyMode || phase !== 'playing') {
       if (preloadRef.current) {
         preloadRef.current.src = '';
         preloadRef.current = null;
+      }
+      if (preloadVideoRef.current) {
+        preloadVideoRef.current.removeAttribute('src');
+        preloadVideoRef.current = null;
       }
       return;
     }
@@ -161,6 +172,23 @@ export function usePtmMedley({
       audio.src = nextAudioUrl;
       audio.preload = 'auto';
       audio.load();
+    }
+
+    // R110: Hintergrund-Video des nächsten Snippets vorwärmen (nur direkte
+    // http(s)/blob-Dateien — YouTube/Plattform-URLs lädt der Player selbst).
+    const nextVideoUrl = nextSnippet?.song?.videoBackground
+      ?? nextSnippet?.song?.videoUrl;
+    if (nextVideoUrl && /^(https?:|blob:)/i.test(nextVideoUrl) && !/youtube|youtu\.be/i.test(nextVideoUrl)) {
+      if (!preloadVideoRef.current) {
+        preloadVideoRef.current = document.createElement('video');
+        preloadVideoRef.current.preload = 'auto';
+        preloadVideoRef.current.muted = true;
+      }
+      const v = preloadVideoRef.current;
+      if (v.src !== nextVideoUrl) {
+        v.src = nextVideoUrl;
+        v.load();
+      }
     }
 
     return () => {

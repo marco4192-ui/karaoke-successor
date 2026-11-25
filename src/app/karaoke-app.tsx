@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
+import type { GameSetupResult, SelectedPlayer } from '@/components/game/unified-party-setup.types';
 import { startAppDataSync } from '@/lib/game/appdata-sync';
 import { startTaxonomyAppDataSync } from '@/lib/game/taxonomy-appdata-sync';
 import { CHALLENGE_GAME_MODE_MAP } from '@/lib/game/player-progression';
@@ -1430,6 +1431,56 @@ export default function AfterTenKaraoke() {
                 },
               },
             }));
+            // R110 (user point 5) — Konkrete Mic-Wahl der Companion-App ins
+            // Spiel routen: Die Queue-Items tragen playerMicId/partnerMicId
+            // (Mic-Manager-Ids) schon lange mit, wurden beim Start aber
+            // IGNORIERT — der Gegner eines per Handy definierten Duells kam
+            // so nie auf sein gewähltes Mikrofon. game-screen-hook löst P1
+            // über unifiedSetupResult.players[0].micId auf, use-duet-p2-pitch
+            // (R110) liest players[1].micid VOR der playerIndex-Heuristik.
+            // Ohne deviceInfo wird ein STALES Party-Setup-Ergebnis geräumt —
+            // vorher leckte dessen P1-Mic stillschweigend in Queue-Spiele.
+            {
+              const duelLike = gameMode === 'duel' || gameMode === 'duet';
+              const baseSettings = {
+                difficulty: (deviceInfo?.difficulty || 'medium') as 'easy' | 'medium' | 'hard',
+                filterGenre: '',
+                filterLanguage: '',
+                filterCombined: false,
+                filterReleaseYear: '',
+                filterEra: 'all',
+                filterSearch: '',
+              };
+              const p1: SelectedPlayer = {
+                id: players[0]?.id || 'p1',
+                name: players[0]?.name || 'Player 1',
+                color: '#ffd60a',
+                playerType: deviceInfo?.playerMicSource === 'companion' ? 'companion' : 'microphone',
+                ...(deviceInfo && deviceInfo.playerMicSource !== 'companion' && deviceInfo.playerMicId
+                  ? { micId: deviceInfo.playerMicId, micName: deviceInfo.playerMicName }
+                  : {}),
+              };
+              const p2: SelectedPlayer = {
+                id: players[1]?.id || 'p2',
+                name: players[1]?.name || 'Player 2',
+                color: '#06b6d4',
+                playerType: deviceInfo?.partnerMicSource
+                  ? (deviceInfo.partnerMicSource === 'companion' ? 'companion' : 'microphone')
+                  : 'companion', // P2-Default wie im deviceAssignment oben
+                ...(deviceInfo && deviceInfo.partnerMicSource && deviceInfo.partnerMicSource !== 'companion' && deviceInfo.partnerMicId
+                  ? { micId: deviceInfo.partnerMicId, micName: deviceInfo.partnerMicName }
+                  : {}),
+              };
+              usePartyStore.getState().setUnifiedSetupResult(deviceInfo ? {
+                mode: duelLike ? 'duel' : 'standard',
+                players: duelLike ? [p1, p2] : [p1],
+                settings: baseSettings,
+                songSelection: 'library',
+                difficulty: baseSettings.difficulty,
+                inputMode: 'microphone',
+                selectedSong: song,
+              } as GameSetupResult : null);
+            }
             // Clear old players — zustand stores expose setState directly
             (useGameStore as any).setState?.((state: any) => ({ gameState: { ...state.gameState, players: [] } }));
             players.forEach(player => {

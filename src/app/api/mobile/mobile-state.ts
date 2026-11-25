@@ -3,6 +3,7 @@ import { generateCode, COMPANION_CODE_CHARS } from '@/lib/utils';
 import { getClientIp } from '@/lib/rate-limiter';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { networkInterfaces } from 'os';
 import { readDomainState, getLeBundle } from '@/lib/server/https-domain';
 import type { MobileClient, PitchData, MobileProfile, QueueItem, RemoteControlState, MobileGameState, GameResults, SongSummary, HostProfile } from './mobile-types';
 
@@ -434,6 +435,34 @@ export function getHttpsDomainInfo(): HttpsDomainInfo {
     }
   } catch { /* Disk-Status unlesbar — null-Infos sind harmlos */ }
   return { httpsDomain: null, httpsCertSource: null, httpsCertExpiresAt: null };
+}
+
+/**
+ * R110 (user point 2): the server's OWN LAN IPv4 addresses (all non-internal
+ * interfaces). Exposed via the `status` action so QR-code clients can
+ * cross-check the locally detected IP (Tauri UDP route trick / WebRTC can
+ * return a VPN or virtual-adapter address that phones cannot reach — the
+ * classic "QR links to a dead address" report). Computing this on the server
+ * side reflects exactly what the HTTP/HTTPS listeners are bound to.
+ */
+export function getServerLanIps(): string[] {
+  try {
+    const out: string[] = [];
+    for (const nets of Object.values(networkInterfaces())) {
+      if (!nets) continue;
+      for (const net of nets) {
+        if (net.family === 'IPv4' && !net.internal) out.push(net.address);
+      }
+    }
+    // Prefer classic private ranges first (192.168., 10., 172.16-31.) —
+    // these are the addresses phones can actually dial in a home network.
+    const isPrivate = (ip: string) =>
+      ip.startsWith('192.168.') || ip.startsWith('10.') ||
+      (/^172\.(1[6-9]|2\d|3[01])\./.test(ip));
+    return [...out.filter(isPrivate), ...out.filter(ip => !isPrivate(ip))];
+  } catch {
+    return [];
+  }
 }
 
 export const mobileClients: Map<string, MobileClient> = shared.mobileClients;

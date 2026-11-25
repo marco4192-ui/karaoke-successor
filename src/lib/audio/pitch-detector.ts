@@ -86,9 +86,16 @@ export class PitchDetector {
       // the fixed volume/noise gates → null frames ("dropouts"), while the
       // phone's AGC kept the level above its gate. Same constraints on both
       // sides = same scoring basis.
+      // R110 (user point 7): noiseSuppression FALSE — Chrome's stationary
+      // noise suppressor ADAPTS within ~0.5–1.5 s and then attenuates LONG
+      // sustained, constant-pitch tones (ballad notes): the level dips below
+      // the mic gate, the rating cuts off mid-note ("Tonwertung nach ca. 1,5
+      // Sekunden abgebrochen"), and runs of same-pitch notes produced periodic
+      // Wertungsaussetzer once the suppressor was adapted. Karaoke needs the
+      // raw level — the difficulty gates handle the noise floor.
       const audioConstraints: MediaTrackConstraints = {
         echoCancellation: true,
-        noiseSuppression: true,
+        noiseSuppression: false,
         autoGainControl: true,
       };
       if (deviceId) {
@@ -162,7 +169,8 @@ export class PitchDetector {
         try {
           const fallbackConstraints: MediaTrackConstraints = {
             echoCancellation: true,
-            noiseSuppression: true,
+            // R110: NS off here too (see primary path — sustained-tone cutoff)
+            noiseSuppression: false,
             // R95/2: AGC stays ON in the retry paths too — the primary path
             // enables it for companion parity (R94-5); a fallback mic without
             // AGC loses quiet singing below the gates (asymmetric dropouts
@@ -209,7 +217,8 @@ export class PitchDetector {
           this.mediaStream = await navigator.mediaDevices.getUserMedia({
             audio: {
               echoCancellation: true,
-              noiseSuppression: true,
+              // R110: NS off here too (see primary path — sustained-tone cutoff)
+              noiseSuppression: false,
               // R95/2: AGC parity (see OverconstrainedError retry above)
               autoGainControl: true,
             },

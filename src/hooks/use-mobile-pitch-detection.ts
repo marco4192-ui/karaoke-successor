@@ -109,8 +109,15 @@ export function useMobilePitchDetection({
   //     nach ≥3 s konstantem Pegel wandert der Boden langsam Richtung
   //     Musikpegel (Deckel 0.30), das Gate folgt → laute Musik wird
   //     gegatet, Gesang in der Hand (CV hoch) wird nie verfolgt.
-  const CLOSE_RANGE_MIN_GATE = 0.12;    // min(1, rms·5)-Skala: absolutes Minimum
-  const CLOSE_RANGE_GAIN_FACTOR = 1.8;  // Faktor über dem adaptiven Boden
+  const CLOSE_RANGE_MIN_GATE = 0.16;    // min(1, rms·5)-Skala: absolutes Minimum
+                                        // R110 (user point 6): 0.12 → 0.16 —
+                                        // Feedback „Empfindlichkeit immer noch zu
+                                        // hoch“: leises 2-m-Singen / Lautsprecher-
+                                        // Musik (0,03–0,2) fällt jetzt unters
+                                        // absolute Minimum; Singen in der Hand
+                                        // (0,15–0,3 ohne AGC, laut 0,3–1,0)
+                                        // bleibt darüber.
+  const CLOSE_RANGE_GAIN_FACTOR = 2.0;  // Faktor über dem adaptiven Boden (1,8 → 2,0)
   const ambientFloorRef = useRef(0.02);
   const wasLocalRef = useRef(false);
   // R95/3 — Konstanz-Tracking (Musikerkennung für den adaptiven Boden)
@@ -120,10 +127,13 @@ export function useMobilePitchDetection({
   const CV_WINDOW_MS = 4000;                // Beobachtungsfenster für CV
   const CV_WINDOW_MIN_SAMPLES = 30;         // ~1 s Daten, bevor CV aussagekräftig
   const CV_THRESHOLD = 0.22;                // Musik ≈ CV<0.22; Gesang deutlich darüber
-  const CONSTANCY_MIN_MS = 3000;            // 3 s konstanter Pegel = Musik, kein Zufall
-  const FLOOR_RISE_INTERVAL_MS = 500;       // Boden-Anstieg nur alle 0,5 s
-  const FLOOR_RISE_RATE = 0.05;             // ~10 s bis zur Annäherung an Musikpegel
-  const FLOOR_CEILING = 0.30;               // Gate max 1.8·0.30=0.54 — Handgesang bleibt drüber
+  const CONSTANCY_MIN_MS = 2000;            // R110: 3 s → 2 s — konstante Musik
+                                            // lernt den Boden schneller hoch
+  const FLOOR_RISE_INTERVAL_MS = 400;       // R110: 500 → 400 ms — zügigerer Anstieg
+  const FLOOR_RISE_RATE = 0.08;             // R110: 0.05 → 0.08 (~5 s statt ~10 s
+                                            // bis zur Annäherung an Musikpegel)
+  const FLOOR_CEILING = 0.35;               // R110: 0.30 → 0.35 — Gate max 2.0·0.35=0.7,
+                                            // Handgesang (typ. 0,3–1,0) bleibt drüber
   // R65 — YIN-Confidence-Receiver (vorab allokiert, rAF-Loop ohne GC-Druck):
   // gegatete Frames erhalten clarity 0, echte Frames die ehrliche YIN-
   // Periodizität — vormals wurde immer clarity: 0 gesendet.
@@ -298,7 +308,14 @@ export function useMobilePitchDetection({
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
-          noiseSuppression: true,
+          // R110 (user point 7): noiseSuppression OFF — Chromes stationäre
+          // Rauschunterdrückung adaptiert innerhalb ~0,5–1,5 s und senkt dann
+          // den Pegel LANG gehaltener, gleichbleibender Töne (Balladen!) ab:
+          // das Close-Range-Gate schließt, die Wertung reißt mitten im Ton ab
+          // („Tonwertung nach ca. 1,5 Sekunden abgebrochen“, Aufeinanderfolge
+          // gleichbleibender Töne → Wertungsaussetzer). Musik-Ablehnung
+          // übernimmt das Close-Range-Gate (R95/3), nicht die NS.
+          noiseSuppression: false,
           // R95/3: AGC OFF — das Handy ist ein NAHFELD-Mikro (in der Hand).
           // AGC hob das Fernfeld (Lautsprecher-Musik, 2-m-Stimmen) um
           // 20–30 dB an und hob leises Fern-Singen ÜBER das Close-Range-Gate
@@ -469,8 +486,11 @@ export function useMobilePitchDetection({
         // ═══ R65 — Close-Range-Gate anwenden ═══
         const gate = Math.max(CLOSE_RANGE_MIN_GATE, ambientFloorRef.current * CLOSE_RANGE_GAIN_FACTOR);
         // Hysterese: einmal als Nahfeld erkannt, bleibt ein Frame bis
-        // 0.6·gate gültig (kein Flackern bei Phrasen-Enden/Atem).
-        const isLocal = volume >= gate || (wasLocalRef.current && volume >= gate * 0.6);
+        // 0.7·gate gültig (R110: 0.6 → 0.7 — der Rückhalte-Puffer nach
+        // einem lauten Silben-Onset war so groß, dass leises Fern-Singen
+        // danach Sekunden weitergewertet wurde; Phrasen-Enden/Atem bleiben
+        // trotzdem überbrückt).
+        const isLocal = volume >= gate || (wasLocalRef.current && volume >= gate * 0.7);
         if (isLocal) {
           wasLocalRef.current = true;
         } else {

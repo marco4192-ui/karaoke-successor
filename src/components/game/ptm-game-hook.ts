@@ -211,7 +211,7 @@ export function usePtmGameLogic({
   // ── Smoothed pitch (visual display only) ──
   // Uses rawNote (un-stabilized) for responsive pitch indicator.
   // Scoring uses pitchResult.note (stabilized) separately.
-  const { pitchResult, stop, switchMicrophone, setDifficulty: setPitchDifficulty } = usePitchDetector();
+  const { pitchResult, pitchResultRef: detectorPitchRef, stop, switchMicrophone, setDifficulty: setPitchDifficulty } = usePitchDetector();
   const smoothedPitch = useSmoothedPitch(pitchResult?.rawNote ?? null, 0.90, 0.08);
 
   // ── Player state (local, mutable for performance) ──
@@ -312,10 +312,17 @@ export function usePtmGameLogic({
   });
 
   // ── Scoring (sub-hook) — also produces the visual notePerformance map ──
+  // R110 (user point 10): pitchSourceRef = der SYNCHRONE Detektor-Ref (schon
+  // R95/2 im Standard-Spiel so). Der Scoring-RAF-Loop liest sonst das 50 ms
+  // gedrosselte React-State-Ergebnis + Render-Latenz — unter Last (Medley-
+  // Snippet-Wechsel, Transition-Overlay, Full-Screen-Re-Renders) hinkt die
+  // Wertung sichtbar 0,5–1 s hinter dem Gesang her. Über den Ref fällt die
+  // Erkennung/Anzeige praktisch verzögerungsfrei aus — wie in Single/Duell.
   const { notePerformance } = usePtmScoring({
     phase,
     isPlaying,
     pitchResult,
+    pitchSourceRef: detectorPitchRef,
     notesSource,
     currentTime,
     difficulty: safeSettings.difficulty,

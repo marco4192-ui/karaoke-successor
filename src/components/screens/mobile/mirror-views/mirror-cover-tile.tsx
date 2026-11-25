@@ -59,8 +59,16 @@ function usableInlineCover(coverImage?: string): boolean {
  *  R52: Leiter verlängert (2 → 5 Versuche, bis 5 Minuten) — der Desktop
  *  lädt große Cover-Mengen in 15s-Ticks (48/Tick); bei einer vollen
  *  Bibliothek kann ein Cover länger als die alten 80s auf seinen Upload
- *  warten. Der 5-Minuten-Retry holt Nachzügler sicher ab. */
+ *  warten. Der 5-Minuten-Retry holt Nachzügler sicher ab.
+ *  R110 (user point 3): Nach dem Ende der Leiter KEIN dauerhaftes Aufgeben
+ *  mehr — stattdessen ein langsamer Endlos-Retry (SLOW_RETRY_MS, 10 Min).
+ *  Vorher blieben Kacheln, deren Cover z. B. erst in der NÄCHSTEN Desktop-
+ *  Session hochgeladen wurde (rotierender Upload-Cursor), für die gesamte
+ *  Handy-Session auf den Initialen hängen: „einige Cover laden, viele
+ *  nicht". Ein Request alle 10 Min pro fehlender Kachel ist vernachlässigbar
+ *  (der Erfolgsfall läuft ohnehin über den 1-Tag-Browser-Cache). */
 const API_RETRY_DELAYS_MS = [5000, 15000, 60000, 120000, 300000];
+const SLOW_RETRY_MS = 600000;
 
 export const SongCoverTile = React.memo(function SongCoverTile({
   songId,
@@ -86,6 +94,11 @@ export const SongCoverTile = React.memo(function SongCoverTile({
   const [stage, setStage] = useState<'api' | 'inline' | 'initials'>(inlineUsable ? 'inline' : 'api');
   const [attempt, setAttempt] = useState(0);
   const retriesRef = useRef(0);
+  // R110: true, sobald die 5-Versuchs-Leiter erschöpft ist (Initialen aktiv).
+  // Der subscribeCoverIndex-Callback unten re-armt solche Kacheln, sobald
+  // der Index das Cover kennt (früher re-armten NUR index-übersprungene
+  // Kacheln — erschöpfte blieben für immer tot).
+  const exhaustedRef = useRef(false);
   // R53 — Merkt sich, dass das Inline-Bild bereits gescheitert ist. Die
   // API-Stufe bekommt danach die VOLLE Retry-Leiter (vorher nur 1 Versuch —
   // ein einziger transienter Proxy-Fehler begrub das Cover für immer), und
@@ -103,11 +116,15 @@ export const SongCoverTile = React.memo(function SongCoverTile({
   // R65 — Index pflegen: beim Mount frisch laden (TTL 30s, geteilt über alle
   // Kacheln) + auf Updates hören (Desktop lädt Thumbnails in 15s-Batches —
   // neue ids re-armen die übersprungenen Kacheln).
+  // R110: Auch ERSCHÖPFTE Kacheln (Leiter durch, Initialen sichtbar) re-armen
+  // sich, sobald der Index das Cover liefert — der Desktop-Upload kann die
+  // Kachel ja erst später im Lauf erreicht haben.
   useEffect(() => {
     void ensureCoverIndex();
     const unsub = subscribeCoverIndex(() => {
-      if (skippedRef.current && hasServerCover(songId)) {
+      if ((skippedRef.current || exhaustedRef.current) && hasServerCover(songId)) {
         skippedRef.current = false;
+        exhaustedRef.current = false;
         retriesRef.current = 0;
         setAttempt(0);
         setStage('api');
@@ -130,6 +147,7 @@ export const SongCoverTile = React.memo(function SongCoverTile({
   useEffect(() => {
     inlineFailedRef.current = false;
     skippedRef.current = false;
+    exhaustedRef.current = false;
     setStage(inlineUsable ? 'inline' : 'api');
     setAttempt(0);
     retriesRef.current = 0;
@@ -152,10 +170,24 @@ export const SongCoverTile = React.memo(function SongCoverTile({
         setAttempt((a) => a + 1);
       }, delay);
     } else {
-      // Stufe 1 endgültig gescheitert → Initialen. R53: Kein Zurück zu
+      // Stufe 1 erstmal gescheitert → Initialen. R53: Kein Zurück zu
       // Stufe 2, wenn das Inline-Bild dort schon gescheitert ist (vorher
       // Ping-Pong zwischen zwei toten Quellen).
       setStage('initials');
+      // R110: KEIN dauerhaftes Aufgeben — langsamer Endlos-Retry. Das Cover
+      // kann (rotierender Desktop-Upload-Cursor, Server-Neustart, Proxy-
+      // Bergiff) auch deutlich nach der 5-Minuten-Leiter verfügbar werden.
+      // exhaustedRef sorgt parallel dafür, dass ein Index-Update sofort
+      // re-armt (schneller als der 10-Minuten-Timer).
+      exhaustedRef.current = true;
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        timerRef.current = null;
+        exhaustedRef.current = false;
+        retriesRef.current = 0;
+        setAttempt((a) => a + 1);
+        setStage('api');
+      }, SLOW_RETRY_MS);
     }
   };
 

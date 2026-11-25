@@ -61,6 +61,12 @@ interface RawGameState {
   // isStandardCompanionSinger blieb für immer false → Mikro startete nie).
   players?: GameState['players'];
   deviceAssignment?: GameState['deviceAssignment'];
+  // R110 (user point 5): die Liste der Desktop-Mikrofone — der Desktop pusht
+  // sie seit jeher im 2s-Gamestate-Push, aber parseGameState ließ das Feld
+  // weg. Dadurch konnte die Companion-App (Duell-Gegner-Auswahl, Chat-
+  // Challenge-Accept) NIEMALS ein bestimmtes Mikrofon anbieten — nur die
+  // generische Auswahl Companion vs. Mikrofon (auto).
+  availableMics?: GameState['availableMics'];
 }
 
 function parseGameState(raw: RawGameState): GameState {
@@ -97,6 +103,9 @@ function parseGameState(raw: RawGameState): GameState {
     // Companion-Eingabe (die Auto-Sing-Bedingung bleibt false).
     players: raw.players ?? null,
     deviceAssignment: raw.deviceAssignment ?? null,
+    // R110 (user point 5): Desktop-Mikrofone durchreichen (vorher gedroppt
+    // → DevicePicker auf dem Handy zeigte nie die Mikrofon-Auswahl)
+    availableMics: raw.availableMics ?? [],
   };
 }
 

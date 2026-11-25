@@ -16,6 +16,7 @@ import {
   getHttpsPort,
   getCaCertPem,
   getHttpsDomainInfo,
+  getServerLanIps,
 } from './mobile-state';
 import { getHttpsDomainStatus } from '@/lib/server/https-domain';
 import { getClientIp } from '@/lib/rate-limiter';
@@ -176,6 +177,10 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         // Domain statt der IP, die Companion-App blendet den Zertifikats-
         // Banner aus (echtes Zertifikat = keine Warnung, nichts zu installieren).
         ...getHttpsDomainInfo(),
+        // R110 (user point 2): Server-eigene LAN-IPv4s — QR-Clients
+        // validieren damit ihre lokal erkannte IP (Tauri-Route-Trick/WebRTC
+        // liefern bei VPN/virtuellen Adaptern gerne UNERREICHBARE Adressen).
+        lanIps: getServerLanIps(),
       });
 
     case 'https-domain':

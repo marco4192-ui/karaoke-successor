@@ -24,6 +24,36 @@ import { isDuetSong } from '@/components/screens/library/utils';
 /** Max songs per playlist pushed for the companion playlist browser. */
 const PLAYLIST_SONGS_CAP = 50;
 
+// ── R110 (user point 3): rotating cover-upload window ──
+// Libraries bigger than one window no longer hit the old hard 2000-cover cap
+// (which silently prevented EVER completing). Instead a persisted cursor
+// rotates through the library: every app start CONTINUES where the previous
+// one left off, so the companion library fills up incrementally and is
+// eventually complete — no matter its size.
+const COVER_WINDOW = 600;
+const COVER_CURSOR_KEY = 'karaoke-cover-upload-cursor';
+// Module-level (not useRef — the hook is a singleton in the app): survives
+// hook re-mounts within a session; localStorage carries it across sessions.
+let coverCursor: number | null = null;
+const healRequestedIds = new Set<string>();
+
+function loadCoverCursor(): number {
+  if (coverCursor !== null) return coverCursor;
+  try {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(COVER_CURSOR_KEY) : null;
+    const n = raw ? parseInt(raw, 10) : 0;
+    coverCursor = Number.isInteger(n) && n > 0 ? n : 0;
+  } catch {
+    coverCursor = 0;
+  }
+  return coverCursor;
+}
+
+function saveCoverCursor(n: number): void {
+  coverCursor = n;
+  try { localStorage.setItem(COVER_CURSOR_KEY, String(n)); } catch { /* storage blocked */ }
+}
+
 /** Downscale a cover image to a small JPEG data-URL for the companion app. */
 async function generateCoverThumbnail(src: string, size = 96, quality = 0.6): Promise<string | null> {
   return new Promise((resolve) => {
@@ -222,10 +252,40 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
         await Promise.all(
           Array.from({ length: Math.min(RESOLVE_POOL, Math.max(allSongs.length, 1)) }, resolveWorker),
         );
-        // R52: Cap massiv erhöht (400 → 2000) — der bisherige Cut sorgte
-        // dafür, dass große Bibliotheken (> 400 Songs mit Cover) NIE vollständig
-        // versorgt wurden. Der eigentliche Schutz ist das Fail-Budget unten.
-        const withCovers = candidates.slice(0, 2000);
+        // R110 (user point 3): rotierendes Fenster statt hartem Cut. Die
+        // hohe Kandidatenliste wird nicht mehr auf 2000 gekappt (große
+        // Bibliotheken wurden STILLSCHWEIGEND nie vollständig versorgt) —
+        // stattdessen arbeitet jeder 15s-Tick ein ~600-Cover-Fenster ab und
+        // ein persistierter Cursor sorgt dafür, dass der NÄCHSTE App-Start
+        // dort weitermacht, wo der vorige aufhörte. Kleine Bibliotheken
+        // (≤ 600 Cover-Kandidaten) laufen unverändert in einem Rutsch durch.
+        const total = candidates.length;
+        let cursor = loadCoverCursor();
+        if (cursor >= total) cursor = 0;
+        let windowCandidates: Array<{ id: string; src: string }>;
+        if (total > COVER_WINDOW) {
+          const end = cursor + COVER_WINDOW;
+          windowCandidates = end <= total
+            ? candidates.slice(cursor, end)
+            : [...candidates.slice(cursor), ...candidates.slice(0, end - total)];
+        } else {
+          windowCandidates = candidates;
+        }
+        // Server-Restart-Healing: ids, die der Self-Heal-Effekt unten als
+        // „auf dem Server fehlend" markiert hat, kommen IMMER in den Upload
+        // (unabhängig vom Fenster) — sonst würde ihr Nachladen auf die
+        // nächste Cursor-Runde warten.
+        if (healRequestedIds.size > 0) {
+          const inWindow = new Set(windowCandidates.map(c => c.id));
+          const byId = new Map(candidates.map(c => [c.id, c] as const));
+          for (const id of healRequestedIds) {
+            const c = byId.get(id);
+            if (c && !inWindow.has(id)) {
+              windowCandidates.push(c);
+              inWindow.add(id);
+            }
+          }
+        }
 
         // R53 — Kein Per-Tick-Cut mehr: Das GESAMTE Backlog wird in diesem
         // Tick abgearbeitet (Chunks + Pausen unten). Vorher wurden pro 15s-
@@ -233,7 +293,7 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
         // > 3 Minuten NUR fürs Hochladen, und das Handy gab seine Cover-
         // Retries auf, bevor die Bilder überhaupt ankamen („es fehlen sehr
         // viele Thumbnails").
-        const pendingUpload = withCovers.filter(({ id, src }) =>
+        const pendingUpload = windowCandidates.filter(({ id, src }) =>
           uploadedCoversRef.current[id] !== src &&
           (coverFailCountsRef.current.get(src) ?? 0) < 3,
         );
@@ -262,6 +322,7 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
                 changed[songId] = thumb;
                 uploadedCoversRef.current[songId] = src;
                 coverFailCountsRef.current.delete(src);
+                healRequestedIds.delete(songId);
               } else {
                 coverFailCountsRef.current.set(src, (coverFailCountsRef.current.get(src) ?? 0) + 1);
               }
@@ -283,6 +344,13 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
             // aber der UI-Thread bekommt regelmäßig Luft.
             await new Promise<void>(resolve => setTimeout(resolve, CHUNK_PAUSE_MS));
           }
+        }
+
+        // R110: Cursor erst NACH vollständiger Abarbeitung des Fensters
+        // weiterschieben — ein abgebrochener Tick (Unmount) wiederholt das
+        // aktuelle Fenster beim nächsten Start, statt Lücken zu hinterlassen.
+        if (!cancelled && total > COVER_WINDOW && pendingUpload.length > 0) {
+          saveCoverCursor((cursor + Math.min(COVER_WINDOW, total)) % total);
         }
       } catch {
         // Non-critical — covers are a progressive enhancement
@@ -312,6 +380,8 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
   // list is deleted from uploadedCoversRef, so the next 15 s upload tick
   // re-uploads it. This heals the state after a server restart without
   // requiring a desktop reload.
+  // R110: fehlende ids werden zusätzlich im healRequestedRef markiert — der
+  // Upload-Tick nimmt sie unabhängig vom rotierenden Cursor sofort mit.
   useEffect(() => {
     let cancelled = false;
     const healAfterServerRestart = async () => {
@@ -324,6 +394,7 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
         for (const songId of Object.keys(uploadedCoversRef.current)) {
           if (!serverIds.has(songId)) {
             delete uploadedCoversRef.current[songId];
+            healRequestedIds.add(songId);
           }
         }
       } catch {

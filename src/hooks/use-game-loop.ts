@@ -242,7 +242,11 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   // to bridge → ticks lost on held notes. The audible level mirrors the
   // detector's gate hysteresis (release at 0.6× the opening threshold): a
   // nulled frame counts as audible while it would still pass the OPEN gate.
-  const PITCH_HOLD_MS = 200;
+  // R110 (user point 7): 200 → 350 ms — längere Überbrückung für AGC-/Atem-
+  // Dips auf langen Balladen-Tönen (die eigentliche 1,5-s-Wurzel war die
+  // noiseSuppression, die seit R110 im PitchDetector deaktiviert ist — der
+  // verlängerte Hold fängt die Restflattern ab).
+  const PITCH_HOLD_MS = 350;
   const PITCH_HOLD_GATE_RELEASE = 0.6;
   const p1LastValidPitchRef = useRef<{ note: number; at: number } | null>(null);
   const p2LastValidPitchRef = useRef<{ note: number; at: number } | null>(null);

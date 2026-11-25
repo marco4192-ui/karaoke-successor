@@ -5,6 +5,7 @@ import type { Song, Difficulty } from '@/types/game';
 import type { MobilePitchData } from '@/hooks/use-mobile-pitch-polling';
 import { PitchDetector } from '@/lib/audio/pitch-detector';
 import { getMultiMicrophoneManager } from '@/lib/audio/microphone-manager';
+import { usePartyStore } from '@/lib/game/party-store';
 
 interface DuetP2PitchParams {
   isDuetMode: boolean;
@@ -80,10 +81,21 @@ export function useDuetP2Pitch({
   useEffect(() => {
     if (!isDuetMode || !song) return;
 
-    // Check if there's a second microphone assigned to playerIndex 1
+    // R110 (user point 5): explicit P2 mic from the setup result WINS over the
+    // playerIndex heuristic — queue items built by the Companion App carry the
+    // phone-chosen partnerMicId in unifiedSetupResult.players[1].micId (the
+    // same place the unified party setup puts its per-player choice, which
+    // game-screen-hook consumes for P1).
+    const setupP2 = usePartyStore.getState().unifiedSetupResult?.players?.[1];
     const micManager = getMultiMicrophoneManager();
     const assignedMics = micManager.getAssignedMicrophones();
-    const p2Mic = assignedMics.find(m => m.playerIndex === 1);
+    let p2Mic = (setupP2 && setupP2.playerType === 'microphone' && setupP2.micId)
+      ? assignedMics.find(m => m.id === setupP2.micId)
+      : undefined;
+    if (!p2Mic) {
+      // Legacy heuristic: second microphone assigned to playerIndex 1
+      p2Mic = assignedMics.find(m => m.playerIndex === 1);
+    }
 
     if (!p2Mic?.deviceId || p2DetectorInitRef.current) return;
 

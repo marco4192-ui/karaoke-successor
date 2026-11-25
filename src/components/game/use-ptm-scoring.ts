@@ -15,8 +15,9 @@
 import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { Song, PitchDetectionResult, Difficulty, Note, LyricLine } from '@/types/game';
 import type { PtmPlayer, PtmSegment } from './ptm-types';
-import { findActiveNote, shouldSkipPitch, evaluateAndScoreTick, PARTY_MAX_POINTS_PER_PLAYER } from '@/lib/game/party-scoring';
+import { shouldSkipPitch, evaluateAndScoreTick, PARTY_MAX_POINTS_PER_PLAYER } from '@/lib/game/party-scoring';
 import { calculateScoringMetadata, evaluateTick, type ScoringMetadata } from '@/lib/game/scoring';
+import { DIFFICULTY_PITCH_CONFIGS, KARAOKE_DEFAULT_CONFIG } from '@/lib/audio/pitch-config';
 
 /** Minimum interval (ms) between scoring evaluations to avoid excessive recalculation */
 export const SCORING_THROTTLE_MS = 250;
@@ -42,10 +43,26 @@ const MAX_VISUAL_SAMPLES_PER_NOTE = 80;
 /** Suppress vibrato jitter smaller than this (semitones). */
 const VIBRATO_THRESHOLD = 0.5;
 
+// ── R110 (user points 7+10): pitch-hold for PTM ──
+// PTM previously had NO dropout bridging at all (the normal game loop and
+// Battle Royale bridge 350/200 ms since R94-5): a single null frame — gate
+// flicker, YIN miss, AGC dip on long ballad notes — left ticks unevaluated
+// and punched holes into held notes ("lange Töne werden abgebrochen",
+// "Wertungsaussetzer"). Same semantics as use-game-loop: bridge with the
+// last valid note while the frame is still AUDIBLE (volume would pass the
+// difficulty gate's release level); after the window it's real silence.
+const PITCH_HOLD_MS = 350;
+const PITCH_HOLD_GATE_RELEASE = 0.6;
+
 interface UsePtmScoringOptions {
   phase: string;
   isPlaying: boolean;
   pitchResult: PitchDetectionResult | null;
+  /** R110 (user point 10): synchroner Detektor-Ref (usePitchDetector.
+   *  pitchResultRef) — wird im RAF-Loop VOR dem gedrosselten React-State
+   *  gelesen; eliminiert die 50-ms-Drossel + Render-Latenz aus der
+   *  Wertungskette. */
+  pitchSourceRef?: React.RefObject<PitchDetectionResult | null>;
   notesSource: Song | null;
   currentTime: number;
   difficulty: Difficulty;
@@ -89,6 +106,7 @@ export function usePtmScoring({
   phase,
   isPlaying,
   pitchResult,
+  pitchSourceRef,
   notesSource,
   currentTime,
   difficulty,
@@ -101,6 +119,48 @@ export function usePtmScoring({
 }: UsePtmScoringOptions): { notePerformance: PtmNotePerformance } {
   const lastEvalTimeRef = useRef(0);
 
+  // R110: Hold-Quelle — zuletzt gültiger Ton + Zeitpunkt (Performance-Now).
+  const lastValidPitchRef = useRef<{ note: number; at: number } | null>(null);
+
+  /**
+   * R110 (user points 7+10): effektiver Pitch MIT Pitch-Hold. Der RAF-Loop
+   * liest hier statt direkt pitchResultRef.current. Gültige Frames werden
+   * als Hold-Quelle gemerkt; Null-Frames werden bis zu PITCH_HOLD_MS lang
+   * mit dem letzten gültigen Ton überbrückt, SOLANGE der Frame noch hörbar
+   * ist (Volume über der Gate-Release-Schwelle der aktiven Difficulty —
+   * gleiche Rechnung wie use-game-loop). Danach echte Stille.
+   */
+  const getEffectivePitch = useCallback((): PitchDetectionResult | null => {
+    // R110 (user point 10): bevorzugt der SYNCHRONE Detektor-Ref (ohne
+    // 50-ms-Drossel + Render-Latenz); Fallback das React-State-Ergebnis
+    // (Legacy-Aufrufer ohne pitchSourceRef).
+    const pitch = pitchSourceRef?.current ?? pitchResultRef.current;
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    if (pitch && pitch.note != null && pitch.frequency != null) {
+      lastValidPitchRef.current = { note: pitch.note, at: now };
+      return pitch;
+    }
+    const lastValid = lastValidPitchRef.current;
+    if (!lastValid || now - lastValid.at > PITCH_HOLD_MS) return null;
+    // Hörbarkeitsprüfung — gleiche Semantik wie use-game-loop (R95/2):
+    // ein genullter Frame, dessen Volume die OFFENE Gate-Schwelle noch
+    // bestehen würde, ist ein hörbarer Ton mit YIN-Flackern (überbrücken);
+    // darunter ist echte Stille (nicht überbrücken).
+    const holdCfg = DIFFICULTY_PITCH_CONFIGS[difficulty] ?? KARAOKE_DEFAULT_CONFIG;
+    const holdGateLevel = Math.max(
+      holdCfg.noiseGateEnabled ? Math.pow(10, holdCfg.noiseGateThreshold / 20) * 5 : 0,
+      holdCfg.volumeThreshold,
+    ) * PITCH_HOLD_GATE_RELEASE;
+    if (pitch && (pitch.volume ?? 0) < holdGateLevel) return null;
+    return {
+      frequency: 440 * Math.pow(2, (lastValid.note - 69) / 12),
+      note: lastValid.note,
+      rawNote: lastValid.note,
+      clarity: 0.5,
+      volume: pitch?.volume ?? 0,
+    };
+  }, [difficulty]);
+
   // R44 (stockt-fix): pitchResult changes ~30–60×/sec (every detection
   // frame). Keeping it in the scoreCurrentPlayer/sampleVisualTicks deps
   // recreated those callbacks — and with them the RAF loop effect — on EVERY
@@ -110,6 +170,31 @@ export function usePtmScoring({
   // only change on real game events (song/segment/difficulty/player).
   const pitchResultRef = useRef(pitchResult);
   pitchResultRef.current = pitchResult;
+
+  // ── R110 (user point 9): Cursor-basierte aktive-Note-Suche ──
+  // findActiveNote lief über ALLE Linien × Noten (O(noten) pro Frame, 80×/s
+  // durch Visual-Sampler + Scoring-Loop). Mit monotonem Cursor über das
+  // vorsortierte allNotes-Flacharray wird der Scan O(1) amortisiert — der
+  // Scoring-RAF bleibt unter Last flüssig (Ruckler beim Spielerwechsel).
+  // Reset bei Noten-Quellenwechsel oder rückwärtslaufender Uhr (Seek).
+  const activeNoteCursorRef = useRef(0);
+  useEffect(() => {
+    activeNoteCursorRef.current = 0;
+  }, [notesSource]);
+  const findActiveNoteFast = useCallback((time: number): (Note & { lineIndex: number; line: LyricLine }) | null => {
+    const notes = allNotes;
+    if (!notes || notes.length === 0) return null;
+    let idx = activeNoteCursorRef.current;
+    if (idx >= notes.length) idx = 0;
+    // Rückwärtslaufende Uhr (Snippet-Wechsel/Seek) → neu suchen
+    if (idx > 0 && notes[idx].startTime > time + 50) idx = 0;
+    // Nach vorne schieben, solange die Note definitiv vorbei ist
+    while (idx < notes.length && notes[idx].startTime + notes[idx].duration < time) idx++;
+    activeNoteCursorRef.current = Math.min(idx, notes.length - 1);
+    const n = notes[idx];
+    if (n && time >= n.startTime && time <= n.startTime + n.duration) return n;
+    return null;
+  }, [allNotes]);
 
   // ── Scoring dead-zone fix (medley snippets) ──
   // Each medley snippet is a DIFFERENT file: when the segment switches, the
@@ -191,13 +276,13 @@ export function usePtmScoring({
     if (now - lastVisualSampleTimeRef.current < VISUAL_SAMPLE_INTERVAL_MS) return;
     lastVisualSampleTimeRef.current = now;
 
-    const activeNote = findActiveNote(notesSource?.lyrics, time);
+    const activeNote = findActiveNoteFast(time);
     if (!activeNote) return;
     // Notes carry an optional runtime id; fall back to the startTime key
     // (same key format NoteBlock uses to look samples up).
     const noteId = (activeNote as Note).id || `note-${activeNote.startTime}`;
 
-    const pitch = pitchResultRef.current;
+    const pitch = getEffectivePitch();
     const sungPitchRaw = pitch?.note ?? null;
     const hasPitch = sungPitchRaw !== null && pitch !== null && pitch.frequency !== null;
 
@@ -242,7 +327,7 @@ export function usePtmScoring({
     if (samples.length > MAX_VISUAL_SAMPLES_PER_NOTE) {
       samples.splice(0, samples.length - MAX_VISUAL_SAMPLES_PER_NOTE);
     }
-  }, [notesSource, difficulty, currentPlayerIndex, playersRef]);
+  }, [notesSource, difficulty, currentPlayerIndex, playersRef, getEffectivePitch, findActiveNoteFast]);
 
   const scoreCurrentPlayer = useCallback(() => {
     const time = currentTimeRef.current;
@@ -250,12 +335,14 @@ export function usePtmScoring({
     // No pitch result yet (mic still initializing after a handoff) or silent
     // input between notes — both are NORMAL during play, not warnings. The
     // visual sampler below keeps recording miss samples for the fill display.
-    const pitchResult = pitchResultRef.current;
+    // R110: getEffectivePitch() statt Direktzugriff — überbrückt Null-Frames
+    // bis zu 350 ms mit dem letzten gültigen Ton (Pitch-Hold, s. oben).
+    const pitchResult = getEffectivePitch();
     if (!pitchResult) return;
 
     if (shouldSkipPitch(pitchResult, difficulty)) return;
 
-    const activeNote = findActiveNote(notesSource?.lyrics, time);
+    const activeNote = findActiveNoteFast(time);
     if (!activeNote) return;
 
     // Backwards clock jump (media seek / snippet replacement) — reset so
@@ -283,7 +370,7 @@ export function usePtmScoring({
 
     playersRef.current[idx] = { ...p };
     forceRender();
-  }, [notesSource, difficulty, currentPlayerIndex, scoringMeta, forceRender, playersRef]);
+  }, [notesSource, difficulty, currentPlayerIndex, scoringMeta, forceRender, playersRef, getEffectivePitch, findActiveNoteFast]);
 
   // ── Game loop: score during playing (visual sampling every frame) ──
   useEffect(() => {

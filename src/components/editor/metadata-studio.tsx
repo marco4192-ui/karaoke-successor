@@ -40,6 +40,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Song } from '@/types/game';
+import { songHasVideo, songHasCover, songHasBackground } from '@/lib/editor/media-presence';
 import {
   planRuleHarmonization,
   planRuleLanguageHarmonization,
@@ -109,6 +110,11 @@ export function MetadataStudio({
     genre: songs.filter(s => !s.genre).length,
     language: songs.filter(s => !s.language).length,
     year: songs.filter(s => !s.year).length,
+    // R110 (user point 1): media-presence counts (same predicates as the
+    // editor library filters — lib/editor/media-presence.ts)
+    video: songs.filter(s => !songHasVideo(s)).length,
+    cover: songs.filter(s => !songHasCover(s)).length,
+    background: songs.filter(s => !songHasBackground(s)).length,
   }), [songs]);
 
   /**
@@ -262,6 +268,9 @@ export function MetadataStudio({
           <span className="text-orange-300/80" title={t('editor.noGenre')}>🎸{missingCounts.genre}</span>
           <span className="text-purple-300/80" title={t('editor.noLanguage')}>🌐{missingCounts.language}</span>
           <span className="text-emerald-300/80" title={t('editor.noYear')}>📅{missingCounts.year}</span>
+          <span className="text-rose-300/80" title={t('editor.noVideo')}>🎬{missingCounts.video}</span>
+          <span className="text-fuchsia-300/80" title={t('editor.noCover')}>🖼️{missingCounts.cover}</span>
+          <span className="text-teal-300/80" title={t('editor.noBackground')}>🌌{missingCounts.background}</span>
         </span>
       </button>
 

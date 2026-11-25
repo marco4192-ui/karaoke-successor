@@ -12,6 +12,7 @@ import { MetadataStudio } from '@/components/editor/metadata-studio';
 import { RuleHarmonizeStatusBar } from '@/components/editor/rule-harmonize-card';
 import { Song } from '@/types/game';
 import { fuzzyMatch } from '@/lib/fuzzy-search';
+import { songHasVideo, songHasCover, songHasBackground } from '@/lib/editor/media-presence';
 import { useTranslation } from '@/lib/i18n/translations';
 import { SEARCH_ACTIVE_FRAME } from '@/lib/game/filter-highlight';
 import { useToast } from '@/hooks/use-toast';
@@ -106,7 +107,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
     }
   }, [t, toast]);
 
-  const [filterMode, setFilterMode] = useState<'all' | 'no-genre' | 'no-language' | 'no-year' | 'incomplete' | 'unverified' | 'verified'>('all');
+  const [filterMode, setFilterMode] = useState<'all' | 'no-genre' | 'no-language' | 'no-year' | 'no-video' | 'no-cover' | 'no-background' | 'incomplete' | 'unverified' | 'verified'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoadingLyrics, setIsLoadingLyrics] = useState(false); // Loading state for lyrics
   const [showNewSongDialog, setShowNewSongDialog] = useState(false);
@@ -142,6 +143,19 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
       case 'no-year':
         filtered = filtered.filter(s => !s.year);
         break;
+      // R110 (user point 1): media-presence filters — show what the
+      // UltraStar txt is MISSING (no #VIDEO / #COVER / #BACKGROUND of any
+      // kind). Predicates live in lib/editor/media-presence.ts and are
+      // shared with the Metadata Studio missing-count badges.
+      case 'no-video':
+        filtered = filtered.filter(s => !songHasVideo(s));
+        break;
+      case 'no-cover':
+        filtered = filtered.filter(s => !songHasCover(s));
+        break;
+      case 'no-background':
+        filtered = filtered.filter(s => !songHasBackground(s));
+        break;
       case 'incomplete':
         filtered = filtered.filter(s => !s.genre || !s.language);
         break;
@@ -167,10 +181,14 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
     return filtered;
   }, [songs, filterMode, searchQuery]);
 
-  // Count songs without genre/language
+  // Count songs without genre/language/year
   const songsWithoutGenre = useMemo(() => songs.filter(s => !s.genre).length, [songs]);
   const songsWithoutLanguage = useMemo(() => songs.filter(s => !s.language).length, [songs]);
   const songsWithoutYear = useMemo(() => songs.filter(s => !s.year).length, [songs]);
+  // R110: media-presence counts for the new filters
+  const songsWithoutVideo = useMemo(() => songs.filter(s => !songHasVideo(s)).length, [songs]);
+  const songsWithoutCover = useMemo(() => songs.filter(s => !songHasCover(s)).length, [songs]);
+  const songsWithoutBackground = useMemo(() => songs.filter(s => !songHasBackground(s)).length, [songs]);
   // R60: verified counts for the badge filter (checked by the Metadata
   // Studio's verify mode — see Song.metadataVerifiedAt)
   const verifiedCount = useMemo(() => songs.filter(s => !!s.metadataVerifiedAt).length, [songs]);
@@ -438,6 +456,35 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                 data-testid="editor-filter-noyear"
               >
                 📅 {t('editor.noYear')} ({songsWithoutYear})
+              </Button>
+              {/* R110 (user point 1): media-presence filters — what the txt
+                  is missing on the media axis (video/cover/background). */}
+              <Button
+                onClick={() => setFilterMode(filterMode === 'no-video' ? 'all' : 'no-video')}
+                variant={filterMode === 'no-video' ? 'default' : 'outline'}
+                className={filterMode === 'no-video' ? 'bg-rose-500 hover:bg-rose-400 ring-1 ring-rose-300/60 shadow-[0_0_10px_rgba(244,63,94,0.35)]' : 'border-white/20 text-white'}
+                size="sm"
+                data-testid="editor-filter-novideo"
+              >
+                🎬 {t('editor.noVideo')} ({songsWithoutVideo})
+              </Button>
+              <Button
+                onClick={() => setFilterMode(filterMode === 'no-cover' ? 'all' : 'no-cover')}
+                variant={filterMode === 'no-cover' ? 'default' : 'outline'}
+                className={filterMode === 'no-cover' ? 'bg-fuchsia-500 hover:bg-fuchsia-400 ring-1 ring-fuchsia-300/60 shadow-[0_0_10px_rgba(217,70,239,0.35)]' : 'border-white/20 text-white'}
+                size="sm"
+                data-testid="editor-filter-nocover"
+              >
+                🖼️ {t('editor.noCover')} ({songsWithoutCover})
+              </Button>
+              <Button
+                onClick={() => setFilterMode(filterMode === 'no-background' ? 'all' : 'no-background')}
+                variant={filterMode === 'no-background' ? 'default' : 'outline'}
+                className={filterMode === 'no-background' ? 'bg-teal-500 hover:bg-teal-400 ring-1 ring-teal-300/60 shadow-[0_0_10px_rgba(20,184,166,0.35)]' : 'border-white/20 text-white'}
+                size="sm"
+                data-testid="editor-filter-nobackground"
+              >
+                🌌 {t('editor.noBackground')} ({songsWithoutBackground})
               </Button>
               {/* R60: verified filter (user request) — compact 3-state choice:
                   All / Unverified (hides the checked songs — shows what still

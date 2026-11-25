@@ -22,7 +22,11 @@ export async function startPassTheMic(ctx: StartHandlerContext): Promise<void> {
     // ONE 30s snippet each (playerCount). No more opaque clamping.
     const playerCount = result.players.length;
     const snippetCount = playerCount <= 4 ? playerCount * 2 : playerCount;
-    const medleySnippets = generateMedleySnippets(filteredSongs, snippetCount, snippetDuration);
+    // R110 (user point 11): vocalStartFallback — snippets ohne #MEDLEYSTARTBEAT
+    // starten ~3 s vor dem ersten Gesang (GAP-Anker), NICHT blind bei 10 s:
+    // sonst lief je nach GAP ein langes Intro ohne Gesang und die 2000 Punkte
+    // verteilten sich auf die wenigen Noten des Snippets.
+    const medleySnippets = generateMedleySnippets(filteredSongs, snippetCount, snippetDuration, undefined, undefined, { vocalStartFallback: true });
 
     // Pre-restore URLs AND lyrics for all snippet songs (needed for
     // Tauri file:// paths and IndexedDB-stored lyrics)
@@ -40,6 +44,29 @@ export async function startPassTheMic(ctx: StartHandlerContext): Promise<void> {
                 prepared = { ...prepared, lyrics };
               }
             } catch { /* non-critical */ }
+          }
+
+          // R110 (user point 11): PRÜFUNG VOR DEM START — jetzt, wo die Lyrics
+          // geladen sind, den Vocal-Anker nachschärfen: Erste Note bekannt und
+          // der aktuelle Snippet-Start lässt mehr als ~3,5 s Instrumental-Intro
+          // davor? Dann Start NACH vorne verschieben (Dauer bleibt 30 s bzw.
+          // bis Songende). Songs mit langem Intro vor der ersten Zeile (GAP 0,
+          // erste Note erst bei 45 s) sonst starteten bei 0 und verteilten die
+          // 2000 Punkte auf die letzten paar Noten.
+          if (prepared.lyrics && prepared.lyrics.length > 0 && snippet.song.medleyStartBeat === undefined) {
+            const firstNote = prepared.lyrics[0]?.notes?.[0]?.startTime;
+            if (typeof firstNote === 'number' && firstNote > snippet.startTime + 3500) {
+              const desiredStart = Math.max(0, firstNote - 3000);
+              if (desiredStart > snippet.startTime) {
+                return {
+                  ...snippet,
+                  startTime: desiredStart,
+                  endTime: Math.min(desiredStart + snippetDuration * 1000, prepared.duration),
+                  duration: Math.min(snippetDuration * 1000, prepared.duration - desiredStart),
+                  song: prepared,
+                };
+              }
+            }
           }
 
           return { ...snippet, song: prepared };

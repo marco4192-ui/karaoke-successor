@@ -37,17 +37,23 @@ export async function generateQRCodeUrl(data: string, size = 200): Promise<strin
  * Returns null if detection fails.
  */
 export async function detectLocalIP(): Promise<string | null> {
-  // Check sessionStorage first
+  // R110: the previously detected IP is re-VALIDATED against the server's
+  // own LAN list on every call — a sessionStorage cache from before a
+  // Wi-Fi/DHCP change would otherwise keep the QR on a dead address for
+  // the whole session.
   const storedIP = sessionStorage.getItem('karaoke-detected-ip');
   if (storedIP && !storedIP.startsWith('127.') && storedIP !== 'localhost' && !storedIP.endsWith('.local')) {
-    return storedIP;
+    if (isServerLanIp(storedIP)) return storedIP;
+    // Stale/foreign address (VPN adapter, old Wi-Fi) — drop the cache and
+    // fall through to a fresh detection below.
+    sessionStorage.removeItem('karaoke-detected-ip');
   }
 
   // Strategy 1: Use Tauri native command (most reliable for Tauri apps)
   try {
     const { invoke } = await import('@tauri-apps/api/core');
     const ip = await invoke<string | null>('network_get_local_ip');
-    if (ip) {
+    if (ip && isServerLanIp(ip)) {
       sessionStorage.setItem('karaoke-detected-ip', ip);
       return ip;
     }
@@ -58,8 +64,10 @@ export async function detectLocalIP(): Promise<string | null> {
   // Strategy 2: window.location.hostname (works when opened via IP in dev)
   const hostname = window.location.hostname;
   if (hostname && hostname !== 'localhost' && !hostname.startsWith('127.') && !hostname.endsWith('.local') && hostname !== 'tauri.localhost') {
-    sessionStorage.setItem('karaoke-detected-ip', hostname);
-    return hostname;
+    if (isServerLanIp(hostname)) {
+      sessionStorage.setItem('karaoke-detected-ip', hostname);
+      return hostname;
+    }
   }
 
   // Strategy 3: WebRTC IP detection (fallback for browser)
@@ -84,18 +92,34 @@ export async function detectLocalIP(): Promise<string | null> {
             if (!detected.endsWith('.local') && detected !== '0.0.0.0' && !detected.startsWith('127.')) {
               clearTimeout(timeout);
               pc.close();
-              sessionStorage.setItem('karaoke-detected-ip', detected);
-              resolve(detected);
+              if (isServerLanIp(detected)) {
+                sessionStorage.setItem('karaoke-detected-ip', detected);
+                resolve(detected);
+                return;
+              }
+              resolve(null);
+              return;
             }
           }
         }
       };
     });
 
-    return ip;
+    if (ip) return ip;
   } catch {
-    return null;
+    // fall through to the server-LAN fallback below
   }
+
+  // Strategy 4 (R110): the SERVER's own LAN IP — the address the HTTP/HTTPS
+  // listeners are actually bound to. Wins whenever local detection failed or
+  // produced an address the server does not own (VPN / virtual adapter).
+  const lanIps = getServerLanIps();
+  if (lanIps.length > 0) {
+    sessionStorage.setItem('karaoke-detected-ip', lanIps[0]);
+    return lanIps[0];
+  }
+
+  return null;
 }
 
 /**
@@ -136,6 +160,28 @@ let httpsPortCache: number | null = null;
 let httpsDomainCache: string | null = null;
 let httpsSourceCache: CompanionHttpsInfo['source'] = null;
 
+// R110 (user point 2): the server's OWN LAN IPv4s from the `status` action.
+// Used to VALIDATE the locally detected IP: the Tauri UDP route trick and
+// the WebRTC fallback can return a VPN/virtual-adapter address that phones
+// cannot reach — the classic "QR links to a dead address" report. When the
+// detected candidate is NOT one of the server's own addresses, the first
+// private server LAN IP wins (that is an address the HTTP/HTTPS listeners
+// are actually bound to).
+let lanIpsCache: string[] = [];
+
+/** The server's LAN IPv4 list as last reported by the status endpoint. */
+export function getServerLanIps(): string[] {
+  return lanIpsCache;
+}
+
+/** True when `ip` is one of the server's own LAN addresses (empty list = no
+ *  status info yet → treat as unverified but acceptable). */
+export function isServerLanIp(ip: string | null | undefined): boolean {
+  if (!ip) return false;
+  if (lanIpsCache.length === 0) return true; // no server info — don't block
+  return lanIpsCache.includes(ip);
+}
+
 /**
  * R60-D — Reaktivitäts-Layer für den HTTPS-Info-Cache.
  *
@@ -150,6 +196,8 @@ let httpsSourceCache: CompanionHttpsInfo['source'] = null;
  * zuverlässig genau EINEN Re-Render in jeder gemounteten QR-Komponente.
  */
 export interface CompanionHttpsInfoSnapshot extends CompanionHttpsInfo {
+  /** Server LAN IPv4 list (empty until the status fetch answered). */
+  lanIps: string[];
   /** Monoton steigend — ändert sich bei jeder effektiven Cache-Mutation. */
   version: number;
 }
@@ -159,6 +207,7 @@ let httpsInfoSnapshot: CompanionHttpsInfoSnapshot = {
   port: null,
   domain: null,
   source: null,
+  lanIps: [],
   version: 0,
 };
 const httpsInfoListeners = new Set<() => void>();
@@ -168,7 +217,10 @@ function notifyCompanionHttpsInfoChange(): void {
   if (
     httpsInfoSnapshot.port === httpsPortCache &&
     httpsInfoSnapshot.domain === httpsDomainCache &&
-    httpsInfoSnapshot.source === httpsSourceCache
+    httpsInfoSnapshot.source === httpsSourceCache &&
+    // R110: LAN-IP-Liste ist ebenfalls Cache-Bestandteil — QR-Komponenten
+    // müssen neu rendern, wenn sie erstmals/aktualisiert eintrifft.
+    httpsInfoSnapshot.lanIps === lanIpsCache
   ) {
     return; // kein effektiver Unterschied zum zuletzt publizierten Stand
   }
@@ -177,6 +229,7 @@ function notifyCompanionHttpsInfoChange(): void {
     port: httpsPortCache,
     domain: httpsDomainCache,
     source: httpsSourceCache,
+    lanIps: lanIpsCache,
     version: httpsInfoVersion,
   };
   for (const listener of httpsInfoListeners) {
@@ -319,12 +372,21 @@ export async function initCompanionHttpsInfo(): Promise<CompanionHttpsInfo | nul
       httpsPort?: number | null;
       httpsDomain?: string | null;
       httpsCertSource?: 'letsencrypt' | 'local-ca' | null;
+      lanIps?: string[] | null;
     };
     updateCompanionHttpsInfo({
       port: typeof data.httpsPort === 'number' && data.httpsPort > 0 ? data.httpsPort : null,
       domain: typeof data.httpsDomain === 'string' && data.httpsDomain.includes('.') ? data.httpsDomain : null,
       source: data.httpsCertSource === 'letsencrypt' || data.httpsCertSource === 'local-ca' ? data.httpsCertSource : null,
     });
+    // R110: Server-LAN-IPs übernehmen (Validierungsquelle für detectLocalIP)
+    const nextLanIps = Array.isArray(data.lanIps)
+      ? data.lanIps.filter((ip): ip is string => typeof ip === 'string' && /^\d+\.\d+\.\d+\.\d+$/.test(ip))
+      : [];
+    if (nextLanIps.length > 0 && nextLanIps.join(',') !== lanIpsCache.join(',')) {
+      lanIpsCache = nextLanIps;
+      notifyCompanionHttpsInfoChange();
+    }
     return { port: httpsPortCache, domain: httpsDomainCache, source: httpsSourceCache };
   } catch {
     return { port: httpsPortCache, domain: httpsDomainCache, source: httpsSourceCache };

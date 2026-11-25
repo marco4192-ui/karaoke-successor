@@ -852,19 +852,30 @@ export class MultiMicrophoneManager {
   // Save config to localStorage
   private saveConfig(): void {
     try {
+      const serialized = Array.from(this.assignedMics.values()).map(m => ({
+        id: m.id,
+        deviceId: m.deviceId,
+        deviceName: m.deviceName,
+        customName: m.customName,
+        playerIndex: m.playerIndex,
+        config: m.config,
+        stereoPartnerId: m.stereoPartnerId,
+      }));
       const config = {
         version: 2, // Version for future migrations
-        assignedMics: Array.from(this.assignedMics.values()).map(m => ({
-          id: m.id,
-          deviceId: m.deviceId,
-          deviceName: m.deviceName,
-          customName: m.customName,
-          playerIndex: m.playerIndex,
-          config: m.config,
-          stereoPartnerId: m.stereoPartnerId,
-        })),
+        assignedMics: serialized,
       };
       setJson(StorageKeys.MULTI_MIC_CONFIG, config);
+      // R110 (user point 4): keep savedMicConfigs IN SYNC with what was just
+      // persisted. The restore source was previously only ever written by the
+      // constructor's loadConfig() — unassignMicrophone() removed the mic and
+      // saved the clean config, but the STALE in-memory savedMicConfigs entry
+      // survived. Every settings-tab remount (menu switch!) calls restoreMics(),
+      // which happily re-connected the removed-but-still-plugged device and
+      // resurrected it — exactly the reported "removal has no effect" bug.
+      // Syncing here covers every mutation path (assign, unassign, stereo
+      // split, rename, player index, gain, prune).
+      this.savedMicConfigs = serialized;
     } catch {
       // Non-critical: config will reset to defaults
     }

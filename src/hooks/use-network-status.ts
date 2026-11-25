@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { API_BASE } from '@/lib/api/leaderboard-service';
+import { useGameStore } from '@/lib/game/store';
 
 // ============================================================================
 // Types
@@ -36,23 +37,48 @@ async function checkServerReachable(): Promise<boolean> {
   } catch { return false; }
 }
 
+/** R110 (user point 8): online features actually used? When the user never
+ *  enabled the online leaderboard, the periodic probe is SKIPPED entirely —
+ *  it was the source of endless failed console requests ("fehlerhafte
+ *  Anfragen") for people who never touched the leaderboard. */
+function isOnlineUsageEnabled(): boolean {
+  try {
+    return useGameStore.getState().onlineEnabled === true;
+  } catch {
+    return true; // store unavailable (SSR) — keep the legacy behavior
+  }
+}
+
 // ============================================================================
 // Hook
 // ============================================================================
 
 /**
  * Hook that tracks network connectivity and server reachability.
+ *
+ * R110 (user point 8): two noise fixes —
+ *  1. The probe only runs while online features are ENABLED
+ *     (gameStore.onlineEnabled, default false). A user who never uses the
+ *     online leaderboard no longer generates a failed cross-origin request
+ *     every 60 s in the console.
+ *  2. Exponential backoff while unreachable (60 s → 2 min → 5 min → 10 min),
+ *     reset to 60 s after a successful probe. A dead server used to be
+ *     re-probed at full rate forever; now the console noise decays.
  */
 export function useNetworkStatus(): NetworkStatus {
   const [isOnline, setIsOnline] = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [isServerReachable, setIsServerReachable] = useState<boolean | null>(null);
+  const backoffMsRef = useRef(60_000);
 
   // Browser online/offline events
   useEffect(() => {
     const goOnline = () => {
       setIsOnline(true);
+      backoffMsRef.current = 60_000;
       // Re-check server when coming back online
-      checkServerReachable().then(setIsServerReachable);
+      if (isOnlineUsageEnabled()) {
+        checkServerReachable().then(setIsServerReachable);
+      }
     };
     const goOffline = () => {
       setIsOnline(false);
@@ -62,21 +88,42 @@ export function useNetworkStatus(): NetworkStatus {
     window.addEventListener('online', goOnline);
     window.addEventListener('offline', goOffline);
 
-    // Initial server check
-    checkServerReachable().then(setIsServerReachable);
+    // Initial server check (only when online features are in use at all)
+    if (isOnlineUsageEnabled()) {
+      checkServerReachable().then(setIsServerReachable);
+    }
 
     // Self-healing (R80): the probe used to run exactly once — a transient
     // failure at startup (or a server restart) kept the banner up forever,
-    // even while boards loaded fine afterwards. Re-probe every 60 s so the
-    // banner clears itself once the server answers again.
-    const recheck = setInterval(() => {
-      checkServerReachable().then(setIsServerReachable);
-    }, 60_000);
+    // even while boards loaded fine afterwards. Re-probe on a backoff
+    // schedule so the banner clears itself once the server answers again.
+    // R110: recursive setTimeout — the NEXT delay is chosen per outcome
+    // (backoff while unreachable, 60 s while healthy), and each tick
+    // re-checks whether online features are still enabled at all.
+    let probeTimer: ReturnType<typeof setTimeout> | null = null;
+    const scheduleNextProbe = () => {
+      probeTimer = setTimeout(async () => {
+        if (!isOnlineUsageEnabled()) {
+          // Online features off → no probing, no console noise. Stay quiet
+          // (null = banner hidden) until the flag flips on again.
+          setIsServerReachable(null);
+          scheduleNextProbe();
+          return;
+        }
+        const reachable = await checkServerReachable();
+        setIsServerReachable(reachable);
+        backoffMsRef.current = reachable
+          ? 60_000
+          : Math.min(backoffMsRef.current * 2, 600_000);
+        scheduleNextProbe();
+      }, backoffMsRef.current);
+    };
+    if (isOnlineUsageEnabled()) scheduleNextProbe();
 
     return () => {
       window.removeEventListener('online', goOnline);
       window.removeEventListener('offline', goOffline);
-      clearInterval(recheck);
+      if (probeTimer) clearTimeout(probeTimer);
     };
   }, []);
 

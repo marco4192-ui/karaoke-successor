@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -331,6 +331,22 @@ export function HomeScreen({ onNavigate, onLaunchMode }: HomeScreenProps) {
   // Cache lesen → der QR springt innerhalb eines Render-Zyklus um.
   const httpsInfo = useCompanionHttpsInfo();
   void httpsInfo; // bewusste Re-Render-Abhängigkeit (Muster wie httpsNonce in mobile-device-section)
+
+  // R110 (user point 2): der Boot-Status-Fetch liefert auch die Server-LAN-
+  // IPs. Läuft die bisher erkannte IP NICHT auf der Liste (Tauri-Route-Trick
+  // griff sich z. B. eine VPN-Adapter-Adresse), wird die Erkennung erneut
+  // ausgeführt — detectLocalIP validiert jetzt gegen die Server-Liste und
+  // fällt notfalls auf die erste echte Server-LAN-IP zurück.
+  const firstLanInfoVersionRef = useRef(-1);
+  useEffect(() => {
+    // Nur einmal ausführen — sobald die LAN-Liste erstmals (nicht-leer)
+    // vorliegt. Version -1/0 = vor dem Status-Fetch.
+    if (httpsInfo.lanIps.length === 0) return;
+    if (firstLanInfoVersionRef.current === httpsInfo.version) return;
+    firstLanInfoVersionRef.current = httpsInfo.version;
+    if (localIP && httpsInfo.lanIps.includes(localIP)) return; // bereits korrekt
+    detectLocalIP().then(ip => { if (ip) setLocalIP(ip); });
+  }, [httpsInfo, localIP]);
 
   const companionUrl = localIP ? buildCompanionUrl(localIP) : '';
   const qrCodeSrc = useQRCode(companionUrl, 160);
