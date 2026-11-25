@@ -1186,3 +1186,28 @@ Stage Summary:
 - Umgesetzt: Startingscreen mit animiertem AfterTen-Logo + „Under the Glare" als Titel-Musik (Autoplay-Fallback, Mute, Enter/Space/Escape, App bootet dahinter) + kompletter Rebrand über App, i18n x16, Server-Skripte, Tauri (inkl. Fenstertitel, productName, neu generierte Icons), Workflows und Docs. Alte Backups und alle gespeicherten Daten bleiben voll funktionsfähig.
 - AKTIONEN NUTZER: Desktop-App neu bauen (neue Icons + Fenstertitel + Splash wirken erst im Build). Optional: certs/-Ordner löschen, damit Handys das Zertifikat mit dem neuen Namen „AfterTen Karaoke Local CA" neu installieren (alte CA bleibt funktionsfähig — nur der Anzeigename in iOS-Settings ist alt).
 - Offen/Risiken: (a) Bestehende Handy-Installationen zeigen in iOS-Settings weiter „Karaoke ZERO Local CA" (persistierte CA — Vertrauen bleibt, nur Kosmetik); (b) Icon ist auto-generiert aus dem 16:9-Logo (breit auf Quadrat) — bei Bedarf später ein dediziert quadratisches Logo nachreichen; (c) Musik-Datei ist 4,2 MB (192 kbps, wie geliefert) — bei Bedarf später auf 128 kbps re-encoden für ~1,4 MB kleineren Bundle.
+
+---
+
+## R110 — 11-Punkte-Nutzer-Feedback (Komplettumsetzung)
+
+**Task ID:** r110 · **Agent:** Z.ai Code · **Datum:** 25.11.
+
+### Task
+Nutzer-Feedback mit 11 Punkten (Metadata-Filter, QR, Companion-Cover, Mic-Entfernen, Duell-Mic, Empfindlichkeit, Sustain-Wertung, Leaderboard-Konsole, PTM-Ruckeln/Latenz/Medley-Start).
+
+### Work Log
+1. **Filter:** `src/lib/editor/media-presence.ts` (neu, geteilt) — songHasVideo/Cover/Background; editor-screen filterMode+Cases+Counts+3 Buttons (rose/fuchsia/teal, testids `editor-filter-no*`); metadata-studio missingCounts+Badges; i18n EN+DE (`editor.noVideo/noCover/noBackground`).
+2. **QR:** status-Endpoint liefert `lanIps` (mobile-state.getServerLanIps); qr-code.ts: `lanIpsCache`+Snapshot-Feld, detectLocalIP validiert jeden Kandidaten gegen die Server-Liste (Cache-Invalidierung bei fremder IP, Strategy 4 = Server-LAN-IP); Home-Screen re-detektiert bei LAN-Info-Version.
+3. **Cover:** use-song-library-sync: rotierendes 600er-Fenster + persistenter Cursor (localStorage `karaoke-cover-upload-cursor`), Heal-ids priorisiert; mirror-cover-tile: `exhaustedRef` re-armt bei Index-Updates + 10-Min-Endlos-Retry.
+4. **Mic-Entfernen:** microphone-manager.saveConfig() synchronisiert `savedMicConfigs` (Root Cause des Wiederauferstehens bei Settings-Remount).
+5. **Companion-Duell:** use-mobile-connection parseGameState reicht `availableMics` durch; karaoke-app onPlayFromQueue baut minimales `unifiedSetupResult` mit playerMicId/partnerMicId (+rmt Stales); use-duet-p2-pitch liest players[1].micId vor playerIndex-Heuristik.
+6. **Empfindlichkeit (Companion):** Gate 0.12→0.16, Faktor 1.8→2.0, Hysterese 0.6→0.7, Konstanz 3s→2s, Floor-Rise 0.05/500→0.08/400, Ceiling 0.30→0.35.
+7. **Sustain (1,5-s-Abbruch):** noiseSuppression OFF (Desktop 3 Pfade + Handy — Chrome-NS daempft stationaere Toene nach ~1 s); PITCH_HOLD_MS 350 (Game-Loop); PTM erhaelt erstmals Pitch-Hold (`getEffectivePitch` in use-ptm-scoring).
+8. **Leaderboard:** useNetworkStatus probe nur bei `onlineEnabled` + Backoff 60s→10min; Banner stumm bei null.
+9. **PTM-Ruckeln:** Video-Preload des naechsten Medley-Snippets (use-ptm-medley); Cursor-O(1)-Notensuche statt O(alle Noten)/Frame; Precompute-Status bestaetigt (Schedule/Segment bereits vorab).
+10. **PTM-Latenz:** Scoring-RAF liest synchronen `pitchSourceRef` (Detektor-Ref) statt 50-ms-React-State.
+11. **Medley-Vocalstart:** Generator ohne MEDLEYSTARTBEAT → Vocal-Anker−3 s (statt blind 10 s; no-lyrics-Fallback GAP−3 s); PTM: vocalStartFallback-Option + Nachschaerfung nach Lyrics-Lade (erste Note >3,5 s nach Start → verspaeten).
+
+### Stage Summary
+TSC 0 · 264/264 Tests · Lint 0 Errors (860 W. Bestand) · Browser-E2E: Home+QR (https://<LAN-IP>:3443/mobile), Editor 6 Filter aktiv/toggelbar, Studio-Badges, /mobile sauber, KEINE Leaderboard-Anfragen, keine Konsolen-Fehler. Commits: `1a3102b7` (R110 Code) + dieser Worklog.
