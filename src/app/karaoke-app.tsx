@@ -375,6 +375,16 @@ export default function AfterTenKaraoke() {
     // damit es nicht als „Läuft" hängen bleibt.
     completeActiveQueueItems();
 
+    // R111 (user 4): Companion-Gesang explizit abschalten. Der 2s-Sync der
+    // Game-Screen (useMobileGameSync) endet mit dem UNMOUNT — sein letzter
+    // Push trägt noch isPlaying:true / songEnded:false, und der Server-Merge
+    // bewahrt Keys, die danach keiner mehr schreibt. Die Companion-App
+    // stoppte ihr Mikro deshalb nach einem Abbruch NICHT (Overlay blieb
+    // aktiv). Ein finaler Push mit songEnded:true ist dasselbe Signal wie
+    // beim regulären Songende — die Companion-Mic-Stop-Effekte reagieren
+    // darauf sofort (mobile-client-view: !isPlaying || songEnded → stop).
+    void postGameState({ isPlaying: false, songEnded: true });
+
     // ── Tournament match abort: needs bracket + aborted flag for the match-abort dialog ──
     if (screen === 'game' && isTournamentMatch) {
       party.setTournamentMatchAborted(true);

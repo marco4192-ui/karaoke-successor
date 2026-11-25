@@ -2,12 +2,18 @@
 
 import { useEffect, useRef } from 'react';
 import type { GamePhase } from './cptm-types';
-import { subscribePitchFeed } from '@/lib/socketio/socketio-pitch-feed';
+import { subscribePitchFeed, isPitchFeedConnected } from '@/lib/socketio/socketio-pitch-feed';
 
 // ===================== CONSTANTS =====================
 
-/** Companion pitch polling interval in ms (5 polls/sec) */
+/** Companion pitch polling interval in ms (5 polls/sec) — used ONLY while the
+ *  phone demonstrably streams over the HTTP fallback (R111/user 5). */
 const COMPANION_POLL_MS = 200;
+
+/** R111 (user 5): push-first liveness probe cadence — while the pitch-feed
+ *  socket is connected and no HTTP fallback is detected, the poll degrades
+ *  to this (silence no longer produces a 5 Hz request stream). */
+const COMPANION_PROBE_MS = 2000;
 
 /** Maximum age (ms) before a cached companion pitch is considered stale and evicted */
 const STALE_PITCH_MS = 1000;
@@ -36,29 +42,29 @@ export function useCompanionPitchPolling(
   isPlaying: boolean,
 ): React.MutableRefObject<Map<string, CompanionPitchEntry>> {
   const companionPitchCacheRef = useRef<Map<string, CompanionPitchEntry>>(new Map());
-  const companionPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const companionAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (phase !== 'playing' || !isPlaying) {
-      if (companionPollRef.current) {
-        clearInterval(companionPollRef.current);
-        companionPollRef.current = null;
-      }
+      // No timer can exist while not playing (the effect below this guard
+      // owns the whole lifecycle) — the cache stays for the next phase.
       return;
     }
 
-    // ── Socket.IO pitch feed (preferred): instant per-profile pushes ──
-    // Updates the same cache the HTTP poll fills. The poll below remains as
-    // fallback watchdog + stale eviction — fetching is skipped while socket
-    // frames arrive fresh (< 400 ms). Eviction still runs on fetch cycles
-    // only (socket events never evict, matching the HTTP semantics).
+    // ── Socket.IO pitch feed (PREFERRED — R111/user 5: pure PUSH) ──
+    // The phones push every frame the moment it occurs; this cache fills
+    // from the pushes directly. The HTTP poll below is a liveness PROBE that
+    // ramps to full cadence ONLY when it detects a phone streaming over the
+    // HTTP fallback (its own socket down) — otherwise it stays at probe pace.
+    // Stale eviction runs on every poll cycle (probe included).
     let lastSocketPitchAt = 0;
+    let httpFallbackActive = false;
     const unsubPitchFeed = subscribePitchFeed((event) => {
       const profileId = event.profile?.id;
       const d = event.data;
       if (!profileId || !d) return;
       lastSocketPitchAt = Date.now();
+      httpFallbackActive = false;
       companionPitchCacheRef.current.set(profileId, {
         note: d.note ?? null,
         frequency: d.frequency ?? null,
@@ -68,9 +74,23 @@ export function useCompanionPitchPolling(
       });
     });
 
+    // R111: cadence state — probe pace (2 s) while push is authoritative,
+    // full pace (200 ms) when the phone demonstrably streams over HTTP.
+    const pollDelayRef = { current: COMPANION_POLL_MS };
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+    const restartPoll = () => {
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = setInterval(pollCompanionPitch, pollDelayRef.current);
+    };
+
     const pollCompanionPitch = async () => {
-      // Watchdog: skip the HTTP fetch while the socket feed is fresh
+      // While socket frames arrive fresh the probe never fetches (pure push).
       if (Date.now() - lastSocketPitchAt < 400) return;
+      // Socket connected and no HTTP fallback detected → probe cadence.
+      if (isPitchFeedConnected() && !httpFallbackActive && pollDelayRef.current !== COMPANION_PROBE_MS) {
+        pollDelayRef.current = COMPANION_PROBE_MS;
+        restartPoll();
+      }
       if (companionAbortRef.current) companionAbortRef.current.abort();
       companionAbortRef.current = new AbortController();
 
@@ -86,6 +106,7 @@ export function useCompanionPitchPolling(
         const pitchEntries = Array.isArray(data?.pitches) ? data.pitches : [];
         const now = Date.now();
         const activeProfileIds = new Set<string>();
+        let freshestHttpTs = 0;
 
         for (const entry of pitchEntries) {
           const profileId = entry.profile?.id;
@@ -93,6 +114,8 @@ export function useCompanionPitchPolling(
           if (!profileId || !pitchData) continue;
 
           activeProfileIds.add(profileId);
+          const ts = typeof pitchData.timestamp === 'number' ? pitchData.timestamp : now;
+          if (ts > freshestHttpTs) freshestHttpTs = ts;
           companionPitchCacheRef.current.set(profileId, {
             note: pitchData.note ?? null,
             frequency: pitchData.frequency ?? null,
@@ -102,7 +125,21 @@ export function useCompanionPitchPolling(
           });
         }
 
-        // Evict stale entries not seen in this poll cycle
+        // R111: a fresh HTTP frame NEWER than the last socket frame proves the
+        // phone streams over the HTTP fallback → full polling cadence (same
+        // store, matching timestamps mean the socket path is authoritative).
+        if (freshestHttpTs > 0 && freshestHttpTs > lastSocketPitchAt + 200) {
+          httpFallbackActive = true;
+        } else if (freshestHttpTs === 0) {
+          // No fresh frames at all (silence) → fallback flag resets
+          httpFallbackActive = false;
+        }
+        if (httpFallbackActive && pollDelayRef.current !== COMPANION_POLL_MS) {
+          pollDelayRef.current = COMPANION_POLL_MS;
+          restartPoll();
+        }
+
+        // Evict stale entries not seen fresh in this poll cycle
         for (const [cachedProfileId, cachedEntry] of companionPitchCacheRef.current.entries()) {
           if (!activeProfileIds.has(cachedProfileId) && (now - cachedEntry.lastUpdated) > STALE_PITCH_MS) {
             companionPitchCacheRef.current.delete(cachedProfileId);
@@ -115,13 +152,27 @@ export function useCompanionPitchPolling(
     };
 
     pollCompanionPitch();
-    companionPollRef.current = setInterval(pollCompanionPitch, COMPANION_POLL_MS);
+    pollTimer = setInterval(pollCompanionPitch, pollDelayRef.current);
+
+    // R111: stale eviction must run at a fixed 250 ms cadence INDEPENDENT of
+    // the probe cadence — with push mode active the poll fetches only every
+    // 2 s, but silent phones (entries older than STALE_PITCH_MS) must be
+    // evicted as fast as the old 200 ms poll did.
+    const staleSweep = setInterval(() => {
+      const now = Date.now();
+      for (const [pid, entry] of companionPitchCacheRef.current.entries()) {
+        if (now - entry.lastUpdated > STALE_PITCH_MS) {
+          companionPitchCacheRef.current.delete(pid);
+        }
+      }
+    }, 250);
 
     return () => {
       unsubPitchFeed();
-      if (companionPollRef.current) {
-        clearInterval(companionPollRef.current);
-        companionPollRef.current = null;
+      clearInterval(staleSweep);
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
       }
       if (companionAbortRef.current) companionAbortRef.current.abort();
     };

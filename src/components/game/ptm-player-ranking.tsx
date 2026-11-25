@@ -1,15 +1,22 @@
 'use client';
 
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import type { PtmPlayer } from '@/components/game/ptm-types';
 import { PARTY_MAX_POINTS_PER_PLAYER } from '@/lib/game/party-scoring';
 
 interface PtmPlayerRankingProps {
   players: PtmPlayer[];
   currentPlayerIndex: number;
+  /** R111 (user 8): monotonic counter (hook's forceRender tick) — the
+   *  players-array identity is STABLE (playersRef.current), so the memo
+   *  needs an explicit score-change signal or the ranking would freeze. */
+  scoreTick?: number;
 }
 
-export function PtmPlayerRanking({ players, currentPlayerIndex }: PtmPlayerRankingProps) {
+/** R111 (user 8): memoized — removed from the ~40 fps per-frame render
+ *  load of the PTM screen; re-renders only on player switches and score
+ *  ticks (scoreTick). */
+export const PtmPlayerRanking = React.memo(function PtmPlayerRanking({ players, currentPlayerIndex, scoreTick }: PtmPlayerRankingProps) {
   // DO-NOT-CHANGE: Dependency must be score-based, not the players array reference.
   // playersRef.current is a stable ref — the array reference never changes even when
   // individual player scores are updated via { ...p } spread. Using [players] as
@@ -20,7 +27,7 @@ export function PtmPlayerRanking({ players, currentPlayerIndex }: PtmPlayerRanki
       .map((p, i) => ({ ...p, originalIndex: i }))
       .sort((a, b) => b.score - a.score),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    players.map(p => p.score),
+    [players.map(p => p.score).join(','), scoreTick],
   );
 
   return (
@@ -98,4 +105,5 @@ export function PtmPlayerRanking({ players, currentPlayerIndex }: PtmPlayerRanki
       </div>
     </div>
   );
-}
+});
+PtmPlayerRanking.displayName = 'PtmPlayerRanking';

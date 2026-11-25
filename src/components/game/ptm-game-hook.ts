@@ -78,6 +78,9 @@ interface PtmGameHookReturn {
   currentPlayerIndex: number;
   currentPlayer: PtmPlayer | undefined;
   players: PtmPlayer[];
+  /** Monotonic counter bumped by forceRender (score ticks etc.) — the
+   *  score-change signal for memoized HUD children (see forceRender). */
+  renderTick: number;
   isMedleyMode: boolean;
 
   // Note data
@@ -218,8 +221,12 @@ export function usePtmGameLogic({
   const playersRef = useRef<PtmPlayer[]>(
     initialPlayers.map(p => ({ ...p, ...EMPTY_PLAYER_SCORE }))
   );
-  const [, rerender] = useState(0);
+  const [renderTick, rerender] = useState(0);
   // Force-render is needed because score updates mutate refs (for performance) instead of state.
+  // renderTick is ALSO exported: React.memo'd HUD children (player ranking)
+  // use it as their score-change signal — their players-array prop has a
+  // stable identity (playersRef.current), so without the tick a memo would
+  // freeze the scores (R111/user 8: PTM render load at the mic handoff).
   const forceRender = useCallback(() => rerender(n => n + 1), []);
   const fallbackLyricsRef = useRef<LyricLine[] | null>(null);
   const segmentSwitchHandledRef = useRef(false);
@@ -889,6 +896,9 @@ export function usePtmGameLogic({
     currentPlayerIndex,
     currentPlayer,
     players: playersRef.current,
+    /** Monotonic counter bumped by forceRender (score ticks etc.) — the
+     *  score-change signal for memoized HUD children (see forceRender). */
+    renderTick,
     isMedleyMode,
 
     // Note data

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { API_BASE } from '@/lib/api/leaderboard-service';
 import { useGameStore } from '@/lib/game/store';
+import { usePartyStore } from '@/lib/game/party-store';
 
 // ============================================================================
 // Types
@@ -46,6 +47,21 @@ function isOnlineUsageEnabled(): boolean {
     return useGameStore.getState().onlineEnabled === true;
   } catch {
     return true; // store unavailable (SSR) — keep the legacy behavior
+  }
+}
+
+/** R111 (user 7): true while a song is ACTIVELY running — standard games set
+ *  the game-store status to 'playing'; party modes (PTM/CPTM/Medley/BR) flag
+ *  isSongPlaying in the party store. Leaderboard/liveness requests are paused
+ *  during gameplay (they cost console noise + network roundtrips exactly when
+ *  the game loop is most timing-sensitive). */
+function isGameplayActive(): boolean {
+  try {
+    if (useGameStore.getState().gameState.status === 'playing') return true;
+    if (usePartyStore.getState().isSongPlaying) return true;
+    return false;
+  } catch {
+    return false;
   }
 }
 
@@ -101,13 +117,23 @@ export function useNetworkStatus(): NetworkStatus {
     // (backoff while unreachable, 60 s while healthy), and each tick
     // re-checks whether online features are still enabled at all.
     let probeTimer: ReturnType<typeof setTimeout> | null = null;
-    const scheduleNextProbe = () => {
+    /** Recursive probe scheduler. Optional `delayMs` overrides the backoff
+     *  interval (used for the gameplay re-check loop: no request fires, we
+     *  just want to notice the song's end quickly). */
+    const runProbeCycle = (delayMs?: number) => {
       probeTimer = setTimeout(async () => {
         if (!isOnlineUsageEnabled()) {
           // Online features off → no probing, no console noise. Stay quiet
           // (null = banner hidden) until the flag flips on again.
           setIsServerReachable(null);
-          scheduleNextProbe();
+          runProbeCycle();
+          return;
+        }
+        // R111 (user 7): active gameplay → NO requests. Re-check every 15 s
+        // (no network traffic) so probing resumes once the song ends; the
+        // banner keeps its last known state meanwhile.
+        if (isGameplayActive()) {
+          runProbeCycle(15_000);
           return;
         }
         const reachable = await checkServerReachable();
@@ -115,10 +141,10 @@ export function useNetworkStatus(): NetworkStatus {
         backoffMsRef.current = reachable
           ? 60_000
           : Math.min(backoffMsRef.current * 2, 600_000);
-        scheduleNextProbe();
-      }, backoffMsRef.current);
+        runProbeCycle();
+      }, delayMs ?? backoffMsRef.current);
     };
-    if (isOnlineUsageEnabled()) scheduleNextProbe();
+    if (isOnlineUsageEnabled()) runProbeCycle();
 
     return () => {
       window.removeEventListener('online', goOnline);

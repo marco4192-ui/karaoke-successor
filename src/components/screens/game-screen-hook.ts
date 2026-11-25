@@ -5,9 +5,7 @@ import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { useNoteScoring } from '@/hooks/use-note-scoring';
 import { useGameSettings } from '@/hooks/use-game-settings';
 import { useModeWarningCues } from '@/hooks/use-mode-warning-cues';
-import { usePitchShift } from '@/hooks/use-pitch-shift';
-import { getPitchShiftUnsupportedReason, PITCH_SHIFT_MAX_SEMITONES } from '@/lib/audio/pitch-shift';
-import { StorageKeys, getNumber, setItem } from '@/lib/storage';
+import { useGameAudioEffects } from '@/hooks/use-game-audio-effects';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import {
@@ -26,7 +24,6 @@ import { useMobilePitchPolling, type MobilePitchData } from '@/hooks/use-mobile-
 import { useGameMedia } from '@/hooks/use-game-media';
 import { useGameLoop } from '@/hooks/use-game-loop';
 import { useNativeAudio } from '@/hooks/use-native-audio';
-import { useGameAudioEffects } from '@/hooks/use-game-audio-effects';
 import { useYouTubeGame } from '@/hooks/use-youtube-game';
 import { useGameModes } from '@/hooks/use-game-modes';
 import { useMobileGameSync } from '@/hooks/use-mobile-game-sync';
@@ -197,7 +194,6 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     hasChallengeNoPitchGuide,
     challengeModifiers,
     challengeTimeLimit,
-    challengePitchShift,
     practiceMode,
     setPracticeMode,
     showPracticeControls,
@@ -316,37 +312,10 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     nativeAudioEnabled: nativeAudio.enabled,
   });
 
-  // ── R105: Song pitch shift (Tonhöhen-Verstellung, −12..+12 semitones) ──
-  // Transposes the song's key without changing the tempo (AudioWorklet DSP
-  // on the shared media graph). Persisted so the choice survives sessions;
-  // clamped to ±12 and disabled (pristine bypass) for media that cannot enter
-  // the Web Audio graph (MIDI synth / platform players / cross-origin).
-  const [pitchShiftSemitones, setPitchShiftSemitonesState] = useState(() => {
-    const stored = getNumber(StorageKeys.PITCH_SHIFT_SEMITONES, 0);
-    return Math.round(Math.min(PITCH_SHIFT_MAX_SEMITONES, Math.max(-PITCH_SHIFT_MAX_SEMITONES, Number.isFinite(stored) ? stored : 0)));
-  });
-  const setPitchShiftSemitones = useCallback((value: number) => {
-    const clamped = Math.round(Math.min(PITCH_SHIFT_MAX_SEMITONES, Math.max(-PITCH_SHIFT_MAX_SEMITONES, Number.isFinite(value) ? value : 0)));
-    setPitchShiftSemitonesState(clamped);
-    setItem(StorageKeys.PITCH_SHIFT_SEMITONES, String(clamped));
-  }, []);
-  const resetPitchShift = useCallback(() => setPitchShiftSemitones(0), [setPitchShiftSemitones]);
-
-  const pitchShiftUnsupportedReason = useMemo(
-    () => getPitchShiftUnsupportedReason({
-      midiMusicActive,
-      songAudioUrl: midiMusicActive ? null : (effectiveSong?.audioUrl ?? null),
-      nativeAudioEnabled: nativeAudio.enabled,
-    }),
-    [midiMusicActive, effectiveSong?.audioUrl, nativeAudio.enabled],
-  );
-  // Only engage the Web Audio chain when a shift is actually possible —
-  // otherwise the element stays on its pristine native path.
-  const pitchShiftEngageable = pitchShiftSemitones !== 0 && !pitchShiftUnsupportedReason;
-  const { unavailable: pitchShiftRuntimeUnavailable } = usePitchShift({
-    element: pitchShiftEngageable ? audioRef.current : null,
-    semitones: pitchShiftEngageable ? pitchShiftSemitones : 0,
-  });
+  // ── Audio effects: reverb/echo/vocal-filter/voice-fx (useGameAudioEffects) ──
+  // R111 (user 3): the manual Pitch Shift feature (R105) was REMOVED from
+  // the single/duel game screen on user request — the shared media graph and
+  // the vocal filter remain untouched (pristine source → sharedGain routing).
 
   // SAFETY: Ensure at least one player exists before game starts
   useEffect(() => {
@@ -898,7 +867,6 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     challengeTimeLimit,
     timeRemaining,
     setTimeRemaining,
-    challengePitchShift,
     showScore,
     showParticles,
     showCombo,
@@ -927,14 +895,6 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     setVocalFilterAmount,
     /** null = vocal filter available; otherwise the reason it is not. */
     vocalFilterUnsupportedReason,
-    /** R105: song pitch shift in semitones (−12..+12, persisted; 0 = off). */
-    pitchShiftSemitones,
-    setPitchShiftSemitones,
-    resetPitchShift,
-    /** null = pitch shift available; otherwise the reason it is not. */
-    pitchShiftUnsupportedReason,
-    /** True when engaging failed at runtime (chain could not be built). */
-    pitchShiftRuntimeUnavailable,
     /** Voice FX Studio (feature idea #16) — persisted settings + availability. */
     voiceFx,
     setVoiceFx,

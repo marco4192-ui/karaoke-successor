@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { usePartyStore } from '@/lib/game/party-store';
 import { PauseButton } from '@/components/game/hud/pause-button';
 import { EndSongButton } from '@/components/game/hud/end-song-button';
@@ -34,7 +34,11 @@ interface PtmHudControlsProps {
  * WebcamQuickControls (same as the regular game screen).
  * Difficulty badge is read-only (configured in the party setup).
  */
-export function PtmHudControls({
+/** R111 (user 8): memoized — the PTM screen re-renders at ~40 fps on the
+ *  currentTime state; this HUD (incl. WebcamBackground) only changes on
+ *  isPlaying / settings / song identity, so the memo removes it from the
+ *  per-frame render load (jank at the mic-handoff text). */
+export const PtmHudControls = React.memo(function PtmHudControls({
   safeSettings,
   isPlaying,
   onTogglePause,
@@ -133,4 +137,5 @@ export function PtmHudControls({
       </div>
     </>
   );
-}
+});
+PtmHudControls.displayName = 'PtmHudControls';

@@ -125,6 +125,10 @@ export function GameBackground({
   }, [isPlaying, videoRef?.current]);
 
   // ── Rutube — postMessage Player API; start gate = position gate (no ad events) ──
+  // R111 (user 1): platform players are MUTED whenever a separate audio file
+  // exists (usePlatformAudio false) — mirroring the local video file branch
+  // (muted <video> + separate audio). Otherwise the platform video's own
+  // soundtrack played ON TOP of the song's audio file.
   if (!videoFailed && showBackgroundVideo && videoPlatform === 'rutube' && platformVideoUrl) {
     return (
       <RutubePlayer
@@ -138,6 +142,7 @@ export function GameBackground({
         isPlaying={isPlaying}
         startTime={effectiveSong?.start || 0}
         interactive={isAdPlaying}
+        muted={!usePlatformAudio}
         onError={handleVideoError}
       />
     );
@@ -157,6 +162,7 @@ export function GameBackground({
         isPlaying={isPlaying}
         startTime={effectiveSong?.start || 0}
         interactive={isAdPlaying}
+        muted={!usePlatformAudio}
         onError={handleVideoError}
       />
     );
@@ -178,6 +184,7 @@ export function GameBackground({
         isPlaying={isPlaying}
         startTime={effectiveSong?.start || 0}
         interactive
+        muted={!usePlatformAudio}
         manualStartConfirmed={manualStartConfirmed}
         onError={handleVideoError}
       />
@@ -199,6 +206,7 @@ export function GameBackground({
         isPlaying={isPlaying}
         startTime={effectiveSong?.start || 0}
         interactive
+        muted={!usePlatformAudio}
         manualStartConfirmed={manualStartConfirmed}
         onManualGateRequired={onManualGateRequired}
         onError={handleVideoError}
@@ -260,6 +268,7 @@ export function GameBackground({
         isPlaying={isPlaying}
         startTime={effectiveSong?.start || 0}
         interactive={isAdPlaying}
+        muted={!usePlatformAudio}
         onError={handleVideoError}
       />
     );
@@ -299,6 +308,7 @@ export function GameBackground({
         isPlaying={isPlaying}
         startTime={effectiveSong?.start || 0}
         interactive={isAdPlaying}
+        muted={!usePlatformAudio}
         onError={handleVideoError}
       />
     );
@@ -322,7 +332,7 @@ export function GameBackground({
     );
   }
 
-  // YouTube video (visible + audio)
+  // YouTube video (visible; audio only when the platform is the audio source)
   if (!videoFailed && showBackgroundVideo && isYouTube && youtubeVideoId) {
     return (
       <YouTubePlayer
@@ -336,6 +346,7 @@ export function GameBackground({
         isPlaying={isPlaying}
         startTime={effectiveSong?.start || 0}
         interactive={isAdPlaying}
+        muted={!usePlatformAudio}
         onError={handleVideoError}
       />
     );

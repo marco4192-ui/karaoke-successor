@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef, useCallback, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/lib/i18n/translations';
 import { PLAYER_COLORS } from '@/types/game';
@@ -26,12 +26,31 @@ import { usePartyStore } from '@/lib/game/party-store';
 // Re-export types for backward compatibility
 export type { PassTheMicPlayer, PassTheMicSegment, PassTheMicSettings } from '@/components/game/ptm-types';
 
+/** R111 (user 8): stable callbacks — the PTM screen re-renders ~40 fps on the
+ *  currentTime state; inline arrow props (onVideoCanPlay / onYoutubeError)
+ * got NEW identities every frame, defeating React.memo on the (now memoized)
+ * HUD children and dragging GameBackground + its video children into every
+ * per-frame render. Module-level noop + useCallback pin the identities. */
+const NOOP = () => {};
+
+/** R111 (user 8): memoized GameBackground — its props are all stable between
+ * real game events (song/segment/ad/play state, songEnergy at 5 Hz), so it
+ * drops out of the per-frame render load. */
+const MemoGameBackground = memo(GameBackground);
+
 // ===================== MAIN COMPONENT =====================
 
 export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
   const { t } = useTranslation();
   const g = usePtmGameLogic(props);
   const ptmSongSelection = usePartyStore((s) => s.ptmSongSelection);
+
+  // R111 (user 8): stable callback identities for the memoized GameBackground
+  // (the ref objects they close over are stable across renders).
+  const videoLoadedRef = g.videoLoadedRef;
+  const handleVideoCanPlay = useCallback(() => {
+    videoLoadedRef.current = true;
+  }, [videoLoadedRef]);
 
   // ── Companion "Song beenden" (R37) ──
   // Any connected companion phone can end the current song early — same
@@ -50,6 +69,15 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
     window.addEventListener('karaoke-end-song', onEndSong);
     return () => window.removeEventListener('karaoke-end-song', onEndSong);
   }, []);
+
+  // R111 (user 8): stable currentPlayer object for the memoized MicIndicator —
+  // identity changes only when the player (or its mic naming inputs) change.
+  const currentPlayer = g.currentPlayer;
+  const sharedMicName = g.safeSettings.sharedMicName
+    || (g.safeSettings.micName && g.safeSettings.micName !== 'Standard' ? g.safeSettings.micName : undefined);
+  const micIndicatorPlayer = useMemo(() => (
+    currentPlayer ? { id: currentPlayer.id, name: currentPlayer.name, micName: sharedMicName } : null
+  ), [currentPlayer, sharedMicName]);
 
   // Guard: no song
   if (!g.effectiveSong) {
@@ -164,8 +192,9 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
 
       {/* Game Area - Full Screen */}
       <div className="absolute inset-0 overflow-hidden">
-        {/* Background */}
-        <GameBackground
+        {/* Background — memoized (R111/user 8): stable props, drops out of the
+            ~40 fps per-frame render load of the PTM screen */}
+        <MemoGameBackground
           effectiveSong={g.audioSong}
           showBackgroundVideo={g.showBackgroundVideo}
           useAnimatedBackground={g.useAnimatedBackground}
@@ -186,9 +215,8 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
           onAdStart={g.handleAdStart}
           onAdEnd={g.handleAdEnd}
           onVideoEnded={g.handleBackgroundVideoEnded}
-          // eslint-disable-next-line react-hooks/immutability -- event callback: set ref flag for imperative tracking
-          onVideoCanPlay={() => { g.videoLoadedRef.current = true; }}
-          onYoutubeError={() => {}}
+          onVideoCanPlay={handleVideoCanPlay}
+          onYoutubeError={NOOP}
         />
 
         {/* Ad Indicator — platform-aware overlay (Einblendung über …).
@@ -262,11 +290,15 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
         />
       )}
 
-      {/* Player Ranking — vertical left side, sorted by score (active player on top) */}
+      {/* Player Ranking — vertical left side, sorted by score (active player on top).
+          Memoized (R111/user 8): scoreTick is the hook's forceRender counter —
+          the players array identity is stable (playersRef), so the memo needs
+          the explicit score-change signal. */}
       {(g.phase === 'playing' || g.phase === 'transitioning') && (
         <PtmPlayerRanking
           players={g.players}
           currentPlayerIndex={g.currentPlayerIndex}
+          scoreTick={g.renderTick}
         />
       )}
 
@@ -277,17 +309,14 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
       {/* Mic indicator (bottom-left) — shows which player sings on which mic.
           currentPlayer feeds the LIVE singer: the store roster is static
           after setup, so without it the indicator would keep naming the
-          first mic player for the whole song (stale after every handoff). */}
+          first mic player for the whole song (stale after every handoff).
+          Memoized (R111/user 8): the currentPlayer object is built with
+          useMemo so its identity changes only when the player changes. */}
       {(g.phase === 'playing' || g.phase === 'transitioning') && (
         <MicIndicator
           isPlaying={g.isPlaying}
           gameMode="pass-the-mic"
-          currentPlayer={g.currentPlayer ? {
-            id: g.currentPlayer.id,
-            name: g.currentPlayer.name,
-            micName: g.safeSettings.sharedMicName
-              || (g.safeSettings.micName && g.safeSettings.micName !== 'Standard' ? g.safeSettings.micName : undefined),
-          } : null}
+          currentPlayer={micIndicatorPlayer}
         />
       )}
 

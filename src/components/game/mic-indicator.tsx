@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { usePartyStore } from '@/lib/game/party-store';
 import type { SelectedPlayer, InputMode } from './unified-party-setup.types';
 
@@ -34,7 +34,10 @@ const VISIBLE_DURATION = 8000;
 /** Fade-out animation duration (ms) */
 const FADE_DURATION = 1500;
 
-export function MicIndicator({
+/** R111 (user 8): memoized — PTM passes stable props (no currentTime), so
+ *  the indicator drops out of the ~40 fps per-frame render load; the regular
+ *  game screen passes currentTime per frame and defeats the memo naturally. */
+export const MicIndicator = React.memo(function MicIndicator({
   currentTime: _currentTime = 0,
   isPlaying = false,
   isDuetMode = false,
@@ -197,4 +200,5 @@ export function MicIndicator({
       </div>
     </div>
   );
-}
+});
+MicIndicator.displayName = 'MicIndicator';

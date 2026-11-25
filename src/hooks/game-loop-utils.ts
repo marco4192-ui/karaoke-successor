@@ -15,6 +15,12 @@ export interface ComputeElapsedParams {
   youtubeTimeRef: React.MutableRefObject<number>;
   nativeAudioTimeRef: React.MutableRefObject<number>;
   startTimeRef: React.MutableRefObject<number>;
+  /** R111 (user 1.2): wall-clock (performance.now()) of the moment the
+   *  platform time in youtubeTimeRef was last updated — lets the loop
+   *  EXTRAPOLATE between the ~100 ms granular platform reports so the note
+   *  stream advances smoothly instead of stepping ("ruckelnder Notenstream").
+   *  Absent → no extrapolation (legacy stepping behavior). */
+  platformClockWallRef?: React.MutableRefObject<number>;
 }
 
 export interface BuildP2PitchParams {
@@ -33,12 +39,20 @@ export interface BuildP2PitchParams {
 
 // ── Elapsed time computation ──
 
+/** Max wall-clock lead the extrapolation may add to the last platform
+ *  report (ms). Caps the run-ahead when a platform feed stalls (buffering):
+ *  the stream then FREEZES instead of sprinting, exactly like a buffering
+ *  video. The platform interval is 100 ms — 150 covers one missed tick. */
+const PLATFORM_EXTRAPOLATION_MAX_MS = 150;
+
 /**
  * Compute the current elapsed time (in ms) from song start.
  *
  * Priority order:
  * 1. Native audio time (ASIO / WASAPI) — lowest latency
  * 2. Streaming-platform time — YouTube IFrame API / Dailymotion SDK / Vimeo player.js
+ *    (ONLY while the platform provides the audio — with a separate audio file
+ *    the platform player is muted and the HEARD audio element is the clock)
  * 3. Browser audio element currentTime
  * 4. Browser video element currentTime (for embedded-audio videos)
  * 5. Wall-clock fallback — (Date.now() − startTime) + startPosition
@@ -54,6 +68,7 @@ export function computeGameElapsedMs(params: ComputeElapsedParams): number {
     youtubeTimeRef,
     nativeAudioTimeRef,
     startTimeRef,
+    platformClockWallRef,
   } = params;
 
   const startPositionMs = song.start || 0;
@@ -63,9 +78,22 @@ export function computeGameElapsedMs(params: ComputeElapsedParams): number {
     return nativeAudioTimeRef.current;
   }
 
-  // Priority: streaming-platform time (YouTube / Dailymotion / Vimeo)
-  if ((isYouTube || isStreamingVideo) && youtubeTimeRef.current > 0) {
-    return youtubeTimeRef.current;
+  // Priority: streaming-platform time (YouTube / Dailymotion / Vimeo) — but
+  // ONLY when the platform is the audio source (no separate audio file).
+  // R111 (user 1): with a separate audio file the platform player is muted
+  // (game-background) — its time would drift against the HEARD audio.
+  if ((isYouTube || isStreamingVideo) && !song.audioUrl && youtubeTimeRef.current > 0) {
+    const platformTime = youtubeTimeRef.current;
+    // R111 (user 1.2): smooth clock — extrapolate between the coarse platform
+    // reports with the wall clock so notes glide at rAF rate. Monotonic by
+    // caller convention (each frame ≥ previous; tiny report jitter can never
+    // pull the stream backwards).
+    if (platformClockWallRef) {
+      const age = performance.now() - platformClockWallRef.current;
+      const lead = Math.max(0, Math.min(age, PLATFORM_EXTRAPOLATION_MAX_MS));
+      return platformTime + lead;
+    }
+    return platformTime;
   }
 
   // Priority: browser audio element

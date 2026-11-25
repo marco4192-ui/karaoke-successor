@@ -109,14 +109,20 @@ export function useMobilePitchDetection({
   //     nach ≥3 s konstantem Pegel wandert der Boden langsam Richtung
   //     Musikpegel (Deckel 0.30), das Gate folgt → laute Musik wird
   //     gegatet, Gesang in der Hand (CV hoch) wird nie verfolgt.
-  const CLOSE_RANGE_MIN_GATE = 0.16;    // min(1, rms·5)-Skala: absolutes Minimum
-                                        // R110 (user point 6): 0.12 → 0.16 —
-                                        // Feedback „Empfindlichkeit immer noch zu
-                                        // hoch“: leises 2-m-Singen / Lautsprecher-
-                                        // Musik (0,03–0,2) fällt jetzt unters
-                                        // absolute Minimum; Singen in der Hand
-                                        // (0,15–0,3 ohne AGC, laut 0,3–1,0)
-                                        // bleibt darüber.
+  // ═══ R111 (user 6) — Empfindlichkeit auf die HÄLFTE ═══
+  // Nutzer: „immer noch viel zu empfindlich“ nach R110 (0.12 → 0.16). Die
+  // Empfindlichkeit (reakiertes Signal = 1/Gate) wird HALBIERT — das Gate
+  // verdoppelt sich damit: CLOSE_RANGE_MIN_GATE 0.16 → 0.32. Effektive
+  // Grenze auf der min(1, rms·5)-Skala:
+  //   • Leises 2-m-Singen / Lautsprecher-Musik (0,03–0,2): klar unter dem
+  //     Gate → keine Wertung mehr (das war der Kern des Feedbacks).
+  //   • Normales Singen in der Hand (0,3–1,0): bleibt sicher darüber.
+  //   • Sehr leises Flüster-Singen in der Hand (0,15–0,3) fällt jetzt weg —
+  //     bewusster Trade-Off des Nutzerauftrags „Hälfte der Empfindlichkeit“.
+  const CLOSE_RANGE_MIN_GATE = 0.32;    // min(1, rms·5)-Skala: absolutes Minimum
+                                        // R110: 0.12 → 0.16; R111 (user 6):
+                                        // Empfindlichkeit halbiert → Gate
+                                        // verdoppelt (0.16 → 0.32)
   const CLOSE_RANGE_GAIN_FACTOR = 2.0;  // Faktor über dem adaptiven Boden (1,8 → 2,0)
   const ambientFloorRef = useRef(0.02);
   const wasLocalRef = useRef(false);

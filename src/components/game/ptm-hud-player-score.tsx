@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import type { PtmPlayer } from '@/components/game/ptm-types';
 import { useTranslation } from '@/lib/i18n/translations';
 import { PARTY_MAX_POINTS_PER_PLAYER } from '@/lib/game/party-scoring';
@@ -18,7 +19,11 @@ interface PtmHudPlayerScoreProps {
  * (fairness: everyone tops out at 2,000 no matter how many segments they
  * sing) with a slim progress bar toward that budget.
  */
-export function PtmHudPlayerScore({ players, currentPlayer }: PtmHudPlayerScoreProps) {
+/** R111 (user 8): memoized — the PTM screen re-renders ~40 fps on the
+ *  currentTime state; this card changes only when the active player object
+ *  changes (score ticks replace the element → new identity) or the player
+ *  switches, so the memo removes it from the per-frame render load. */
+export const PtmHudPlayerScore = React.memo(function PtmHudPlayerScore({ players, currentPlayer }: PtmHudPlayerScoreProps) {
   const { t } = useTranslation();
   const teamScore = players.reduce((sum, p) => sum + p.score, 0);
   const accent = currentPlayer?.color ?? '#22d3ee';
@@ -93,4 +98,5 @@ export function PtmHudPlayerScore({ players, currentPlayer }: PtmHudPlayerScoreP
       </div>
     </div>
   );
-}
+});
+PtmHudPlayerScore.displayName = 'PtmHudPlayerScore';

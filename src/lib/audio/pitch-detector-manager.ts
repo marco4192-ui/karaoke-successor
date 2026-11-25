@@ -1,7 +1,7 @@
 import { PitchDetectionResult, Difficulty } from '@/types/game';
 import { PitchDetector } from './pitch-detector';
 import { registerCleanup } from '@/lib/utils/app-cleanup';
-import { subscribePitchFeed } from '@/lib/socketio/socketio-pitch-feed';
+import { subscribePitchFeed, isPitchFeedConnected } from '@/lib/socketio/socketio-pitch-feed';
 
 // ===================== PITCH DETECTOR MANAGER =====================
 // Manages multiple PitchDetector instances for multi-player karaoke
@@ -45,6 +45,12 @@ export class PitchDetectorManager {
    *  entirely while ALL feeds are socket-fresh. */
   private mobileWatchdogInterval: ReturnType<typeof setInterval> | null = null;
   private mobileWatchdogInFlight = false;
+  /** R111 (user 5): true while at least one phone demonstrably streams over
+   *  the HTTP fallback (fresh HTTP frames newer than its socket feed). */
+  private mobileHttpFallbackActive = false;
+  /** R111 (user 5): last liveness-probe fetch (push mode is authoritative —
+   *  probes run at most every 2 s while the pitch-feed socket is connected). */
+  private mobileLastProbeAt = 0;
 
   /** Tracks which device streams are already open. Key is the deviceId (or '__default__' for undefined). */
   private deviceStreamMap: Map<string, MediaStream> = new Map();
@@ -64,6 +70,23 @@ export class PitchDetectorManager {
     this.difficulty = difficulty;
     this.players.forEach((player) => {
       player.detector?.setDifficulty(difficulty);
+    });
+  }
+
+  /**
+   * R111 (user 9): stagger LOCAL detectors across rAF frames.
+   * With n ≥ 2 local mics every detector ran its full YIN at 60 Hz — four
+   * Medley singers ≈ 24M multiply-adds per frame ("stockt stark"). Each
+   * detector now analyzes every OTHER frame (30 Hz — companion parity),
+   * with alternating phases so at most ceil(n/2) YIN runs share a frame.
+   * A single local detector keeps the full 60 Hz rate (single/duel parity).
+   * Re-run after every add/remove of a local player.
+   */
+  private updateDetectorStrides(): void {
+    const localPlayers = Array.from(this.players.values()).filter(p => p.type === 'local' && p.detector);
+    const stride = localPlayers.length >= 2 ? 2 : 1;
+    localPlayers.forEach((p, idx) => {
+      p.detector!.setFrameStride(stride, stride > 1 ? idx % stride : 0);
     });
   }
 
@@ -159,6 +182,7 @@ export class PitchDetectorManager {
             this.callbacks?.onPitchDetected(playerId, _result);
           });
         }
+        this.updateDetectorStrides();
         return true;
       } catch (error) {
         // eslint-disable-next-line no-console
@@ -201,6 +225,7 @@ export class PitchDetectorManager {
           this.callbacks?.onPitchDetected(playerId, _result);
         });
       }
+      this.updateDetectorStrides();
       return true;
     }
 
@@ -286,6 +311,7 @@ export class PitchDetectorManager {
 
     this.players.delete(playerId);
     this.stopMobileWatchdogIfUnused();
+    this.updateDetectorStrides();
   }
 
   start(): void {
@@ -329,6 +355,9 @@ export class PitchDetectorManager {
     player.pitchFeedUnsubscribe = subscribePitchFeed((event) => {
       if (event.clientId !== mobileClientId) return;
       player.lastSocketPitchAt = Date.now();
+      // R111: a live socket frame proves push mode for this phone — leave
+      // the HTTP fallback cadence (the next silent probe re-evaluates).
+      this.mobileHttpFallbackActive = false;
       this.callbacks?.onPitchDetected(playerId, {
         frequency: event.data.frequency,
         note: event.data.note,
@@ -378,6 +407,17 @@ export class PitchDetectorManager {
     );
     if (stalePlayers.length === 0) return;
 
+    // R111 (user 5): push-first — while the pitch-feed socket is connected and
+    // no phone demonstrably streams over HTTP, the watchdog degrades to a 2 s
+    // liveness PROBE (phones push their frames the moment they occur; silence
+    // must not produce a 10 Hz fetch stream). A probe that finds frames NEWER
+    // than the last socket frame (phone socket down) flips into full fallback
+    // cadence; a socket frame flips back.
+    if (isPitchFeedConnected() && !this.mobileHttpFallbackActive) {
+      if (now - this.mobileLastProbeAt < 2000) return;
+      this.mobileLastProbeAt = now;
+    }
+
     this.mobileWatchdogInFlight = true;
     try {
       const response = await fetch('/api/mobile?action=getpitch');
@@ -385,6 +425,7 @@ export class PitchDetectorManager {
       // Server returns "pitches" array — match each stale player's entry by
       // clientId (never blindly use pitches[0]: with multiple companions
       // connected that could be another player's data).
+      let sawFreshHttpFrame = false;
       if (data.success && Array.isArray(data.pitches) && data.pitches.length > 0) {
         for (const player of stalePlayers) {
           const matchingEntry = data.pitches.find(
@@ -392,16 +433,27 @@ export class PitchDetectorManager {
           );
           if (matchingEntry?.data) {
             const pitchData = matchingEntry.data;
-            this.callbacks?.onPitchDetected(player.id, {
-              frequency: pitchData.frequency,
-              note: pitchData.note,
-              rawNote: pitchData.note,
-              clarity: pitchData.clarity || 0,
-              volume: pitchData.volume || 0,
-            });
+            // R111: a frame NEWER than the player's last socket frame proves
+            // the phone streams over the HTTP fallback (the socket path
+            // writes the SAME server store — matching timestamps mean push
+            // is alive). Deliver in fallback mode or for genuinely fresh
+            // frames; otherwise the socket feed stays authoritative.
+            const frameTs = typeof pitchData.timestamp === 'number' ? pitchData.timestamp : 0;
+            const newerThanSocket = frameTs > (player.lastSocketPitchAt || 0) + 200;
+            if (newerThanSocket) sawFreshHttpFrame = true;
+            if (this.mobileHttpFallbackActive || newerThanSocket) {
+              this.callbacks?.onPitchDetected(player.id, {
+                frequency: pitchData.frequency,
+                note: pitchData.note,
+                rawNote: pitchData.note,
+                clarity: pitchData.clarity || 0,
+                volume: pitchData.volume || 0,
+              });
+            }
           }
         }
       }
+      this.mobileHttpFallbackActive = sawFreshHttpFrame;
     } catch (error) {
       // eslint-disable-next-line no-console
       console.debug('[pitch-detector]: mobile pitch polling error', error);

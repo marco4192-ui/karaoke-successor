@@ -823,6 +823,11 @@ export function useMedleyGame({
     let rafId = 0;
     let lastTimeSync = 0; // 25 ms cadence — smooth currentTimeMs for the highway
     let lastTick = 0;     // 50 ms cadence — scoring / events / transitions
+    // R111 (user 9): 10 Hz cadence for the playersDisplay snapshot — scores
+    // change at beat-throttled rate (evaluateMedleyTick), so a 100 ms display
+    // sync is visually instant while cutting the 20 Hz array-copy re-render
+    // storm that made 4-singer medleys stutter heavily.
+    let lastPlayersSync = 0;
 
     const loop = () => {
       rafId = requestAnimationFrame(loop);
@@ -948,20 +953,26 @@ export function useMedleyGame({
         scoringEventsRef.current = scoringEventsRef.current.filter(e => e.timestamp > cutoff);
       }
 
-      // Unified HUD: sync note performance samples to state (~100ms) for the NoteHighway
+      // Unified HUD: sync note performance samples for the NoteHighway.
+      // R111 (user 9): NO Map copies — the refs are mutated in place and the
+      // currentTimeMs-driven re-render (40 Hz) reads them fresh, the same
+      // pattern as the standard game's notePerformance (same identity
+      // setState + render-through-currentTime). The previous full copy of
+      // BOTH maps every 50 ms (outer + per-player inner maps!) was the main
+      // render-storm driver with 4 singers.
       if (notePerformanceRef.current.size > 0) {
-        setNotePerformance(new Map(notePerformanceRef.current));
+        setNotePerformance(notePerformanceRef.current);
       }
-      // Multi-player strips: sync the per-player buckets in the same tick
       if (notePerformanceByPlayerRef.current.size > 0) {
-        setNotePerformanceByPlayer(new Map(
-          Array.from(notePerformanceByPlayerRef.current.entries(),
-            ([pid, m]) => [pid, new Map(m)] as const),
-        ));
+        setNotePerformanceByPlayer(notePerformanceByPlayerRef.current);
       }
 
       // Keep display state in sync with ref mutations for live score updates
-      forceRender();
+      // (R111/user 9: throttled to 10 Hz — see lastPlayersSync above).
+      if (perfNow - lastPlayersSync >= 100) {
+        lastPlayersSync = perfNow;
+        forceRender();
+      }
     };
 
     rafId = requestAnimationFrame(loop);

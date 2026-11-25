@@ -220,6 +220,14 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   const p2VolumeRef = useRef(p2Volume);
   const youtubeTimeRef = useRef(youtubeTime);
   const nativeAudioTimeRef = useRef(nativeAudioTime);
+  // R111 (user 1.2): wall-clock anchor of the LAST platform time report —
+  // computeGameElapsedMs extrapolates between the ~100 ms granular platform
+  // reports with it so the note stream glides at rAF rate instead of stepping
+  // in 100 ms jumps ("ruckelnder Notenstream bei Videolink-Songs").
+  const platformClockWallRef = useRef(0);
+  // Monotonic guard for the extrapolated platform clock: an early/re-anchored
+  // report could briefly compute BELOW the previous frame — never wind back.
+  const lastElapsedMsRef = useRef(0);
   // Refs for checkNoteHits / checkP2NoteHits — prevents game loop restart
   // when these callbacks are recreated (e.g. inline arrow functions in caller).
   const checkNoteHitsRef = useRef(checkNoteHits);
@@ -282,6 +290,13 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     sampleVisualTicksRef.current = sampleVisualTicks;
     sampleP2VisualTicksRef.current = sampleP2VisualTicks;
   }, [pitchResult, p2DetectedPitch, p2Volume, youtubeTime, nativeAudioTime, checkNoteHits, checkP2NoteHits, sampleVisualTicks, sampleP2VisualTicks]);
+
+  // Re-anchor the extrapolation clock whenever a NEW platform time report
+  // arrives (the value identity change is the report signal — frozen values
+  // during pause re-anchor harmlessly at the same time).
+  useEffect(() => {
+    platformClockWallRef.current = performance.now();
+  }, [youtubeTime]);
   // DO-NOT-CHANGE: lastPitchStoreUpdateRef was removed to eliminate a
   // separate throttle gate for setDetectedPitch. Previously, setCurrentTime
   // and setDetectedPitch fired on alternating rAF frames (two independent
@@ -690,9 +705,13 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   useEffect(() => {
     if (!isPlaying || !effectiveSong) return;
 
+    // R111: fresh loop start (new song / resume) — re-arm the monotonic guard
+    // so the first frame cannot clamp against the PREVIOUS song's position.
+    lastElapsedMsRef.current = 0;
+
     const gameLoop = () => {
       // Compute elapsed time using extracted utility
-      const elapsed = computeGameElapsedMs({
+      const rawElapsed = computeGameElapsedMs({
         audioRef,
         videoRef,
         song: effectiveSong,
@@ -702,7 +721,13 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         youtubeTimeRef,
         nativeAudioTimeRef,
         startTimeRef,
+        platformClockWallRef,
       });
+      // R111 (user 1.2): monotonic platform clock — extrapolation jitter
+      // (early platform reports, quantization) must never wind the note
+      // stream backwards, only ever hold one report cycle ahead at most.
+      const elapsed = Math.max(rawElapsed, lastElapsedMsRef.current);
+      lastElapsedMsRef.current = elapsed;
 
       const adjustedTime = elapsed + timingOffset;
 

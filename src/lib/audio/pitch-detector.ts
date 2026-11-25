@@ -48,6 +48,19 @@ export class PitchDetector {
   // Pitch stability tracking
   private pitchStabilizer: PitchStabilizer;
 
+  // ── R111 (user 9): multi-mic frame stride ──
+  // YIN on a 4096-sample window costs ~6M multiply-adds per call. With FOUR
+  // simultaneous local detectors (Medley Contest) that ran 4× per rAF frame
+  // (~60 Hz each) and saturated the main thread ("stockt stark bei 4
+  // Sängern"). The manager staggers detectors: stride 2 = each detector
+  // analyzes every OTHER frame (30 Hz — same rate the companion phones
+  // push), offsets spread across frames so at most ceil(n/2) YIN runs land
+  // in the same frame. Stride 1 (default) = unchanged full-rate behavior
+  // for single/duel games.
+  private frameStride = 1;
+  private framePhase = 0;
+  private frameCounter = 0;
+
   // Whether this detector owns the MediaStream (i.e. it created it via getUserMedia).
   // When false, destroy() will NOT stop the tracks — the stream is shared.
   private ownsStream = true;
@@ -66,6 +79,16 @@ export class PitchDetector {
     this.config = { ...this.config, ...config };
     this.pitchStabilizer.setStabilityFrames(this.config.pitchStabilityFrames);
     this.pitchStabilizer.reset();
+  }
+
+  /** R111 (user 9): stagger this detector across rAF frames (multi-mic).
+   * stride 1 = every frame (default, single/duel), stride 2 = every other
+   * frame (~30 Hz — companion parity). phase spreads several detectors
+   * across the stride slots so their YIN work does not pile up in one frame. */
+  setFrameStride(stride: number, phase = 0): void {
+    this.frameStride = Math.max(1, Math.floor(stride));
+    this.framePhase = Math.max(0, Math.floor(phase)) % this.frameStride;
+    this.frameCounter = 0;
   }
 
   // Set configuration based on difficulty
@@ -389,6 +412,21 @@ export class PitchDetector {
     // Just return without scheduling — stop() has already set isListening=false.
     if (!this.audioContext) {
       return;
+    }
+
+    // R111 (user 9): multi-mic staggering — when the manager assigned a
+    // stride > 1, skip every (stride-1)/stride frames entirely (no buffer
+    // read, no RMS, no YIN). The next frame is always scheduled so the
+    // phase pattern keeps cycling.
+    if (this.frameStride > 1) {
+      if (this.frameCounter % this.frameStride !== this.framePhase) {
+        this.frameCounter++;
+        if (this.isListening) {
+          this.animationFrame = requestAnimationFrame(() => this.detect());
+        }
+        return;
+      }
+      this.frameCounter++;
     }
 
     // Guard: if AudioContext was suspended (e.g. Tauri window lost focus),

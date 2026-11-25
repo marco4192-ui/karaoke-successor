@@ -298,7 +298,7 @@ export function SongStartModal({
     } catch (err) {
       const code = (err as { code?: string }).code || 'decodeFailed';
       setInstrError(
-        code === 'noAudioFile' ? t('songStart.instrumentalNoAudio')
+        code === 'noAudioFile' || code === 'platformVideo' ? t('songStart.instrumentalNoAudio')
           : code === 'crossOrigin' ? t('songStart.instrumentalCrossOrigin')
             : t('songStart.instrumentalFailed'),
       );

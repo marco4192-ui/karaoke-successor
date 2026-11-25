@@ -24,6 +24,7 @@
  */
 
 import type { Song } from '@/types/game';
+import { detectVideoPlatform } from '@/lib/url-utils';
 
 export interface InstrumentalExportOptions {
   /** 0..1 — how much center cancellation to apply (1 = full karaoke). */
@@ -42,13 +43,34 @@ export interface InstrumentalExportResult {
 
 export type InstrumentalExportError =
   | 'noAudioFile'
+  | 'platformVideo'
   | 'crossOrigin'
   | 'decodeFailed'
   | 'renderFailed';
 
+/** R111 (user 2): true when the song's video source is a streaming-platform
+ *  LINK (YouTube/Dailymotion/Vimeo/Rutube/VK/Bilibili/Niconico) instead of a
+ *  video FILE. Platform songs have no decodable audio medium — the music
+ *  streams from the platform — so the Instrumental export must not be
+ *  offered for them ("warum wird bei Songs mit Videolink die Option
+ *  Instrumental angeboten?"). */
+export function songHasPlatformVideoLink(song: Song): boolean {
+  if (
+    song.youtubeUrl || song.dailymotionUrl || song.vimeoUrl ||
+    song.rutubeUrl || song.vkVideoUrl || song.bilibiliUrl || song.nicovideoUrl
+  ) return true;
+  // #VIDEO / video URL can also HOLD a platform link (classified into
+  // videoBackground when it is the fallback source)
+  const directVideo = song.videoBackground || song.videoUrl;
+  return !!directVideo && !!detectVideoPlatform(directVideo);
+}
+
 /** Why an instrumental export is impossible for this song (UI probe). */
 export function getInstrumentalExportBlocker(song: Song): InstrumentalExportError | null {
   if (typeof window === 'undefined') return 'noAudioFile';
+  // Platform-video songs (YouTube etc.): music streams from the platform,
+  // nothing to decode/cancel — R111 (user 2): never offer the export there.
+  if (songHasPlatformVideoLink(song)) return 'platformVideo';
   // MIDI/KAR songs: music is synthesized at runtime — there is no audio file.
   // Platform songs (YouTube etc.): audioUrl empty as well.
   if (!song.audioUrl) return 'noAudioFile';

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { subscribePitchFeed } from '@/lib/socketio/socketio-pitch-feed';
+import { subscribePitchFeed, isPitchFeedConnected } from '@/lib/socketio/socketio-pitch-feed';
 import { PitchStabilizer } from '@/lib/audio/pitch-smoothing';
 
 export interface MobilePitchData {
@@ -165,15 +165,18 @@ export function useMobilePitchPolling(
       }
     }, 250);
 
-    // ── Socket.IO pitch feed (preferred): instant pushes, no polling chain ──
-    // Matching semantics: with matchProfileId ONLY frames from that profile
-    // are accepted (the singing phone); without it the FIRST companion that
-    // streams pitch during this song wins (legacy behavior — same order the
-    // server's getpitch Map iteration would produce). The HTTP poll below
-    // stays as a fallback watchdog — skipped while socket frames arrive
-    // fresh (< 400 ms).
+    // ── Socket.IO pitch feed (PREFERRED — R111/user 5: pure PUSH) ──
+    // The companion phone pushes every frame the moment it occurs
+    // ('companion:pitch', ~30 Hz while singing); matching semantics as below.
+    // The HTTP poll is NOT a pull-mode data path anymore — it is a liveness
+    // PROBE (2 s) that only ramps to full cadence when it detects the phone
+    // streaming over the HTTP fallback (socket down on the phone). Silence
+    // therefore produces ~0.5 requests/s instead of 10/s.
     let lastSocketPitchAt = 0;
     let firstSocketClientId: string | null = null;
+    // R111: true while the phone demonstrably streams over the HTTP fallback
+    // (fresh HTTP frames NEWER than the socket feed). A socket frame resets it.
+    let httpFallbackActive = false;
     const unsubPitchFeed = subscribePitchFeed((event) => {
       if (aborted) return;
       const wanted = matchProfileIdRef.current;
@@ -185,6 +188,7 @@ export function useMobilePitchPolling(
         if (event.clientId !== firstSocketClientId) return;
       }
       lastSocketPitchAt = Date.now();
+      httpFallbackActive = false;
       // R94-5: stabilize + TTL-check BEFORE dedup (identical raw frames must
       // still advance the stabilizer's window).
       const raw = event.data as MobilePitchData;
@@ -214,9 +218,26 @@ export function useMobilePitchPolling(
       pollInterval = setInterval(pollMobilePitch, pollDelay);
     };
 
+    // R111 (user 5): cadence targets. FULL = HTTP fallback data path (phone
+    // socket down, fresh HTTP frames newer than the socket feed). PROBE =
+    // socket-connected liveness check — push mode is authoritative, the probe
+    // only exists to detect a phone that silently fell back to HTTP batching.
+    const POLL_FULL_MS = 100;
+    const POLL_PROBE_MS = 2000;
+    const setPollDelay = (ms: number) => {
+      if (pollDelay !== ms) {
+        pollDelay = ms;
+        startPolling();
+      }
+    };
+
     const pollMobilePitch = async () => {
-      // Watchdog: skip the HTTP poll while the socket feed is fresh
+      // While socket frames arrive fresh the poll NEVER fires (pure push).
       if (Date.now() - lastSocketPitchAt < 400) return;
+      // Socket connected and no HTTP fallback detected → slow probe cadence.
+      // (The fetch below ramps back to full cadence when it detects a phone
+      // streaming over HTTP because its own socket is down.)
+      if (isPitchFeedConnected() && !httpFallbackActive) setPollDelay(POLL_PROBE_MS);
       // Cancel any in-flight request from the previous poll
       if (abortController) {
         abortController.abort();
@@ -249,6 +270,10 @@ export function useMobilePitchPolling(
             // (phone stopped streaming) must not feed scoring.
             if (isStale(pitchData)) {
               setHasMobileClient(false);
+              // R111: silence (stale entries) must NOT hold the fast cadence —
+              // the phone is not streaming, so the fallback flag resets and
+              // the probe cadence takes over at the next poll start.
+              httpFallbackActive = false;
               return;
             }
             const processed = processFrame(pitchData);
@@ -264,16 +289,22 @@ export function useMobilePitchPolling(
               refreshLiveness(processed);
             }
             setHasMobileClient(true);
-          }
-          // Companion connected: reset to fast polling
-          if (pollDelay > 100) {
-            pollDelay = 100;
-            startPolling();
+            // R111 (user 5): fresh HTTP frame — the phone is streaming over the
+            // HTTP fallback ONLY when its frame is NEWER than the last socket
+            // frame (the socket path writes the SAME server store, so matching
+            // timestamps mean push is alive). Ramp to full cadence just for the
+            // genuine fallback; otherwise push mode stays authoritative.
+            const frameTs = typeof pitchData.timestamp === 'number' ? pitchData.timestamp : 0;
+            if (frameTs > lastSocketPitchAt + 200) {
+              httpFallbackActive = true;
+              setPollDelay(POLL_FULL_MS);
+            }
           }
         } else {
           setHasMobileClient(false);
-          // No companion: apply backoff (max 2s)
-          if (pollDelay < 2000) {
+          // No companion frames at all: backoff (max 2s) — but never below the
+          // probe cadence while the socket is connected (push is authoritative).
+          if (!isPitchFeedConnected() && pollDelay < 2000) {
             pollDelay = Math.min(pollDelay * 2, 2000);
             startPolling();
           }

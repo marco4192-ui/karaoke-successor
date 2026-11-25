@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { PLAYER_COLORS } from '@/types/game';
 import { SING_LINE_POSITION, NOTE_WINDOW, VISIBLE_TOP, VISIBLE_RANGE } from '@/lib/game/note-utils';
 import { useTranslation } from '@/lib/i18n/translations';
-import { PITCH_SHIFT_MAX_SEMITONES } from '@/lib/audio/pitch-shift';
 import { WebcamBackground, WebcamQuickControls } from '@/components/game/webcam-background';
 import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
 import { SongTitleBanner } from '@/components/game/hud/song-title-banner';
@@ -25,24 +24,18 @@ import { GameScoreDisplay } from '@/components/game/game-score-display';
 import {
   AudioEffectsButton,
   AudioEffectsPanel,
-  PitchShiftButton,
-  PitchShiftPanel,
   AdIndicator,
   SongStartGateIndicator,
   GameProgressBar,
   TimeDisplay,
 } from '@/components/game/game-hud';
 import { MicIndicator } from '@/components/game/mic-indicator';
-import { ModeWarningBanner } from '@/components/game/hud/mode-warning-banner';
 import { MidiAudioSource } from '@/components/game/midi-audio-source';
 import { useGameScreenLogic } from '@/components/screens/game-screen-hook';
 
 // ===================== GAME SCREEN =====================
 function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
   const { t } = useTranslation();
-  // R105: pitch shift panel visibility (pure UI state — the semitones value
-  // itself lives in the game-screen hook and persists across sessions).
-  const [showPitchShiftPanel, setShowPitchShiftPanel] = useState(false);
   const g = useGameScreenLogic(props);
 
   // ── Companion "Song beenden" (R37) ──
@@ -151,14 +144,11 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
         </div>
       </div>
 
-      {/* Blind / Missing Words warning banner (countdown before hidden sections + active indicator) */}
-      {(g.gameState.gameMode === 'blind' || g.gameState.gameMode === 'missing-words') && g.isPlaying && (
-        <ModeWarningBanner
-          blindWarning={g.blindWarning}
-          missingWordsWarning={g.missingWordsWarning}
-          placement={g.isDuetMode ? 'left-half' : 'center'}
-        />
-      )}
+      {/* R111 (user 10): the Blind / Missing Words INFO OVERLAY (countdown
+          banner + active pill) was REMOVED on user request — the hidden/
+          blind sections now start without the visual announcement. The
+          audible attention cues (useModeWarningCues) stay intact so singers
+          still get a subtle heads-up. */}
 
       {/* Audio Element - Primary audio source for songs with separate audio file */}
       {/* key=song.id forces React to create a fresh DOM element per song,
@@ -373,23 +363,6 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
 
         {/* Audio Effects Button */}
         <AudioEffectsButton onClick={g.toggleAudioEffects} />
-
-        {/* R105: Pitch Shift Button + Panel (Tonhöhen-Verstellung) */}
-        <PitchShiftButton
-          onClick={() => setShowPitchShiftPanel(prev => !prev)}
-          semitones={g.pitchShiftSemitones}
-          unsupportedReason={g.pitchShiftUnsupportedReason}
-        />
-        <PitchShiftPanel
-          show={showPitchShiftPanel}
-          semitones={g.pitchShiftSemitones}
-          max={PITCH_SHIFT_MAX_SEMITONES}
-          unsupportedReason={g.pitchShiftUnsupportedReason}
-          runtimeUnavailable={g.pitchShiftRuntimeUnavailable}
-          onSemitonesChange={g.setPitchShiftSemitones}
-          onReset={g.resetPitchShift}
-          onClose={() => setShowPitchShiftPanel(false)}
-        />
 
         {/* Audio Effects Panel */}
         <AudioEffectsPanel

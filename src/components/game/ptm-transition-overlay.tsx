@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== TYPES =====================
@@ -32,7 +32,12 @@ const AUTO_DISMISS_MS = 5000; // Auto-hide 5s after typing finishes
 
 // ===================== TRANSITION OVERLAY =====================
 
-export function PtmTransitionOverlay({
+/** R111 (user 8): memoized — the PTM screen re-renders ~40 fps on the
+ *  currentTime state; the overlay's own typewriter interval (28 Hz local
+ *  renders) stays, but the parent's per-frame re-renders no longer duplicate
+ *  that work. Props (visible / nextPlayer / onSkip) are stable between
+ *  transitions. */
+export const PtmTransitionOverlay = React.memo(function PtmTransitionOverlay({
   visible,
   nextPlayer,
   onComplete,
@@ -178,4 +183,5 @@ export function PtmTransitionOverlay({
       `}</style>
     </div>
   );
-}
+});
+PtmTransitionOverlay.displayName = 'PtmTransitionOverlay';
