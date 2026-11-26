@@ -51,9 +51,19 @@ rusqlite = { version = "0.31", features = ["bundled"] }
 # OFF so embedded YouTube videos don't flood the console with blocked
 # storage accesses (googlevideo.com media segments). Versions are pinned to
 # the ones already in the tree via tauri-runtime-wry → wry.
+# IMPORTANT (R113): windows-core MUST stay on the same version line as the
+# windows-core behind webview2-com (webview2-com 0.38 → windows 0.61.x →
+# windows-core 0.61.x, s. Cargo.lock). Pre-1.0 semver counts 0.54/0.61 as
+# incompatible majors: a pin on a different line makes Cargo compile TWO
+# windows-core copies side by side — the identically-named `Interface`
+# traits of two crate versions are DISTINCT traits, so lib.rs's
+# `use windows_core::Interface` no longer matches the webview2-com types
+# => E0599 "no method named `cast`" (R112 Windows-CI regression). The
+# 0.54.x copies pulled by OTHER deps (rfd u. a.) are unaffected — they
+# never mix with the webview2 call chain.
 [target.'cfg(windows)'.dependencies]
 webview2-com = "0.38"
-windows-core = "0.54"
+windows-core = "0.61"
 
 [features]
 # Production defaults: CREPE pitch detection.
