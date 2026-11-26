@@ -441,7 +441,7 @@ export const partyTranslations = {
     deviceMicActive: 'aktywny',
     micChange: 'Zmień mikrofon…',
     deviceMicTaken: 'w użyciu',
-    deviceMultiMicHint: 'Tryb duel: wykryto {n} mikrofonów — gracze w pojedynku dzielą je między siebie, bez stałego mikrofonu na gracza.',
+    deviceMultiMicHint: 'Dostępne mikrofony: {n} — „Mikrofon (automatycznie)” przydziela wolny, albo wybierz zdefiniowany mikrofon dla gracza.',
     deviceNeedAllCompanion: 'Aby rozpocząć, wszyscy gracze muszą być połączeni przez aplikację kompana',
     deviceNeedExclusive: '{n} gracz(e) potrzebuje jeszcze urządzenia — przypisz wolny mikrofon lub połącz aplikację kompana',
     deviceNeedFlexible: '{n} gracz(e) potrzebuje jeszcze urządzenia — wybierz mikrofon lub połącz aplikację kompana',

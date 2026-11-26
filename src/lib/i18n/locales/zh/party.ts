@@ -441,7 +441,7 @@ export const partyTranslations = {
     deviceMicActive: '当前使用',
     micChange: '更换麦克风…',
     deviceMicTaken: '使用中',
-    deviceMultiMicHint: '对决模式：检测到 {n} 支麦克风——对决玩家共用麦克风，不固定每人一支。',
+    deviceMultiMicHint: '检测到 {n} 支可用麦克风——“麦克风（自动）”会分配空闲的一支，也可以为每位玩家指定已定义的麦克风。',
     deviceNeedAllCompanion: '所有玩家都必须通过伴侣应用连接才能开始',
     deviceNeedExclusive: '还有 {n} 名玩家需要设备——请分配空闲麦克风或连接伴侣应用',
     deviceNeedFlexible: '还有 {n} 名玩家需要设备——请选择麦克风或连接伴侣应用',

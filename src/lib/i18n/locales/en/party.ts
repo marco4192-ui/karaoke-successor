@@ -430,7 +430,7 @@ export const partyTranslations = {
     deviceMicTaken: 'in use',
     deviceNoMic: 'No microphone',
     deviceSingingVia: 'Sings via',
-    deviceMultiMicHint: 'Duel mode: {n} microphones detected — dueling players share them, no fixed mic per player.',
+    deviceMultiMicHint: '{n} microphones available — \'Microphone (automatic)\' assigns a free one, or pick a defined mic per player.',
     deviceSingleMicHint: 'Only one microphone connected — assign it to one player; all others need the Companion App.',
     deviceNoMicsHint: 'No microphone connected — all players must sing via Companion App.',
     deviceNeedSharedMic: 'Select the shared microphone to start',

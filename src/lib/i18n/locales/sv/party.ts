@@ -441,7 +441,7 @@ export const partyTranslations = {
     deviceMicActive: 'aktiv',
     micChange: 'Byt mikrofon…',
     deviceMicTaken: 'används',
-    deviceMultiMicHint: 'Duelläge: {n} mikrofoner hittades — duellerande spelare delar på dem, ingen fast mikrofon per spelare.',
+    deviceMultiMicHint: '{n} mikrofoner tillgängliga — \'Mikrofon (automatisk)\' tilldelar en ledig, eller välj en definierad mikrofon per spelare.',
     deviceNeedAllCompanion: 'Alla spelare måste vara anslutna via Companion-appen för att starta',
     deviceNeedExclusive: '{n} spelare behöver fortfarande en enhet — tilldela en ledig mikrofon eller anslut Companion-appen',
     deviceNeedFlexible: '{n} spelare behöver fortfarande en enhet — välj mikrofon eller anslut Companion-appen',

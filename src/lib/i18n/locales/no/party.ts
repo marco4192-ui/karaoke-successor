@@ -441,7 +441,7 @@ export const partyTranslations = {
     deviceMicActive: 'aktiv',
     micChange: 'Bytt mikrofon…',
     deviceMicTaken: 'i bruk',
-    deviceMultiMicHint: 'Duellmodus: {n} mikrofoner oppdaget — duellerende spillere deler dem, ingen fast mikrofon per spiller.',
+    deviceMultiMicHint: '{n} mikrofoner tilgjengelig — \'Mikrofon (automatisk)\' tildeler en ledig, eller velg en definert mikrofon per spiller.',
     deviceNeedAllCompanion: 'Alle spillere må være tilkoblet via Companion-appen for å starte',
     deviceNeedExclusive: '{n} spiller(e) trenger fortsatt en enhet — tildel en ledig mikrofon eller koble til Companion-appen',
     deviceNeedFlexible: '{n} spiller(e) trenger fortsatt en enhet — velg mikrofon eller koble til Companion-appen',

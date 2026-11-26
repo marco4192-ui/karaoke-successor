@@ -1211,3 +1211,34 @@ Nutzer-Feedback mit 11 Punkten (Metadata-Filter, QR, Companion-Cover, Mic-Entfer
 
 ### Stage Summary
 TSC 0 · 264/264 Tests · Lint 0 Errors (860 W. Bestand) · Browser-E2E: Home+QR (https://<LAN-IP>:3443/mobile), Editor 6 Filter aktiv/toggelbar, Studio-Badges, /mobile sauber, KEINE Leaderboard-Anfragen, keine Konsolen-Fehler. Commits: `1a3102b7` (R110 Code) + dieser Worklog.
+
+---
+
+## R111 — 12-Punkte-Nutzer-Feedback (Fortsetzung/Fertigstellung)
+
+**Task ID:** R111 · **Agent:** Z.ai Code · **Datum:** 26.11.
+
+### Task
+Fortsetzung nach Token-Limit: Der Watchdog-Cron hatte den Stand von Nutzer-Punkten 1–10 bereits auto-committet (7dc91b61, generische Message); offen waren Nutzer 11 (Missing Words / Blind Karaoke: Singen auf den DEFINIERTEN Mikrofonen) und Nutzer 12 (Serienende → „Back to Setup").
+
+### Work Log (User 11 — definierte Mikrofone)
+1. **ROOT CAUSE A (Match-Start):** Jede Runde rebaut `unifiedSetupResult` via `buildGameSetupResult` — die Handler in party-game-screens.tsx übergaben NUR id/name/color, die Mikro-Zuweisungen aus dem Party-Setup wurden verworfen (micId → 'default') → beide Duellanten auf dem Standard-Mikro. FIX: `getSetupMicAssignment(playerId)` liest playerType/micId/micName/stereoChannel aus dem Setup-Ergebnis und wird in ALLE 4 Handler (onPlayMatch/onPlaySolo × missing-words/blind) eingestreut.
+2. **ROOT CAUSE B (Runde 2+):** Der Rebuild trägt nur die 2 Match-Spieler — Runde-2-Gegner (3–4 Spieler Swiss-Pairing) verlieren ihre Mics nach Runde 1. FIX: `competitiveMicSnapshotRef` (useRef — PartyGameScreens bleibt über alle Screens gemountet) capturert beim Serienstart (competitiveGame null→game, unifiedSetupResult = VOLLE Spielerliste) die Zuweisungen und merged Runden-Rebuilds (Default/undefined überschreibt NIE ein echtes Mic); Handler lesen Snapshot-first.
+3. **ROOT CAUSE C (Setup-UI):** `flexibleNoFixedMic` (flexible + ≥2 Mics) zeigte im Dropdown NUR „Mikrofon (automatisch)" + Platzhalter — konkrete definierte Mics waren NICHT wählbar. FIX (unified-party-setup-mic.tsx): die savedMics erscheinen MIT „✓ aktiv"/„in use"-Annotationen im Dropdown; 'auto' wirft eine explizite Zuweisung (Auto-Assign übernimmt), konkrete Mic-ID = explizite Zuweisung (getauschtes Mic wird freigegeben), '' = Companion. Validierung (flexible + micCount≥2 → gültig) und createPlayers (explizit vor Auto) unterstützten das bereits — nur die UI versteckte die Liste.
+4. **i18n:** deviceMultiMicHint („kein festes Mikro pro Spieler" — now falsch) in ALLEN 16 Locales neu formuliert („…oder wähle pro Spieler ein definiertes Mikro") via Script.
+
+### Work Log (User 12 — Back to Setup)
+5. Winner-Screen-Button (competitive-words-blind-screen.tsx): Label `competitiveWords.backToMenu` („← Back to Main Menu") → `passTheMic.backToSetup` („← Back to Setup", gleiche Zielsprache wie PTM), data-testid `competitive-back-to-setup`.
+6. onEndGame (beide Modi): erster Versuch full `resetPartyState(true)` + 'party-setup' → BLANK SCREEN (resetPartyState nuked auch selectedGameMode; UnifiedPartySetup rendert nur mit gewähltem Modus). FIX: TARGETED cleanup nach PTM's handleEndSeriesComplete-Muster — `setCompetitiveGame(null)` + `setUnifiedSetupResult(null)` + resetGame + setGameMode('standard') → selectedGameMode bleibt gesetzt, Setup-Screen rendert sofort für die nächste Runde.
+
+### Verifikation (Browser-E2E, 3 Profile Anna/Ben/Carla + 3 geseedte Mics)
+- Setup: Dropdown zeigt „🎤 Anna's Mic"/„Ben's Mic"/„Carla's Mic" (+ in use/✓ aktiv), explizite Zuweisung + Auto-Restore über Sessions (persistierte Präferenzen).
+- Runde 1 (Anna vs Ben): Starting Screen + Game-Screen-MicIndicator „P1: Anna's Mic / P2: Ben's Mic"; NotFoundError des Pitch-Detektors beweist die Auflösung der DEFINIERTEN fake-deviceIds (Headless-Chrome hat keine echten).
+- Runde 2 (Ben vs Carla): „Ben's Mic + Carla's Mic" — Carlos Mic kam aus dem SNAPSHOT (sie war NICHT Teil des Runde-1-Rebuilds) → Persistenz über Runden bewiesen.
+- Serienende: „It's a tie!"- UND „Winner!"-Screen zeigen „📝 ← Back to Setup"; Klick → Missing-Words-Setup-Screen rendert (Player Selection + Ready to Play), kein Blank Screen. Abort-Flow (Escape→Enter) beendet Runden mit echten Scores → Scoreboard → Next Round/End Series intakt.
+- TSC 0 · ESLint 0 Errors · 264/264 Tests (i18n 75/75) · 0 Page-Errors; einzige Konsolen-Fehler: Pitch-NotFound (fake Devices) + Media-Watchdog (Seed-Songs ohne Audio) — beide erwartbar. Screenshots scripts-tmp/r111/shot-*.png.
+
+### Stage Summary
+- Umgesetzt: Nutzer 11 + 12 komplett — definierte Mikrofone sind im Setup wählbar (flexible Modus ≥2 Mics), fließen durch Start-Screen/MicIndicator/Pitch-Detektor in JEDE Match-Runde (Snapshot-Persistenz für 3–4-Spieler-Serien), Serienende führt über „← Back to Setup" zurück ins modusgewählte Setup (gezielter Cleanup statt Nuklear-Reset). Zusammen mit dem Watchdog-Commit (7dc91b61: Punkte 1–10) sind alle 12 Nutzer-Punkte erledigt.
+- AKTIONEN NUTZER: Desktop-App neu bauen (Client-Änderungen).
+- Offen/Risiken: (a) Companion-P1-Sänger in MW/Blind öffnen wie im Duell das Desktop-Standard-Mikro (deviceAssignment.p1Companion wird im Party-Flow nirgends gesetzt — prä-existierendes Duell-Verhalten, nicht Teil dieses Auftrags); (b) Coop mit >2 Spielern singt weiterhin über die ersten 2 Mikrofone (GameScreen-Duett-Limit).

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { getAllSongs, getNonDuetSongs, filterSongs } from '@/lib/game/song-library';
@@ -214,6 +214,64 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
     }
     return pool;
   }, []);
+
+  // ── R111 (user 11): Missing Words / Blind Karaoke sing on the DEFINED mics ──
+  // Every match round rebuilds the unified setup result (buildGameSetupResult)
+  // with ONLY the 2 match players — the previous version passed just
+  // id/name/color, so the mic/device assignments from the party setup were
+  // dropped and every duelist fell back to the DEFAULT microphone (two
+  // singers scored on one device). This snapshot captures the FULL setup's
+  // per-player assignments when the series starts and carries them through
+  // every round (later-round opponents in 3–4 player Swiss pairings are not
+  // part of the round-1 rebuild — without the snapshot they would lose their
+  // mic after the first match). PartyGameScreens stays mounted across all
+  // screens, so the ref survives the whole series.
+  const competitiveMicSnapshotRef = useRef<Map<string, {
+    playerType?: 'microphone' | 'companion';
+    micId?: string;
+    micName?: string;
+    stereoChannel?: number;
+  }>>(new Map());
+  const compSeriesActiveRef = useRef(false);
+
+  // (Re)feed the snapshot: reset at series start (competitiveGame null →
+  // game — at that moment unifiedSetupResult still holds the FULL player
+  // list), merge on round updates (round rebuilds carry the 2 match players;
+  // a default/undefined entry must never overwrite a captured real mic).
+  useEffect(() => {
+    const active = !!party.competitiveGame;
+    const justStarted = active && !compSeriesActiveRef.current;
+    compSeriesActiveRef.current = active;
+    if (!active) return;
+    if (justStarted) competitiveMicSnapshotRef.current = new Map();
+    for (const p of party.unifiedSetupResult?.players ?? []) {
+      if (!p?.id) continue;
+      const realMic = !!p.micId && p.micId !== 'default';
+      const entry = {
+        playerType: p.playerType,
+        micId: realMic ? p.micId : undefined,
+        micName: realMic ? p.micName : undefined,
+        stereoChannel: p.stereoChannel,
+      };
+      if (realMic || entry.playerType === 'companion' || !competitiveMicSnapshotRef.current.has(p.id)) {
+        competitiveMicSnapshotRef.current.set(p.id, entry);
+      }
+    }
+  }, [party.competitiveGame, party.unifiedSetupResult]);
+
+  // Lookup used by the match/solo handlers: snapshot first (survives rounds),
+  // live setup result as fallback.
+  const getSetupMicAssignment = useCallback((playerId: string) => {
+    const snap = competitiveMicSnapshotRef.current.get(playerId);
+    if (snap) return snap;
+    const p = party.unifiedSetupResult?.players?.find(pl => pl.id === playerId);
+    return {
+      playerType: p?.playerType,
+      micId: p?.micId && p.micId !== 'default' ? p.micId : undefined,
+      micName: p?.micId && p.micId !== 'default' ? p?.micName : undefined,
+      stereoChannel: p?.stereoChannel,
+    };
+  }, [party.unifiedSetupResult]);
 
   // ── Tournament starting-screen state (replaces the old 3-2-1 mic overlay) ──
   // After selecting the next pairing ("Start Next Match"), the mode starting
@@ -882,15 +940,18 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           modeType='missing-words'
           onUpdateGame={(game) => party.setCompetitiveGame(game)}
           onEndGame={() => {
-            // TERMINATE the mode (user report): full reset incl. selectedGameMode.
-            // Round 2: resetGame+standard clears the game-store gameMode too
-            // (onPlayMatch sets 'missing-words' there and resetGame preserves
-            // it — stale party modes re-route Library picks into a broken
-            // GameScreen).
-            party.resetPartyState(true);
+            // R111 (user 12): series end goes BACK TO SETUP — same pattern as
+            // PTM's handleEndSeriesComplete: TARGETED cleanup instead of the
+            // nuclear resetPartyState (which also nukes selectedGameMode and
+            // would leave the setup screen blank). The mode stays selected so
+            // the unified setup renders immediately for the next round; the
+            // game-store mode is clamped to standard (a stale party mode
+            // there re-routes Library picks into a broken GameScreen).
+            party.setCompetitiveGame(null);
+            party.setUnifiedSetupResult(null);
             resetGame();
             setGameMode('standard');
-            setScreen('home');
+            setScreen('party-setup');
           }}
           onPlayMatch={(p1Id, p2Id, p1Name, p2Name, song) => {
             const comp = party.competitiveGame;
@@ -904,8 +965,11 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             const setupResult = buildGameSetupResult({
               mode: 'missing-words',
               players: [
-                { id: p1Id, name: p1Name, color: p1Color },
-                { id: p2Id, name: p2Name, color: p2Color },
+                // R111 (user 11): carry the DEFINED mic/device assignment from
+                // the party setup into the match — otherwise both duelists
+                // sang on the default microphone.
+                { id: p1Id, name: p1Name, color: p1Color, ...getSetupMicAssignment(p1Id) },
+                { id: p2Id, name: p2Name, color: p2Color, ...getSetupMicAssignment(p2Id) },
               ],
               difficulty: comp.settings.difficulty,
               settings: {
@@ -930,7 +994,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             addPlayer({ id: pId, name: pName, color: pColor });
             const setupResult = buildGameSetupResult({
               mode: 'missing-words',
-              players: [{ id: pId, name: pName, color: pColor }],
+              players: [{ id: pId, name: pName, color: pColor, ...getSetupMicAssignment(pId) }],
               difficulty: comp.settings.difficulty,
               settings: {
                 missingWordFrequency: freqNumberToLabel(comp.settings.missingWordFrequency),
@@ -956,15 +1020,18 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           modeType='blind'
           onUpdateGame={(game) => party.setCompetitiveGame(game)}
           onEndGame={() => {
-            // TERMINATE the mode (user report): full reset incl. selectedGameMode.
-            // Round 2: resetGame+standard clears the game-store gameMode too
-            // (onPlayMatch sets 'blind' there and resetGame preserves it —
-            // stale party modes re-route Library picks into a broken
-            // GameScreen).
-            party.resetPartyState(true);
+            // R111 (user 12): series end goes BACK TO SETUP — same pattern as
+            // PTM's handleEndSeriesComplete: TARGETED cleanup instead of the
+            // nuclear resetPartyState (which also nukes selectedGameMode and
+            // would leave the setup screen blank). The mode stays selected so
+            // the unified setup renders immediately for the next round; the
+            // game-store mode is clamped to standard (a stale party mode
+            // there re-routes Library picks into a broken GameScreen).
+            party.setCompetitiveGame(null);
+            party.setUnifiedSetupResult(null);
             resetGame();
             setGameMode('standard');
-            setScreen('home');
+            setScreen('party-setup');
           }}
           onPlayMatch={(p1Id, p2Id, p1Name, p2Name, song) => {
             const comp = party.competitiveGame;
@@ -978,8 +1045,11 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             const setupResult = buildGameSetupResult({
               mode: 'blind',
               players: [
-                { id: p1Id, name: p1Name, color: p1Color },
-                { id: p2Id, name: p2Name, color: p2Color },
+                // R111 (user 11): carry the DEFINED mic/device assignment from
+                // the party setup into the match — otherwise both duelists
+                // sang on the default microphone.
+                { id: p1Id, name: p1Name, color: p1Color, ...getSetupMicAssignment(p1Id) },
+                { id: p2Id, name: p2Name, color: p2Color, ...getSetupMicAssignment(p2Id) },
               ],
               difficulty: comp.settings.difficulty,
               settings: {
@@ -1003,7 +1073,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             addPlayer({ id: pId, name: pName, color: pColor });
             const setupResult = buildGameSetupResult({
               mode: 'blind',
-              players: [{ id: pId, name: pName, color: pColor }],
+              players: [{ id: pId, name: pName, color: pColor, ...getSetupMicAssignment(pId) }],
               difficulty: comp.settings.difficulty,
               settings: {
                 blindFrequency: freqNumberToLabel(comp.settings.blindFrequency),

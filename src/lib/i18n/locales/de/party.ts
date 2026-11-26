@@ -403,7 +403,7 @@ unifiedSetup: {
   deviceMicTaken: 'belegt',
   deviceNoMic: 'Kein Mikrofon',
   deviceSingingVia: 'Singt per',
-  deviceMultiMicHint: 'Duell-Modus: {n} Mikrofone erkannt — duellierende Spieler teilen sie, kein festes Mikro pro Spieler.',
+  deviceMultiMicHint: '{n} Mikrofone verfügbar — „Mikrofon (automatisch)“ vergibt ein freies, oder wähle pro Spieler ein definiertes Mikro.',
   deviceSingleMicHint: 'Nur ein Mikrofon angeschlossen — weise es einem Spieler zu; alle anderen benötigen die Companion-App.',
   deviceNoMicsHint: 'Kein Mikrofon angeschlossen — alle Spieler müssen per Companion-App singen.',
   deviceNeedSharedMic: 'Wähle das gemeinsame Mikrofon, um zu starten',

@@ -841,11 +841,15 @@ function CompetitiveWinnerScreen({
           ))}
         </div>
 
+        {/* R111 (user 12): series end exits to the party SETUP (same target
+            and label as PTM's series-end "← Back to Setup") instead of the
+            main menu — party groups continue with the next mode/round. */}
         <button
           onClick={onEndGame}
           className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl text-xl font-bold hover:from-indigo-500 hover:to-purple-500 transition-all"
+          data-testid="competitive-back-to-setup"
         >
-          {modeIcon} {t('competitiveWords.backToMenu')}
+          {modeIcon} {t('passTheMic.backToSetup')}
         </button>
       </div>
     </div>

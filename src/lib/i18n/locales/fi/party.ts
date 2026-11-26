@@ -441,7 +441,7 @@ export const partyTranslations = {
     deviceMicActive: 'aktiivinen',
     micChange: 'Vaihda mikrofonia…',
     deviceMicTaken: 'käytössä',
-    deviceMultiMicHint: 'Kaksinkamppailutila: tunnistettu {n} mikrofonia — kaksinkamppailijat jakavat ne, ei kiinteää mikrofonia pelaajaa kohti.',
+    deviceMultiMicHint: 'Käytettävissä {n} mikrofonia — \'Mikrofoni (automaattinen)\' antaa vapaan, tai valitse pelaajille määritetty mikrofoni.',
     deviceNeedAllCompanion: 'Voi aloittaa vain, kun kaikki pelaajat ovat yhteydessä Companion-sovelluksen kautta',
     deviceNeedExclusive: '{n} pelaaja(a) tarvitsee vielä laitteen — osoita vapaa mikrofoni tai yhdistä Companion-sovellus',
     deviceNeedFlexible: '{n} pelaaja(a) tarvitsee vielä laitteen — valitse mikrofoni tai yhdistä Companion-sovellus',

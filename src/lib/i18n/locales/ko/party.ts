@@ -441,7 +441,7 @@ export const partyTranslations = {
     deviceMicActive: '선택됨',
     micChange: '마이크 변경…',
     deviceMicTaken: '사용 중',
-    deviceMultiMicHint: '듀얼 모드: 마이크 {n}개 감지 — 대결하는 플레이어들이 공유하며, 플레이어별 고정 마이크는 없어요.',
+    deviceMultiMicHint: '마이크 {n}개 사용 가능 — \'마이크(자동)\'은 빈 마이크를 배정하고, 플레이어별로 정의된 마이크를 직접 고를 수도 있어요.',
     deviceNeedAllCompanion: '시작하려면 모든 플레이어가 컴패니언 앱으로 연결되어 있어야 합니다',
     deviceNeedExclusive: '{n}명에게 아직 기기가 필요합니다 — 빈 마이크를 배정하거나 컴패니언 앱을 연결하세요',
     deviceNeedFlexible: '{n}명에게 아직 기기가 필요합니다 — 마이크를 선택하거나 컴패니언 앱을 연결하세요',

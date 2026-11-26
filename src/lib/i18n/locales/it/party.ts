@@ -441,7 +441,7 @@ export const partyTranslations = {
     deviceMicActive: 'attivo',
     micChange: 'Cambia microfono…',
     deviceMicTaken: 'in uso',
-    deviceMultiMicHint: 'Modalità duello: {n} microfoni rilevati — i giocatori in duello li condividono, nessun microfono fisso per giocatore.',
+    deviceMultiMicHint: '{n} microfoni disponibili — «Microfono (automatico)» ne assegna uno libero, oppure scegli un microfono definito per giocatore.',
     deviceNeedAllCompanion: 'Per iniziare, tutti i giocatori devono essere connessi tramite app Companion',
     deviceNeedExclusive: '{n} giocatore/i ha ancora bisogno di un dispositivo — assegna un microfono libero o collega l\'app Companion',
     deviceNeedFlexible: '{n} giocatore/i ha ancora bisogno di un dispositivo — scegli un microfono o collega l\'app Companion',

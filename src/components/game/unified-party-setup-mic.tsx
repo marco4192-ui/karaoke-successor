@@ -317,12 +317,25 @@ export function SingingDeviceAssignment({
                 {/* Mic dropdown */}
                 <div className="flex items-center gap-2 flex-1 min-w-[180px]">
                   <select
-                    value={flexibleNoFixedMic ? (isCompanion ? '' : 'auto') : (currentMicId || '')}
+                    value={flexibleNoFixedMic ? (isCompanion ? '' : (currentMicId || 'auto')) : (currentMicId || '')}
                     disabled={micDropdownDisabled}
                     onChange={(e) => {
                       if (flexibleNoFixedMic) {
-                        // 'auto' → mic player; '' → companion
-                        onSetPlayerDevice(playerId, e.target.value === 'auto' ? 'mic' : 'companion');
+                        // R111 (user 11): 'auto' → mic player (drops an
+                        // explicit assignment so auto-assign takes over), a
+                        // concrete mic id → EXPLICIT defined-mic assignment
+                        // (swap a held mic for the new one), '' → companion.
+                        if (e.target.value === 'auto') {
+                          if (currentMicId) onRemoveMic(currentMicId);
+                          onSetPlayerDevice(playerId, 'mic');
+                        } else if (e.target.value === '') {
+                          if (currentMicId) onRemoveMic(currentMicId);
+                          onSetPlayerDevice(playerId, 'companion');
+                        } else {
+                          if (currentMicId && currentMicId !== e.target.value) onRemoveMic(currentMicId);
+                          onAssignMic(e.target.value, playerId);
+                          onSetPlayerDevice(playerId, 'mic');
+                        }
                         return;
                       }
                       if (e.target.value) {
@@ -338,6 +351,30 @@ export function SingingDeviceAssignment({
                     {flexibleNoFixedMic ? (
                       <>
                         <option value="auto">🎤 {t('unifiedSetup.deviceMicAuto')}</option>
+                        {/* R111 (user 11): the DEFINED mics are selectable —
+                            automatic stays the default, but an explicit pick
+                            (e.g. “Anna's Mic” for Anna) wins over auto-assign
+                            order. Missing Words / Blind Karaoke duels used to
+                            land both singers on whatever the auto order gave
+                            (or the default mic after the match rebuild). */}
+                        {savedMics.map(mic => {
+                          const takenByOther = usedMicIds.has(mic.id) && micAssignments[mic.id] !== playerId;
+                          const isActiveForPlayer = micAssignments[mic.id] === playerId;
+                          return (
+                            <option
+                              key={mic.id}
+                              value={mic.id}
+                              disabled={takenByOther}
+                            >
+                              🎤 {micDisplayName(mic)}
+                              {isActiveForPlayer
+                                ? ` — ✓ ${t('unifiedSetup.deviceMicActive')}`
+                                : takenByOther
+                                  ? ` — ${t('unifiedSetup.deviceMicTaken')}`
+                                  : ''}
+                            </option>
+                          );
+                        })}
                         <option value="">{t('unifiedSetup.deviceChooseMic')}</option>
                       </>
                     ) : (

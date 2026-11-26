@@ -441,7 +441,7 @@ export const partyTranslations = {
     deviceMicActive: 'actief',
     micChange: 'Microfoon wijzigen…',
     deviceMicTaken: 'in gebruik',
-    deviceMultiMicHint: 'Duelmodus: {n} microfoons gedetecteerd — duellerende spelers delen ze, geen vaste microfoon per speler.',
+    deviceMultiMicHint: '{n} microfoons beschikbaar — \'Microfoon (automatisch)\' wijst een vrije toe, of kies per speler een gedefinieerde microfoon.',
     deviceNeedAllCompanion: 'Alle spelers moeten via de Companion App verbonden zijn om te starten',
     deviceNeedExclusive: '{n} speler(s) heeft/hebben nog een apparaat nodig — wijs een vrije microfoon toe of verbind de Companion App',
     deviceNeedFlexible: '{n} speler(s) heeft/hebben nog een apparaat nodig — kies een microfoon of verbind de Companion App',

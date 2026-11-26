@@ -441,7 +441,7 @@ export const partyTranslations = {
     deviceMicActive: '選択中',
     micChange: 'マイクを変更…',
     deviceMicTaken: '使用中',
-    deviceMultiMicHint: 'デュエルモード：{n}本のマイクを検出 — デュエルするプレイヤーで共有され、プレイヤーごとの固定マイクはありません。',
+    deviceMultiMicHint: '{n} 本のマイクが利用可能 — 「マイク（自動）」は空きを割り当てます。プレイヤーごとに定義済みマイクを選ぶこともできます。',
     deviceNeedAllCompanion: '開始するには、全プレイヤーがコンパニオンアプリ経由で接続している必要があります',
     deviceNeedExclusive: '{n}人にまだデバイスが必要です — 空いているマイクを割り当てるか、コンパニオンアプリを接続してください',
     deviceNeedFlexible: '{n}人にまだデバイスが必要です — マイクを選択するか、コンパニオンアプリを接続してください',
