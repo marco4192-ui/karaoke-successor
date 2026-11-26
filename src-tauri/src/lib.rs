@@ -646,6 +646,57 @@ fn app_get_platform(app: tauri::AppHandle) -> Result<PlatformInfo, String> {
     })
 }
 
+/// ── Windows: disable WebView2 tracking prevention ──
+/// Edge's tracking prevention classifies googlevideo.com (the YouTube media
+/// CDN) as a tracker in third-party contexts — every media-segment request
+/// of an embedded YouTube video triggers a blocked storage access plus a
+/// console message, hundreds per song ("Tracking Prevention blocked access
+/// to storage for …googlevideo.com/videoplayback?…"). The video still
+/// plays, but the message flood costs real performance while DevTools is
+/// attached, and the classification/partitioning path itself adds overhead.
+/// The app only renders content we control plus trusted video platforms, so
+/// the feature buys nothing here: profile level NONE keeps storage flowing
+/// normally and eliminates the entire classification + logging path.
+/// Best-effort — if the runtime is too old for the profile API
+/// (ICoreWebView2_13 / ICoreWebView2Profile3), the level stays at its
+/// default and only the cosmetic console spam remains.
+#[cfg(target_os = "windows")]
+fn disable_tracking_prevention(window: &tauri::WebviewWindow) {
+    use webview2_com::Microsoft::Web::WebView2::Win32::{
+        COREWEBVIEW2_TRACKING_PREVENTION_LEVEL_NONE, ICoreWebView2_13, ICoreWebView2Profile3,
+    };
+    use windows_core::Interface;
+
+    let _ = window.with_webview(|webview| unsafe {
+        let core = match webview.controller().CoreWebView2() {
+            Ok(core) => core,
+            Err(e) => {
+                eprintln!("[tracking-prevention] CoreWebView2: {e}");
+                return;
+            }
+        };
+        let profile = match core.cast::<ICoreWebView2_13>().and_then(|w13| w13.Profile()) {
+            Ok(profile) => profile,
+            Err(e) => {
+                eprintln!("[tracking-prevention] Profile: {e}");
+                return;
+            }
+        };
+        let profile3: ICoreWebView2Profile3 = match profile.cast() {
+            Ok(p) => p,
+            Err(e) => {
+                eprintln!("[tracking-prevention] ICoreWebView2Profile3: {e}");
+                return;
+            }
+        };
+        if let Err(e) = profile3
+            .SetPreferredTrackingPreventionLevel(COREWEBVIEW2_TRACKING_PREVENTION_LEVEL_NONE)
+        {
+            eprintln!("[tracking-prevention] SetPreferredTrackingPreventionLevel: {e}");
+        }
+    });
+}
+
 pub fn run() {
     // ── Windows: Make bundled native DLLs discoverable ──
     // On a clean Windows install, the Microsoft Visual C++ Runtime
@@ -744,6 +795,14 @@ pub fn run() {
             app_get_platform,
         ])
         .setup(|app| {
+            // ── Windows: switch off WebView2 tracking prevention ──
+            // Must happen before any navigation so embedded platform
+            // videos (YouTube et al.) never hit the storage-blocking path.
+            #[cfg(target_os = "windows")]
+            if let Some(window) = app.handle().get_webview_window("main") {
+                disable_tracking_prevention(&window);
+            }
+
             // ── macOS / Linux: make bundled native libraries discoverable ──
             // Windows handles this in run() via exe_dir (NSIS layout, where
             // resources sit next to the .exe). On macOS (.app bundle) and

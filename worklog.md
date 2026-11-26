@@ -1242,3 +1242,31 @@ Fortsetzung nach Token-Limit: Der Watchdog-Cron hatte den Stand von Nutzer-Punkt
 - Umgesetzt: Nutzer 11 + 12 komplett — definierte Mikrofone sind im Setup wählbar (flexible Modus ≥2 Mics), fließen durch Start-Screen/MicIndicator/Pitch-Detektor in JEDE Match-Runde (Snapshot-Persistenz für 3–4-Spieler-Serien), Serienende führt über „← Back to Setup" zurück ins modusgewählte Setup (gezielter Cleanup statt Nuklear-Reset). Zusammen mit dem Watchdog-Commit (7dc91b61: Punkte 1–10) sind alle 12 Nutzer-Punkte erledigt.
 - AKTIONEN NUTZER: Desktop-App neu bauen (Client-Änderungen).
 - Offen/Risiken: (a) Companion-P1-Sänger in MW/Blind öffnen wie im Duell das Desktop-Standard-Mikro (deviceAssignment.p1Companion wird im Party-Flow nirgends gesetzt — prä-existierendes Duell-Verhalten, nicht Teil dieses Auftrags); (b) Coop mit >2 Spielern singt weiterhin über die ersten 2 Mikrofone (GameScreen-Duett-Limit).
+
+---
+
+## R112 — WebView2-Tracking-Prevention: YouTube-Embed-Konsolenflut abgeschaltet
+
+**Task ID:** R112 · **Agent:** Z.ai Code · **Datum:** 26.11.
+
+### Task
+
+Nutzer-Report: Bei YouTube-Embed-Videos (VIDEO = Youtube-Link) hunderte „Tracking Prevention blocked access to storage for …googlevideo.com/videoplayback?…"-Meldungen (Edge/WebView2), Spiel „fast in die Knie" — ist das notwendig, geht es besser?
+
+### Analyse
+
+- Ursache ist NICHT der App-Code, sondern die Tracking Prevention des Browsers/WebView2: Der eingebettete YouTube-Player streamt Medien von googlevideo.com; JEDE Medienteil-Anfrage (keepalive/alr-Aufrufe, `c=WEB_EMBEDDED_PLAYER`) versucht Storage-Zugriff, den Edge im Third-Party-Kontext als „Tracker" blockiert + loggt. Das Video spielt trotzdem (Google wiederholt ohne Cookies) — Performance-Kosten entstehen v.a. durch die Konsolen-Flut (DevTools offen: Rendering hunderter ~2-KB-URL-Meldungen) plus Classification-/Partitionierungspfad.
+- youtube-nocookie.com würde NICHT helfen (geblockte Domain ist die Medien-CDN googlevideo.com, nicht youtube.com); Seiten-Code kann Browser-Konsolen-Meldungen nicht unterdrücken.
+
+### Umsetzung
+
+- **Windows-App (WebView2): Tracking Prevention profilweit AUS** — `disable_tracking_prevention()` in setup() VOR der ersten Navigation: `ICoreWebView2Controller::CoreWebView2()` → cast `ICoreWebView2_13` → `Profile()` → cast `ICoreWebView2Profile3` → `SetPreferredTrackingPreventionLevel(COREWEBVIEW2_TRACKING_PREVENTION_LEVEL_NONE)`. Best-effort mit eprintln-Log pro Stufe (zu alte Runtime → Level bleibt Default, nur kosmetischer Spam bliebe).
+- `src-tauri/Cargo.toml`: `[target.'cfg(windows)'.dependencies]` → `webview2-com = "0.38"` + `windows-core = "0.54"` (exakt die im Tree liegenden Versionen via tauri-runtime-wry→wry → keine Duplicate-Versions).
+- Verifikation ohne Rust-Toolchain: alle Symbolnamen/-Signaturen gegen webview2-com-sys **0.38.2** (bindings.rs der crates.io-Tarballs) geprüft: `impl ICoreWebView2_13 { pub unsafe fn Profile() }`, `impl ICoreWebView2Profile3 { pub unsafe fn SetPreferredTrackingPreventionLevel(value) }`, `COREWEBVIEW2_TRACKING_PREVENTION_LEVEL_NONE`, `CoreWebView2()` — alle exakt vorhanden; `webview2_com::Microsoft`-Reexport bestätigt. Referenz-Pattern: WebView2Feedback-Spec (TrackingPrevention.md: Level NONE greift, solange EnableTrackingPrevention=Default true).
+- Keine Frontend-Änderungen (Browser-Umgebung ist per Browser-Privacy-Einstellung lösbar, nicht per App-Code): Edge → edge://settings/privacy → Ausnahme für die App-URL ODER DevTools beim Testen zu — ohne offene Konsole ist der Messwert-Overhead minimal.
+
+### Stage Summary
+
+- Umgesetzt: Windows-Desktop-App: Tracking Prevention profilweit NONE → keine googlevideo-Storage-Blocks mehr, keine Konsolenflut, kein Classification-Overhead. Alle API-Namen gegen die exakt gebundene Crate-Version verifiziert; echter Compile-Check passiert im nächsten Windows-CI-Build (kein Rust-Toolchain in der Sandbox).
+- AKTIONEN NUTZER: Windows-Build neu auslösen (Rust-Änderung), damit der Fix in der App wirksam wird. Im Edge-Browser beim Testen: Ausnahme hinzufügen oder DevTools schließen.
+- Offen/Risiken: (a) Erster Compile-Lauf des Rust-Codes erst im CI — bei Namens-/Signaturabweichung würde der Windows-Build fehlschlagen (Wahrscheinlichkeit gering: Symbol-Verifikation + etabliertes Community-Pattern); (b) alte WebView2-Runtimes ohne Profile3-API behalten Default-Level (nur Spam, kein Funktionsverlust).

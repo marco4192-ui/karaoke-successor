@@ -47,6 +47,14 @@ reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-feature
 # SQLite for local offline storage
 rusqlite = { version = "0.31", features = ["bundled"] }
 
+# Windows: direct WebView2 COM access — profile-level tracking prevention
+# OFF so embedded YouTube videos don't flood the console with blocked
+# storage accesses (googlevideo.com media segments). Versions are pinned to
+# the ones already in the tree via tauri-runtime-wry → wry.
+[target.'cfg(windows)'.dependencies]
+webview2-com = "0.38"
+windows-core = "0.54"
+
 [features]
 # Production defaults: CREPE pitch detection.
 default = ["crepe"]
