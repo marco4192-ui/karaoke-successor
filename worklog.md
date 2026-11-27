@@ -1270,3 +1270,36 @@ Nutzer-Report: Bei YouTube-Embed-Videos (VIDEO = Youtube-Link) hunderte „Track
 - Umgesetzt: Windows-Desktop-App: Tracking Prevention profilweit NONE → keine googlevideo-Storage-Blocks mehr, keine Konsolenflut, kein Classification-Overhead. Alle API-Namen gegen die exakt gebundene Crate-Version verifiziert; echter Compile-Check passiert im nächsten Windows-CI-Build (kein Rust-Toolchain in der Sandbox).
 - AKTIONEN NUTZER: Windows-Build neu auslösen (Rust-Änderung), damit der Fix in der App wirksam wird. Im Edge-Browser beim Testen: Ausnahme hinzufügen oder DevTools schließen.
 - Offen/Risiken: (a) Erster Compile-Lauf des Rust-Codes erst im CI — bei Namens-/Signaturabweichung würde der Windows-Build fehlschlagen (Wahrscheinlichkeit gering: Symbol-Verifikation + etabliertes Community-Pattern); (b) alte WebView2-Runtimes ohne Profile3-API behalten Default-Level (nur Spam, kein Funktionsverlust).
+
+---
+
+## R113 — R112-Hotfix Windows-CI: windows-core 0.54 → 0.61 (Trait-Split)
+
+**Task ID:** R113 · **Agent:** Z.ai Code · **Datum:** 26.11.
+
+### Task
+
+Der nach R112 getriggerte Windows-CI-Job fiel mit E0599 „no method named `cast`" (lib.rs:678) — das Risiko (a) aus R112 schlug real zu. Warum, und wie beheben?
+
+### Analyse
+
+- R112 pinnte `[target.'cfg(windows)'.dependencies] windows-core = "0.54"` in der Annahme, damit die Tree-Version hinter tauri-runtime-wry → wry zu treffen. webview2-com 0.38 baut jedoch auf **windows 0.61.3 / windows-core 0.61.2** (Cargo.lock); die 0.54.x-Kopien im Tree gehören anderen Abhängigkeiten (rfd).
+- Pre-1.0-Semver zählt 0.54/0.61 als inkompatible Majors → Cargo kompilierte BEIDE windows-core-Versionen nebeneinander; der Trait-Name `Interface` existiert dadurch als zwei VERSCHIEDENE Traits. webview2-com-Typen implementieren `Interface` aus 0.61.2 (E0599-Note: „this is the expected trait"), während das in lib.rs importierte `windows_core::Interface` auf 0.54.0 auflöste („the trait that was imported") → `core.cast::<ICoreWebView2_13>()` fand keine cast-Methode. Der Folgefehler „no method named cast found for type !" (lib.rs:685) war nur der Typ-Inferenz-Kollaps (Never-Type).
+- Die R112-Signaturen (CoreWebView2() → cast ICoreWebView2_13 → Profile() → cast ICoreWebView2Profile3 → SetPreferredTrackingPreventionLevel(NONE)) waren korrekt gegen webview2-com-sys 0.38.2 — nur der Trait-Import war versionsfalsch.
+
+### Umsetzung
+
+- 1 Zeile: `windows-core = "0.61"` — semver-kompatibel zur vorhandenen 0.61.2 → Cargo unifiziert zur EINEN Kopie; Interface, ICoreWebView2_13/ICoreWebView2Profile3 und das `windows_core::Result` der and_then-Kette stammen fortan aus derselben Krate-Version.
+- Cargo.toml-Kommentar um die Versionsregel erweitert (Regressionsschutz: windows-core MUSS auf derselben Versionslinie wie das windows-core hinter webview2-com bleiben).
+- Cargo.lock bewusst nicht angefasst: Der Workflow baut ohne `--locked` (verifiziert), Cargo macht das Minimal-Update selbst (nur die Direkt-Kante afterten-karaoke → windows-core 0.61.2 kommt hinzu; die 0.54.0-Kopie bleibt für rfd u. a. unverändert).
+- KEIN Code-Change in lib.rs — `windows_core` wird im gesamten Repo ausschließlich in src-tauri/src/lib.rs importiert (Code-Suche: 1 Treffer, nur Interface — nirgends 0.54-spezifische APIs); ICoreWebView2_13::get_Profile ist laut MS-Doku das einzige Member.
+
+### Verifikation
+
+- CI-Run „Build Standalone Executables" auf 7e270787: ALLE Jobs grün — Leaderboard-API Check, **Windows · NSIS (offline-fähig)**, Linux · AppImage + deb, macOS · Universal, Zusammenfassung. Der E0599 ist damit reproduzierbar behoben; der Tracking-Prevention-Code kompiliert und ist im neuesten Windows-Build wirksam.
+
+### Stage Summary
+
+- Umgesetzt: Windows-CI-E0599 durch Trait-Split (zwei windows-core-Versionen) gefixt — nur die Cargo.toml-Version angepasst, R112-Rust-Code unverändert korrekt. Neuester Build (Run 295) ist auf allen Plattformen grün.
+- AKTIONEN NUTZER: keine — der erfolgreiche Build lief bereits; die neue Windows-App enthält den Tracking-Prevention-Fix.
+- Offen/Risiken: keine neuen — windows-core-Pin ist jetzt dokumentiert versionsgebunden an webview2-com.
