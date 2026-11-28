@@ -48,16 +48,25 @@ export class PitchDetector {
   // Pitch stability tracking
   private pitchStabilizer: PitchStabilizer;
 
-  // ── R111 (user 9): multi-mic frame stride ──
-  // YIN on a 4096-sample window costs ~6M multiply-adds per call. With FOUR
-  // simultaneous local detectors (Medley Contest) that ran 4× per rAF frame
-  // (~60 Hz each) and saturated the main thread ("stockt stark bei 4
-  // Sängern"). The manager staggers detectors: stride 2 = each detector
-  // analyzes every OTHER frame (30 Hz — same rate the companion phones
-  // push), offsets spread across frames so at most ceil(n/2) YIN runs land
-  // in the same frame. Stride 1 (default) = unchanged full-rate behavior
-  // for single/duel games.
-  private frameStride = 1;
+  // ── R111 (user 9) + R114: frame stride — YIN runs at 30 Hz, not 60 Hz ──
+  // YIN on a 4096-sample window costs ~6M multiply-adds per call (~4–35 ms
+  // per call depending on CPU). R111 staggered only multi-mic setups
+  // (Medley 4 singers "stockt stark"); R114 extends stride 2 to EVERY local
+  // detector, including the single/duel singleton path:
+  // R110's noiseSuppression=OFF fix (sustain scoring) has a side effect —
+  // the mic gate now stays OPEN for the whole sustained note, so YIN runs
+  // at every rAF frame for the ENTIRE singing time. Before R110 Chrome's
+  // adapting noise suppressor dropped the level below the gate after
+  // ~1–1.5 s (that WAS the "Tonwertung bricht ab" bug), which accidentally
+  // kept the main thread free while singing. With NS off, 60 Hz YIN ≈
+  // 2×6M MACs/s on the main thread made the note stream stutter badly
+  // whenever ANYONE sang ("Spiel stockt beim Gesang").
+  // Stride 2 = analyze every OTHER rAF frame (30 Hz) — EXACTLY the rate
+  // the companion phones push (parity with mobile scoring quality). The
+  // pitch-hold in use-game-loop/PTM scoring (350 ms) bridges the 33 ms gap
+  // between analysis frames. RMS/gate continue at 60 Hz in analyzed frames
+  // only; null-gap frames keep the last pitch alive via the hold.
+  private frameStride = 2;
   private framePhase = 0;
   private frameCounter = 0;
 

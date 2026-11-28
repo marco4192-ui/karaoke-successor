@@ -244,8 +244,15 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
   // renderten die GameScreen-Baumgruppe vorher bis zu 60×/s neu → Stocken).
   // Der Game-Loop liest mobilePitchRef.current ohnehin mit rAF-Takt.
   const mobilePitchRef = useRef<MobilePitchData | null>(null);
+  // R114 (user): PITCH = PUSH — ohne Companion-Spieler läuft GAR KEIN Pitch-Poll.
+  // Der Hook erhielt bisher IMMER den Song (auch reine Desktop-Mic-Spiele)
+  // und schickte dann getpitch-Requests als Liveness-Takt ins Leere. Ab hier
+  // aktiviert nur noch ein echter P1-Companion (deviceAssignment.p1Companion)
+  // den Hook — Song null = kein HTTP-Pull, kein Socket-Abo, kein Cleanup-Lauf.
+  // Mit Companion bleibt der Socket-Push der Datenpfad; HTTP misst nur noch
+  // als 2-s-Liveness-Probe (Full-Pull nur bei nachgewiesenem HTTP-Fallback).
   useMobilePitchPolling(
-    song,
+    p1Companion ? song : null,
     p1Companion ? (gameState.players?.[0]?.id ?? null) : null,
     mobilePitchRef,
   );
@@ -451,9 +458,12 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
   // nur, solange P2 nicht selbst streamt.
   const p2CompanionActive = isDuetMode && gameState.deviceAssignment?.p2Companion !== false;
   // R60 — PERF-FIX: Auch P2s Stream im Ref-Modus (siehe P1 oben).
+  // R114 (user): PITCH = PUSH — P2-Poll ebenso nur mit echtem Companion-
+  // Spieler (siehe P1-Kommentar): reine Desktop-Mic-Duette ziehen keinen
+  // einzigen getpitch-Request mehr.
   const p2MobilePitchRef = useRef<MobilePitchData | null>(null);
   useMobilePitchPolling(
-    song,
+    p2CompanionActive ? song : null,
     p2CompanionActive ? (gameState.players?.[1]?.id ?? null) : null,
     p2MobilePitchRef,
   );

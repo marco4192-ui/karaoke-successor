@@ -74,17 +74,21 @@ export class PitchDetectorManager {
   }
 
   /**
-   * R111 (user 9): stagger LOCAL detectors across rAF frames.
-   * With n ≥ 2 local mics every detector ran its full YIN at 60 Hz — four
-   * Medley singers ≈ 24M multiply-adds per frame ("stockt stark"). Each
-   * detector now analyzes every OTHER frame (30 Hz — companion parity),
-   * with alternating phases so at most ceil(n/2) YIN runs share a frame.
-   * A single local detector keeps the full 60 Hz rate (single/duel parity).
+   * R111 (user 9) + R114: stagger LOCAL detectors across rAF frames — YIN
+   * at 30 Hz for EVERY detector (previously only multi-mic setups).
+   * R114 root cause: R110's noiseSuppression=OFF keeps the mic gate open
+   * for the entire sustained note, so 60 Hz YIN ran on the main thread for
+   * the whole singing time ("Spiel stockt beim Gesang" — the NS bug used
+   * to close the gate after ~1.5 s and accidentally freed the main thread).
+   * Stride 2 = 30 Hz = companion-phone parity (phones push ~30 Hz); the
+   * 350 ms pitch-hold in scoring bridges the 33 ms gap. Phases spread
+   * several detectors across frames so their YIN work does not pile up
+   * in one frame.
    * Re-run after every add/remove of a local player.
    */
   private updateDetectorStrides(): void {
     const localPlayers = Array.from(this.players.values()).filter(p => p.type === 'local' && p.detector);
-    const stride = localPlayers.length >= 2 ? 2 : 1;
+    const stride = 2;
     localPlayers.forEach((p, idx) => {
       p.detector!.setFrameStride(stride, stride > 1 ? idx % stride : 0);
     });

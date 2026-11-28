@@ -91,8 +91,20 @@ export function useMobilePitchPolling(
     let aborted = false;
     let abortController: AbortController | null = null;
     let pollInterval: ReturnType<typeof setInterval> | null = null;
-    // Exponential backoff: when no companion is connected, poll less frequently
-    let pollDelay = 100;
+    // R111 (user 5): cadence targets. FULL = HTTP fallback data path (phone
+    // socket down, fresh HTTP frames newer than the socket feed). PROBE =
+    // socket-connected liveness check — push mode is authoritative, the probe
+    // only exists to detect a phone that silently fell back to HTTP batching.
+    const POLL_FULL_MS = 100;
+    const POLL_PROBE_MS = 2000;
+    // R114 (user): NO immediate first fetch and NO 100 ms opening cadence.
+    // The old start (instant pollMobilePitch + 100 ms interval) fired a
+    // request burst at every song start until the socket's connect finished
+    // and the probe cadence took over. Now: socket already connected → probe
+    // cadence from the start; otherwise a single delayed first poll (500 ms —
+    // by then the pitch-feed socket is usually connected and the very first
+    // pollMobilePitch call switches to probe cadence BEFORE fetching).
+    let pollDelay = isPitchFeedConnected() ? POLL_PROBE_MS : 500;
 
     // ── R94-5: parity layer for companion frames ──
     // 1) PitchStabilizer: same 2-frame/±1-semitone smoothing the desktop
@@ -218,12 +230,9 @@ export function useMobilePitchPolling(
       pollInterval = setInterval(pollMobilePitch, pollDelay);
     };
 
-    // R111 (user 5): cadence targets. FULL = HTTP fallback data path (phone
-    // socket down, fresh HTTP frames newer than the socket feed). PROBE =
-    // socket-connected liveness check — push mode is authoritative, the probe
-    // only exists to detect a phone that silently fell back to HTTP batching.
-    const POLL_FULL_MS = 100;
-    const POLL_PROBE_MS = 2000;
+    // R111 (user 5) + R114: cadence switch — see the constants above the
+    // pollDelay declaration. setPollDelay restarts the interval only when the
+    // cadence actually changes.
     const setPollDelay = (ms: number) => {
       if (pollDelay !== ms) {
         pollDelay = ms;
@@ -315,13 +324,21 @@ export function useMobilePitchPolling(
       }
     };
 
-    // Start first poll immediately, then set up interval for repeated polling
-    pollMobilePitch();
-    startPolling();
+    // R114 (user): delayed first poll, then interval. The delayed start gives
+    // the pitch-feed socket time to finish connecting so the FIRST pollMobile-
+    // Pitch call already switches to probe cadence before its fetch (no more
+    // 100 ms opening burst). A genuine HTTP-fallback phone is detected on the
+    // first poll and then ramps to full cadence immediately.
+    const firstPollTimer = setTimeout(() => {
+      if (aborted) return;
+      pollMobilePitch();
+      startPolling();
+    }, pollDelay);
 
     // Clear backoff timer on cleanup
     return () => {
       aborted = true;
+      clearTimeout(firstPollTimer);
       unsubPitchFeed();
       clearInterval(staleSweepInterval);
       if (pollInterval) clearInterval(pollInterval);

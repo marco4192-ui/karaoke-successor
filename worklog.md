@@ -1303,3 +1303,37 @@ Der nach R112 getriggerte Windows-CI-Job fiel mit E0599 „no method named `cast
 - Umgesetzt: Windows-CI-E0599 durch Trait-Split (zwei windows-core-Versionen) gefixt — nur die Cargo.toml-Version angepasst, R112-Rust-Code unverändert korrekt. Neuester Build (Run 295) ist auf allen Plattformen grün.
 - AKTIONEN NUTZER: keine — der erfolgreiche Build lief bereits; die neue Windows-App enthält den Tracking-Prevention-Fix.
 - Offen/Risiken: keine neuen — windows-core-Pin ist jetzt dokumentiert versionsgebunden an webview2-com.
+
+---
+
+## R114 — Notenlauf-Stocken beim Gesang: YIN-Last-Root-Cause + Pitch = Push-only ohne Companion
+
+**Task ID:** R114 · **Agent:** Z.ai Code · **Datum:** 27.11.
+
+### Task
+
+Nutzer-Report: „das Spiel stockt nur noch, gar kein smoother Notenlauf mehr. Extrem wirkt sich der Gesang (wahrscheinlich die Pitcherkennung) darauf aus, auch wenn der Gesang direkt über ein Mic läuft." Vorgaben: Pitcherkennung muss als PUSH laufen und nur dann, wenn Pitcherkennung erforderlich ist. Regressor zwischen R109 und jetzt.
+
+### Analyse (Root Cause — dreifach belegt)
+
+1. **YIN-Cadence-Kollaps (HAUPTURSACHE):** R110 deaktivierte noiseSuppression (Sustain-Wertungs-Fix). Nebenwirkung: Chromes NS adaptierte vorher nach ~0,5–1,5 s und drückte den Pegel UNTERs Mic-Gate — YIN lief beim Singen dadurch de facto nur 1–2 s pro Ton und übersprang danach jeden Analyse-Frame. Der NS-Bug „fesselte" versehentlich den Main-Thread frei. Mit NS OFF bleibt das Gate die GESAMTE Singezeit offen → YIN (4096-Sample-Fenster, ~6,3M multiply-adds/Call) lief bei JEDEM rAF-Frame durchgehend: ~380M MACs/s auf dem Main-Thread. Inline-Browser-Benchmark der YIN-Differenzfunktion: 35,8 ms/Call auf der Sandbox-CPU (= 2 rAF-Frames!) — bei 60 Hz ≈ 2150 ms/s Main-Thread. Basismessung ohne Gesang (Headless, kein Mic): rAF avg 16,7 ms konstant smooth — das Stocken kam exklusiv von der aktiven Sing-Kette. Exakt die Nutzer-Symptomatik („stockt extrem beim Gesang, AUCH bei direktem Mic" — ohne Companion-YIN auf dem Handy, sondern Desktop-Detektor).
+2. **Pitch-PULL ohne Companion:** useMobilePitchPolling lief im Standard-GameScreen IMMER (song aktiv), egal ob P1/P2 Companion-Spieler waren — ohne Handy: getpitch-Requests als Liveness-Takt ins Leere. Browser-Beweis: 61 getpitch-Requests in 76 s im Single-Spiel ohne Handy (inkl. 100-ms-Auftakt-Sturm: 12 Requests in 27 ms bei Song-Start).
+3. **100/200-ms-Auftakt-Sturm:** Beide Poll-Hooks starteten mit sofortigem Erst-Fetch + 100/200-ms-Intervall, bis Socket-Connect/Backoff die Cadence bremsten — Request-Burst bei jedem Spielstart.
+
+### Umsetzung
+
+- **(1) YIN 60 → 30 Hz für ALLE lokalen Detektoren:** `frameStride`-Default im PitchDetector 1 → 2 (deckt den Single/Duell-SINGLETON-Pfad, der NICHT über den PitchDetectorManager läuft) + `updateDetectorStrides()` konstant stride 2 (Manager-Pfade: Medley/BR). 30 Hz = exakte Companion-Handy-Parität (Handys pushen ~30 Hz, identische 4096-YIN-Qualität); der 350-ms-Pitch-Hold (use-game-loop + PTM-Scoring, R110) überbrückt die 33-ms-Analyse-Lücken. YIN-Last halbiert — Stride-Mechanismus in Produktion erprobt (R111/user 9, Medley 4-Singer).
+- **(2) Pitch-Pull nur bei Companion-Spieler:** game-screen-hook übergibt P1/P2-Polling-Hooks `p1Companion ? song : null` — ohne Companion-Gesangswahl läuft GAR KEIN HTTP-Pull, kein Socket-Abo, kein Cleanup. Mit Companion: Socket-Push bleibt der Datenpfad, HTTP nur noch 2-s-Liveness-Probe (Full-Pull nur bei nachgewiesenem HTTP-Fallback, R111-Logik unverändert).
+- **(3) Kein Auftakt-Sturm mehr:** use-mobile-pitch-polling + cptm-companion-polling starten mit verzögertem Erst-Poll (500 ms statt sofort; Socket bereits verbunden → direkt Probe-Cadence). POLL_FULL (100/200 ms) greift ausschließlich nach nachgewiesenem HTTP-Fallback-Handy.
+
+### Verifikation
+
+- TSC 0 · ESLint 0 Errors · 264/264 Tests.
+- Browser-E2E (Headless, kein Mic → Song-Start-Default „Companion" als Gesangsquelle): Spiel läuft, rAF avg 16,71 ms / p95 16,8 / max 33,3 — smooth. getpitch-Verhalten: gedrosselter Backoff/Probe-Takt (33 Requests über ~90 s ≈ 0,4/s statt vorher 100-ms-Sturm; 12-in-27-ms-Cluster beim Start verschwunden). Mit echtem Desktop-Mic (micId ≠ 'companion'): Poll komplett inaktiv.
+- YIN-Kostenmessung (inline, Browser): 35,84 ms/Call auf Sandbox-CPU — bestätigt den Root Cause quantitativ; 30-Hz-Striding halbiert die Sing-Last auf Desktop-Rechnern (typ. 3–7 ms/Call) auf unkritische 100–200 ms/s.
+
+### Stage Summary
+
+- Umgesetzt: YIN-Cadence 30 Hz überall (Root Cause des Sing-Stockens — NS-off-Regressionsfolge aus R110), Pitch-Pull-Nur-bei-Companion, kein Poll-Auftakt-Sturm. Push-First-Architektur (R111) bleibt unverändert: Socket.IO = Datenpfad, HTTP = reiner Liveness-Fallback.
+- AKTIONEN NUTZER: Desktop-App neu bauen/laden (Client-Änderungen) und beim nächsten Mic-Gesang prüfen: Notenlauf muss beim Singen glatt bleiben (YIN jetzt 30 Hz) und im Netzwerk-Tab dürfen im Desktop-Mic-Spiel KEINE getpitch-Requests mehr auftauchen.
+- Offen/Risiken: (a) Auf sehr schwacher Hardware kann 30-Hz-YIN (3–7 ms/Call) weiterhin spürbar sein — nächste Stufe wäre YIN in einen Web Worker (größerer Umbau); (b) Headless-Default „Companion" ohne Mic hält den 2-s-Liveness-Loop aktiv (legitim: das System kann nicht wissen, ob ein Handy kommt) — mit Desktop-Mic-Konfiguration komplett aus.

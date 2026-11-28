@@ -76,7 +76,13 @@ export function useCompanionPitchPolling(
 
     // R111: cadence state — probe pace (2 s) while push is authoritative,
     // full pace (200 ms) when the phone demonstrably streams over HTTP.
-    const pollDelayRef = { current: COMPANION_POLL_MS };
+    // R114 (user): NO immediate first fetch and NO 200 ms opening cadence —
+    // socket already connected → probe pace from the start; otherwise a
+    // single delayed first poll (500 ms — the pitch-feed socket is usually
+    // connected by then, so the first poll switches to probe pace BEFORE
+    // fetching). A genuine HTTP-fallback phone ramps to full pace on the
+    // first poll.
+    const pollDelayRef = { current: isPitchFeedConnected() ? COMPANION_PROBE_MS : 500 };
     let pollTimer: ReturnType<typeof setInterval> | null = null;
     const restartPoll = () => {
       if (pollTimer) clearInterval(pollTimer);
@@ -151,8 +157,13 @@ export function useCompanionPitchPolling(
       }
     };
 
-    pollCompanionPitch();
-    pollTimer = setInterval(pollCompanionPitch, pollDelayRef.current);
+    // R114 (user): delayed first poll, then interval (see pollDelayRef above)
+    // — the pitch-feed socket gets time to connect, so the first poll usually
+    // runs at probe pace instead of opening a request burst.
+    const firstPollTimer = setTimeout(() => {
+      pollCompanionPitch();
+      restartPoll();
+    }, pollDelayRef.current);
 
     // R111: stale eviction must run at a fixed 250 ms cadence INDEPENDENT of
     // the probe cadence — with push mode active the poll fetches only every
@@ -169,6 +180,7 @@ export function useCompanionPitchPolling(
 
     return () => {
       unsubPitchFeed();
+      clearTimeout(firstPollTimer);
       clearInterval(staleSweep);
       if (pollTimer) {
         clearInterval(pollTimer);
