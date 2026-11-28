@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback, useMemo } from 'react';
 import type { Song, Note, LyricLine, Difficulty } from '@/types/game';
-import { findActiveNote, shouldSkipPitch, evaluateAndScoreTick, PARTY_MAX_POINTS_PER_PLAYER } from '@/lib/game/party-scoring';
+import { shouldSkipPitch, evaluateAndScoreTick, PARTY_MAX_POINTS_PER_PLAYER } from '@/lib/game/party-scoring';
 import { calculateScoringMetadata, evaluateTick, type ScoringMetadata } from '@/lib/game/scoring';
 import type { CptmPlayer, CptmSegment } from './cptm-types';
 import type { CompanionPitchEntry } from './cptm-companion-polling';
@@ -107,6 +107,42 @@ export function useCptmScoring(params: CptmScoringParams): { notePerformance: Cp
 
   const lastEvalTimeRef = useRef(0);
 
+  // ── R116: live-value refs — the scoring callbacks below read the CURRENT
+  // player index / scoring metadata from refs so their identities stay
+  // STABLE across turn switches. Previously every switch recreated
+  // sampleVisualTicks + scoreCurrentPlayer (deps: currentPlayerIndex,
+  // scoringMeta) — tearing down and re-arming the scoring rAF loop exactly
+  // at the switch frame and piling its restart onto the switch commit
+  // (the visible hitch at every CPTM player change).
+  const currentPlayerIndexLiveRef = useRef(currentPlayerIndex);
+  currentPlayerIndexLiveRef.current = currentPlayerIndex;
+  const scoringMetaLiveRef = useRef<ScoringMetadata | null>(null);
+
+  // ── R116: cursor-based active-note lookup ──
+  // findActiveNote scanned ALL lines × notes (O(n) per call, twice per frame
+  // through visual sampler + scoring loop). With a monotonic cursor over
+  // the pre-sorted allNotes flat array the scan is O(1) amortized — same
+  // fix PTM received in R110. Reset on note-source change or a
+  // backwards-running clock (seek / medley snippet switch).
+  const activeNoteCursorRef = useRef(0);
+  useEffect(() => {
+    activeNoteCursorRef.current = 0;
+  }, [notesSource]);
+  const findActiveNoteFast = useCallback((time: number): (Note & { lineIndex: number; line: LyricLine }) | null => {
+    const notes = allNotes;
+    if (!notes || notes.length === 0) return null;
+    let idx = activeNoteCursorRef.current;
+    if (idx >= notes.length) idx = 0;
+    // Backwards-running clock (snippet switch/seek) → re-scan from the start
+    if (idx > 0 && notes[idx].startTime > time + 50) idx = 0;
+    // Advance while the note is definitely over
+    while (idx < notes.length && notes[idx].startTime + notes[idx].duration < time) idx++;
+    activeNoteCursorRef.current = Math.min(idx, notes.length - 1);
+    const n = notes[idx];
+    if (n && time >= n.startTime && time <= n.startTime + n.duration) return n;
+    return null;
+  }, [allNotes]);
+
   // Reset the eval throttle on segment changes so the first evaluation of
   // every segment is immediate (fairness: no player loses scoring time at
   // their segment start; matches the PTM scoring hook).
@@ -134,13 +170,13 @@ export function useCptmScoring(params: CptmScoringParams): { notePerformance: Cp
     if (now - lastVisualSampleTimeRef.current < VISUAL_SAMPLE_INTERVAL_MS) return;
     lastVisualSampleTimeRef.current = now;
 
-    const activeNote = findActiveNote(notesSource?.lyrics, time);
+    const activeNote = findActiveNoteFast(time);
     if (!activeNote) return;
     // Notes carry an optional runtime id; fall back to the startTime key
     // (same key format NoteBlock uses to look samples up).
     const noteId = (activeNote as Note).id || `note-${activeNote.startTime}`;
 
-    const player = playersRef.current[currentPlayerIndex];
+    const player = playersRef.current[currentPlayerIndexLiveRef.current];
     const cachedPitch = player ? companionPitchCacheRef.current.get(player.id) : undefined;
     const sungPitch = cachedPitch?.note ?? null;
     const hasPitch = sungPitch !== null && cachedPitch != null && cachedPitch.frequency != null;
@@ -165,7 +201,7 @@ export function useCptmScoring(params: CptmScoringParams): { notePerformance: Cp
     if (samples.length > MAX_VISUAL_SAMPLES_PER_NOTE) {
       samples.splice(0, samples.length - MAX_VISUAL_SAMPLES_PER_NOTE);
     }
-  }, [notesSource, difficulty, currentPlayerIndex, playersRef, companionPitchCacheRef]);
+  }, [notesSource, difficulty, playersRef, companionPitchCacheRef, findActiveNoteFast]);
 
   // Read currentTime from a ref inside the callback to avoid recreating
   // the RAF loop ~40 times/sec (currentTime changes every frame).
@@ -211,11 +247,17 @@ export function useCptmScoring(params: CptmScoringParams): { notePerformance: Cp
     if (segmentNotes.length === 0) return null;
     return calculateScoringMetadata(segmentNotes, SCORING_THROTTLE_MS, 'medium', segmentMaxPoints);
   }, [segments, currentSegmentIndex, allNotes, segmentMaxPoints]);
+  // R116: live-value ref — keeps scoreCurrentPlayer's identity stable across
+  // segment/player switches (see the ref block at the top of this hook).
+  scoringMetaLiveRef.current = scoringMeta;
 
   const scoreCurrentPlayer = useCallback(() => {
     const time = currentTimeRef.current;
 
-    const player = playersRef.current[currentPlayerIndex];
+    // R116: live refs — keeps this callback's identity stable across player
+    // switches (no scoring-rAF restart at the handoff frame).
+    const idx = currentPlayerIndexLiveRef.current;
+    const player = playersRef.current[idx];
     if (!player) return;
 
     const cachedPitch = companionPitchCacheRef.current.get(player.id);
@@ -236,7 +278,7 @@ export function useCptmScoring(params: CptmScoringParams): { notePerformance: Cp
 
     if (shouldSkipPitch(pitchResult, difficulty)) return;
 
-    const activeNote = findActiveNote(notesSource?.lyrics, time);
+    const activeNote = findActiveNoteFast(time);
     if (!activeNote) return;
 
     // Backwards clock jump (media seek) — reset so the throttle never
@@ -247,9 +289,8 @@ export function useCptmScoring(params: CptmScoringParams): { notePerformance: Cp
 
     const note = pitchResult.note;
     if (note == null) return;
-    const tick = evaluateAndScoreTick(note, activeNote, difficulty, scoringMeta);
-    const p = playersRef.current[currentPlayerIndex];
-    const idx = currentPlayerIndex;
+    const tick = evaluateAndScoreTick(note, activeNote, difficulty, scoringMetaLiveRef.current);
+    const p = playersRef.current[idx];
 
     if (tick.hit) {
       p.score += tick.points;
@@ -263,7 +304,7 @@ export function useCptmScoring(params: CptmScoringParams): { notePerformance: Cp
 
     playersRef.current[idx] = { ...p };
     forceRender();
-  }, [notesSource, difficulty, currentPlayerIndex, scoringMeta, forceRender, playersRef, companionPitchCacheRef]);
+  }, [notesSource, difficulty, forceRender, playersRef, companionPitchCacheRef, findActiveNoteFast]);
 
   useEffect(() => {
     if (phase !== 'playing' || !isPlaying) return;

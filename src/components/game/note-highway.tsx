@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { Note, LyricLine } from '@/types/game';
 import { getNoteDisplayStyleClasses, getMultiPlayerNoteOverlay, PitchStats, NoteRenderMode } from '@/lib/game/note-utils';
 import { useTranslation } from '@/lib/i18n/translations';
+import { readGameClockTime } from '@/lib/game/game-clock';
 
 // ===================== HELPERS =====================
 
@@ -16,6 +17,18 @@ function withAlpha(hex: string, alpha: number): string {
 }
 
 // ===================== TYPES =====================
+
+/** Horizontal span (in % of the highway) a note can travel past the left
+ *  border before being culled — mirrors NoteBlock's cull check. */
+const NOTE_WIDTH_EXTRA = 20;
+
+/** Registry callback: NoteBlock reports its mounted DOM element (or null on
+ *  unmount) so NoteHighway's rAF loop can move it WITHOUT React re-renders. */
+export type RegisterNoteEntry = (
+  key: string,
+  el: HTMLDivElement | null,
+  note: NoteWithLine,
+) => void;
 
 export interface NoteWithLine extends Note {
   lineIndex: number;
@@ -110,6 +123,64 @@ const SingLine = React.memo(function SingLine({
   );
 });
 
+/**
+ * R116 memo comparator — NoteBlock re-renders ONLY when its visual output
+ * actually changed. The 25 ms-gated parent renders (~40 fps) used to run
+ * the FULL getNoteDisplayStyleClasses pipeline (segment mapping, ghost-bar
+ * scan, laser state) for EVERY visible note on EVERY frame — the main
+ * render-load driver across all modes and a big contributor to the hitch
+ * at PTM player switches.
+ *
+ * Time-driven visuals (fill fraction, active glow, past opacity, live
+ * samples) advance at segment granularity (≥ 50 ms per segment) — a 40 ms
+ * time bucket is visually indistinguishable from the old 25 ms gate while
+ * cutting NoteBlock reconciliation work by ~40%. The horizontal MOTION is
+ * no longer React-driven at all (direct-DOM position loop in NoteHighway).
+ */
+function areNoteBlockPropsEqual(
+  prev: {
+    note: NoteWithLine;
+    currentTime: number;
+    pitchStats: PitchStats;
+    singLinePosition: number;
+    noteWindow: number;
+    visibleTop: number;
+    visibleRange: number;
+    noteWidthExtra?: number;
+    playerColor?: string;
+    noteTint?: string;
+    notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean; sungPitch?: number | null; playerColor?: string }>>;
+    playerStrips?: NotePlayerStrip[];
+    renderMode: NoteRenderMode;
+    flatFill?: string;
+    registerEntry: RegisterNoteEntry;
+  },
+  next: typeof prev,
+): boolean {
+  if (
+    prev.note !== next.note ||
+    prev.pitchStats !== next.pitchStats ||
+    prev.notePerformance !== next.notePerformance ||
+    prev.playerStrips !== next.playerStrips ||
+    prev.playerColor !== next.playerColor ||
+    prev.noteTint !== next.noteTint ||
+    prev.renderMode !== next.renderMode ||
+    prev.flatFill !== next.flatFill ||
+    prev.singLinePosition !== next.singLinePosition ||
+    prev.noteWindow !== next.noteWindow ||
+    prev.visibleTop !== next.visibleTop ||
+    prev.visibleRange !== next.visibleRange ||
+    prev.noteWidthExtra !== next.noteWidthExtra ||
+    prev.registerEntry !== next.registerEntry
+  ) {
+    return false;
+  }
+  // notePerformance/playerStrips are mutated IN PLACE — the time-bucket
+  // change is the re-read trigger for fresh samples (the same role the
+  // 25 ms gate played before).
+  return Math.floor(prev.currentTime / 40) === Math.floor(next.currentTime / 40);
+}
+
 const NoteBlock = React.memo(function NoteBlock({
   note,
   currentTime,
@@ -125,6 +196,7 @@ const NoteBlock = React.memo(function NoteBlock({
   playerStrips,
   renderMode,
   flatFill,
+  registerEntry,
 }: {
   note: NoteWithLine;
   currentTime: number;
@@ -143,6 +215,8 @@ const NoteBlock = React.memo(function NoteBlock({
   renderMode: NoteRenderMode;
   /** Flat mode fill colour */
   flatFill?: string;
+  /** Registry for the direct-DOM position loop (stable identity per highway) */
+  registerEntry: RegisterNoteEntry;
 }) {
   const timeUntilNote = note.startTime - currentTime;
   const noteEnd = note.startTime + note.duration;
@@ -151,6 +225,14 @@ const NoteBlock = React.memo(function NoteBlock({
 
   const distanceFromSingLine = (timeUntilNote / noteWindow) * (100 - singLinePosition + noteWidthExtra);
   const x = Math.round((singLinePosition + distanceFromSingLine) * 100) / 100;
+
+  // Stable identity across renders (note object + registerEntry are stable):
+  // React would otherwise detach/re-attach the ref on every re-render.
+  const noteKey = note.id || `note-${note.startTime}`;
+  const registerRef = useCallback(
+    (el: HTMLDivElement | null) => registerEntry(noteKey, el, note),
+    [registerEntry, noteKey, note],
+  );
 
   const pr = pitchStats.pitchRange || 1;
   const pitchY = Math.round((visibleTop + visibleRange - ((note.pitch - pitchStats.minPitch) / pr) * visibleRange) * 100) / 100;
@@ -261,9 +343,12 @@ const NoteBlock = React.memo(function NoteBlock({
 
   return (
     <div
+      // R116: the horizontal position (`left`) is written by NoteHighway's
+      // direct-DOM rAF loop at full display refresh rate — React never
+      // manages `left`, so re-renders can never quantize the note motion.
+      ref={registerRef}
       className={`absolute ${displayStyle.additionalClasses}`}
       style={{
-        left: `${x}%`,
         top: `${pitchY}%`,
         width: `${noteWidthPercent}%`,
         height: `${noteHeight}px`,
@@ -278,7 +363,7 @@ const NoteBlock = React.memo(function NoteBlock({
       {displayStyle.overlayElement}
     </div>
   );
-});
+}, areNoteBlockPropsEqual);
 
 const PlayerLabel = React.memo(function PlayerLabel({
   playerName,
@@ -325,6 +410,48 @@ export const NoteHighway = React.memo(function NoteHighway({
   flatNoteFill,
 }: NoteHighwayProps) {
   const { t } = useTranslation();
+
+  // ── R116: direct-DOM note motion (60 fps glide without React) ──
+  // The React currentTime prop updates only at the 25 ms store gate — at
+  // 60 Hz refresh that quantizes onto every 2nd rAF frame, so notes visibly
+  // stepped in ~33 ms jumps ("Stocken/Stottern der Noten", alle Modi). A
+  // local rAF loop now moves the mounted note elements' `left` at FULL
+  // display refresh rate, completely bypassing React for the horizontal
+  // motion. The clock source is the shared game-clock singleton (written
+  // UNTHROTTLED by every game loop: Standard/Duet, PTM, CPTM, Medley,
+  // Battle Royale); when no live writer is present (paused game or a
+  // consumer without its own loop) it falls back to the latest React
+  // currentTime prop — the exact pre-R116 behaviour.
+  const noteElsRef = useRef(new Map<string, { el: HTMLDivElement; note: NoteWithLine }>());
+  const lastTimeRef = useRef(currentTime);
+  lastTimeRef.current = currentTime;
+
+  const registerEntry = useCallback<RegisterNoteEntry>((key, el, note) => {
+    if (el) {
+      // Position immediately on mount so the very first paint is not at
+      // left:auto (the rAF loop refines it every frame afterwards).
+      const span = 100 - singLinePosition + NOTE_WIDTH_EXTRA;
+      const t = readGameClockTime(lastTimeRef.current);
+      el.style.left = `${singLinePosition + ((note.startTime - t) / noteWindow) * span}%`;
+      noteElsRef.current.set(key, { el, note });
+    } else {
+      noteElsRef.current.delete(key);
+    }
+  }, [singLinePosition, noteWindow]);
+
+  useEffect(() => {
+    let rafId = 0;
+    const span = 100 - singLinePosition + NOTE_WIDTH_EXTRA;
+    const moveNotes = () => {
+      rafId = requestAnimationFrame(moveNotes);
+      const t = readGameClockTime(lastTimeRef.current);
+      for (const entry of noteElsRef.current.values()) {
+        entry.el.style.left = `${singLinePosition + ((entry.note.startTime - t) / noteWindow) * span}%`;
+      }
+    };
+    rafId = requestAnimationFrame(moveNotes);
+    return () => cancelAnimationFrame(rafId);
+  }, [singLinePosition, noteWindow]);
 
   const effectiveColor = playerColor ?? (playerNumber === 2 ? '#ec4899' : '#22d3ee');
   const resolvedPlayerName = playerName || t('prominentScore.player1');
@@ -376,6 +503,7 @@ export const NoteHighway = React.memo(function NoteHighway({
           playerStrips={playerStrips}
           renderMode={renderMode}
           flatFill={flatNoteFill}
+          registerEntry={registerEntry}
         />
       ))}
 

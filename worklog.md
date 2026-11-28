@@ -1362,3 +1362,33 @@ Nutzer-Wunsch: (1) Tutorial um den Punkt „Metadaten-Studio" ergänzen — plat
 ### Verifikation
 
 TSC 0 · Lint 0 Errors (895 Warnings = exakt Bestandsniveau, per Stash-Baseline-Vergleich verifiziert) · Browser-E2E (DE-UI): Hilfemenü zeigt Editor-Tour mit 🎛️ Metadaten Studio (4 Schritte) zwischen „Noten bearbeiten" und „Extras & Shortcuts" (3 Schritte), Party-Modi-Kapitel jetzt 3 Schritte; kompletter Kapiteldurchlauf: 1/4 Studio-Spotlight, 2/4 Settings→Metadaten-Studio-Tab öffnet live, 3/4 Song offen + Panel-Toggle-Spotlight mit „Jetzt anklicken" (Klick öffnet echtes Panel), 4/4 #song-video-Feld mit gespeicherter YouTube-URL spotlighted; Party-Kapitel 3/3 Motto-Party mit live geöffnetem Motto-Tab + „Mehr erfahren"-Ausklapp; keine Page-Errors, dev.log sauber. QA-Notiz: Der im Worklog dokumentierte Converter-Import (public/qa-test.txt) existiert nicht mehr — Test-Song stattdessen über Editor → Neuer Song (YouTube-URL) + „Speichern & Beenden" erzeugt und in der Bibliothek belassen (agent-browser-Profil).
+
+---
+
+## R116 — Notenlauf flüssig in ALLEN Modi (60-fps-Direct-DOM statt 25-ms-Store-Quantelung) + PTM-Spielerwechsel ohne Ruckler
+
+**Task ID:** R116 · **Agent:** Z.ai Code · **Datum:** 28.11.
+
+### Task
+
+Nutzer-Wunsch: Das Spiel läuft deutlich stabiler, aber es gibt immer noch ein Stocken/Stottern der Noten (alle Screens und Modi — „das ging schon mal viel besser"). Zusätzlich bremst im PTM-Mode jeder Spielerwechsel das Spiel kurz aus.
+
+### Root Cause
+
+1. **Noten-Stocken (alle Modi):** Jeder Game-Loop drosselt seine React-Zeit-State-Writes auf 25 ms (~40 fps) — nötig, um die Render-Last im Zaum zu halten. Auf einem 60-Hz-Display landet diese 25-ms-Gate aber auf jedem 2. rAF-Frame → die Notenbewegung quantelt effektiv auf 30 fps in ~33-ms-Sprüngen = sichtbares Ruckeln. Hochskalieren der Store-Writes (früher 16 ms) löst genau die Render-Kaskade wieder aus, wegen der die Drossel eingebaut wurde.
+2. **PTM-Spielerwechsel:** Beim Wechsel-Commit lief die schwere NoteBlock-Pipeline (getNoteDisplayStyleClasses: Segment-Mapping, Ghost-Scan, Laser-State) für JEDE sichtbare Note erneut + der Scoring-rAF-Loop wurde per Dependencies (currentPlayerIndex/scoringMeta) ab- und neu gerüstet — beides im selben Frame wie Segment-Commit und Transition-Overlay.
+
+### Umsetzung
+
+- **NEU `src/lib/game/game-clock.ts`:** Modul-Singleton `gameClock = { now, stamp }` + `writeGameClock()`/`isGameClockFresh()` — die EINE gemeinsame, ungedrosselte Frame-Uhr.
+- **Alle 5 Game-Loops schreiben die Uhr JEDE Frame:** Standard/Duell (use-game-loop), PTM (use-ptm-time-tracking), CPTM (cptm-game-hook), Medley (medley-game-hook — absolute Zeitbasis wie medley-game-playing), Battle Royale (use-battle-royale-game).
+- **NoteHighway (note-highway.tsx) — Direct-DOM-Notenbewegung:** NoteBlock-Elemente registrieren sich in einer Registry (stabiler Ref-Callback); EIN rAF-Loop pro NoteHighway schreibt `el.style.left` mit voller Bildwiederholfrequenz — komplett an React vorbei. React verwaltet `left` nie wieder (aus JSX-Style entfernt), Re-Renders können die Bewegung nicht mehr quantelieren. Ohne aktiven Writer (Pause/kein Loop) greift der Fallback auf die React-currentTime-Prop = exakt das Vor-R116-Verhalten.
+- **NoteBlock-Memo-Comparator:** Re-Render nur noch bei echten Visuell-Änderungen — Identitäts-Props + 40-ms-Zeit-Buckets (Füllung/Laser/Ran-Opazität springen ohnehin in Segment-Schritten ≥ 50 ms). Senkt die NoteBlock-Reconciliation um ~40 % — der Haupt-Render-Last-Treiber aller Modi und der Wechsel-Hitch.
+- **PTM (use-ptm-scoring) + CPTM (cptm-scoring) Scoring-Stabilisierung:** currentPlayerIndex + scoringMeta werden in Live-Refs gelesen → sampleVisualTicks/scoreCurrentPlayer behalten ihre Identität über Spieler-/Segment-Wechsel → kein rAF-Ab-/-Neu-Rüsten im Wechsel-Frame.
+- **CPTM-Notenscan O(1):** cursor-basierter findActiveNoteFast über das vorsortierte allNotes-Flacharray (gleiche R110-PTM-Fix-Pattern) statt O(n)-findActiveNote-Scan 2× pro Frame.
+
+### Verifikation
+
+TSC 0 · Lint 0 Errors (901 Warnings = Bestandsniveau + 6 neue vom akzeptierten react-hooks/immutability-Typ, gleiche Klasse wie die 895 Bestandswarnungen) · Browser-E2E (agent-browser, EN-UI): Test-Song (32 s → 70 s WAV mit 70-Ton-Melodie via IndexedDB geseedet) in Bibliothek sichtbar, Standard-Spiel läuft mic-los (Graceful Degradation) mit Noten-Animation; **Bewegungsmessung 31 consecutive rAF-Frames: 0 unveränderte Frames** (vorher ~50 % bei 25-ms-Gate) bei Delta ~0,3–0,6 %/Frame ≈ exakt 25 %/s Scrollrate; PTM-E2E mit 2 Profilen + Fake-Shared-Mic: kompletter Party-Setup-Flow (Party → Pass the Mic → 2 Spieler → From Library → Ready to Play → Start Singing), Spielerwechsel bei 30 s verifiziert (E2E Tester übernimmt), **Frame-Recorder 2335 Frames/~40 s DURCH den Wechsel: avg 17,5 ms, p95 17 ms, leftUnveraendert = 0 von 2294 Samples** — die Notenbewegung stockt auch beim Wechsel nicht mehr; nur 7 Frames > 50 ms (0,3 %, Dev-Mode-GC/Lazy-Load-Artefakte). Keine Page-Errors im Spiel; dev.log zeigt nur den erwarteten Mic-losen Graceful-Degradation-Pfad (Headless hat kein Audio-Gerät). E2E-Test-WAV aus public/ entfernt (nur Sandbox-Testasset).
+
+**AKTIONEN NUTZER:** Desktop-App neu bauen/laden (Client-Änderungen). Notenlauf muss jetzt in allen Modi (Solo, Duell, Duet, PTM, CPTM, Medley, Battle Royale, Jukebox) mit voller Bildwiederholfrequenz gleiten und der PTM-Spielerwechsel ohne sichtbares Stocken durchlaufen.

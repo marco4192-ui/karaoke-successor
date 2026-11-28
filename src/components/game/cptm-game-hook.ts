@@ -8,6 +8,7 @@ import { useGameMedia } from '@/hooks/use-game-media';
 import { useGameSettings } from '@/hooks/use-game-settings';
 import { useMobileGameSync } from '@/hooks/use-mobile-game-sync';
 import { getVisibleNotes, NOTE_WINDOW, calculatePitchStats } from '@/lib/game/note-utils';
+import { writeGameClock } from '@/lib/game/game-clock';
 import type { CptmPlayer, CptmSegment, CptmSettings, CptmRoundResult, GamePhase } from './cptm-types';
 import { DEFAULT_CPTM_SETTINGS } from './cptm-types';
 
@@ -459,6 +460,10 @@ export function useCptmGameLogic({
       }
 
       const now = performance.now();
+      // R116: unthrottled frame clock — the CPTM NoteHighway positions its
+      // note elements at display refresh rate via direct DOM writes
+      // (independent of the 25 ms React state gate below).
+      writeGameClock(elapsedMs);
       if (now - lastCurrentTimeUpdateRef.current >= 25) {
         setCurrentTime(elapsedMs);
         lastCurrentTimeUpdateRef.current = now;

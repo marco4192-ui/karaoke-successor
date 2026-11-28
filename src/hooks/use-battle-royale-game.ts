@@ -17,6 +17,7 @@ import {
 } from '@/lib/game/battle-royale';
 import { Song, Note, LyricLine, PitchDetectionResult } from '@/types/game';
 import { calculatePitchStats, getVisibleNotes, PitchStats, NOTE_WINDOW } from '@/lib/game/note-utils';
+import { writeGameClock } from '@/lib/game/game-clock';
 import { useMultiPitchDetector, type PlayerPitchConfig } from '@/hooks/use-multi-pitch-detector';
 import { shuffleArray } from '@/lib/utils';
 import { calculateScoringMetadata } from '@/lib/game/scoring';
@@ -1117,6 +1118,10 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
       }
 
       if (audioRef.current) {
+        // R116: unthrottled frame clock — the BR NoteHighway positions its
+        // note elements at display refresh rate via direct DOM writes
+        // (independent of the 25 ms React state gate below).
+        writeGameClock(audioRef.current.currentTime * 1000);
         const now = performance.now();
         if (now - lastCurrentTimeUpdateRef.current >= 25) {
           setCurrentTime(audioRef.current.currentTime * 1000);

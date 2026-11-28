@@ -119,6 +119,17 @@ export function usePtmScoring({
 }: UsePtmScoringOptions): { notePerformance: PtmNotePerformance } {
   const lastEvalTimeRef = useRef(0);
 
+  // ── R116: live-value refs — the scoring callbacks below read the CURRENT
+  // player index / scoring metadata from refs so their identities stay
+  // STABLE across player switches. Previously every switch recreated
+  // sampleVisualTicks + scoreCurrentPlayer (deps: currentPlayerIndex,
+  // scoringMeta) — tearing down and re-arming the scoring rAF loop exactly
+  // at the switch frame and piling its restart onto the switch commit
+  // (the visible hitch at every PTM player change).
+  const currentPlayerIndexLiveRef = useRef(currentPlayerIndex);
+  currentPlayerIndexLiveRef.current = currentPlayerIndex;
+  const scoringMetaLiveRef = useRef<ScoringMetadata | null>(null);
+
   // R110: Hold-Quelle — zuletzt gültiger Ton + Zeitpunkt (Performance-Now).
   const lastValidPitchRef = useRef<{ note: number; at: number } | null>(null);
 
@@ -252,6 +263,9 @@ export function usePtmScoring({
     if (segmentNotes.length === 0) return null;
     return calculateScoringMetadata(segmentNotes, SCORING_THROTTLE_MS, 'medium', segmentMaxPoints);
   }, [segments, currentSegmentIndex, allNotes, segmentMaxPoints]);
+  // R116: live-value ref — keeps scoreCurrentPlayer's identity stable across
+  // segment/player switches (see the ref block at the top of this hook).
+  scoringMetaLiveRef.current = scoringMeta;
 
   // ── Visual note performance map (mutated in place; consumed fresh by
   // NoteHighway on every currentTime-driven render — same pattern as
@@ -315,7 +329,7 @@ export function usePtmScoring({
       lastVisualSungPitchRef.current = null;
     }
 
-    const playerColor = playersRef.current?.[currentPlayerIndex]?.color;
+    const playerColor = playersRef.current?.[currentPlayerIndexLiveRef.current]?.color;
 
     const perf = notePerformanceRef.current;
     let samples = perf.get(noteId);
@@ -327,7 +341,7 @@ export function usePtmScoring({
     if (samples.length > MAX_VISUAL_SAMPLES_PER_NOTE) {
       samples.splice(0, samples.length - MAX_VISUAL_SAMPLES_PER_NOTE);
     }
-  }, [notesSource, difficulty, currentPlayerIndex, playersRef, getEffectivePitch, findActiveNoteFast]);
+  }, [notesSource, difficulty, playersRef, getEffectivePitch, findActiveNoteFast]);
 
   const scoreCurrentPlayer = useCallback(() => {
     const time = currentTimeRef.current;
@@ -353,10 +367,12 @@ export function usePtmScoring({
 
     const note = pitchResult.note;
     if (note == null) return;
-    const tick = evaluateAndScoreTick(note, activeNote, difficulty, scoringMeta);
-    const p = playersRef.current?.[currentPlayerIndex];
+    // R116: live refs — keeps this callback's identity stable across player
+    // switches (no scoring-rAF restart at the handoff frame).
+    const idx = currentPlayerIndexLiveRef.current;
+    const tick = evaluateAndScoreTick(note, activeNote, difficulty, scoringMetaLiveRef.current);
+    const p = playersRef.current?.[idx];
     if (!p) return;
-    const idx = currentPlayerIndex;
 
     if (tick.hit) {
       p.score += tick.points;
@@ -370,7 +386,7 @@ export function usePtmScoring({
 
     playersRef.current[idx] = { ...p };
     forceRender();
-  }, [notesSource, difficulty, currentPlayerIndex, scoringMeta, forceRender, playersRef, getEffectivePitch, findActiveNoteFast]);
+  }, [notesSource, difficulty, forceRender, playersRef, getEffectivePitch, findActiveNoteFast]);
 
   // ── Game loop: score during playing (visual sampling every frame) ──
   useEffect(() => {

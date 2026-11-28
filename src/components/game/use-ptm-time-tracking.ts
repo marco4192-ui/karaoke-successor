@@ -5,6 +5,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { writeGameClock } from '@/lib/game/game-clock';
 
 interface UsePtmTimeTrackingOptions {
   phase: string;
@@ -83,6 +84,11 @@ export function usePtmTimeTracking({
         // Fallback: keep current time (no regression)
         elapsedMs = currentTimeRef.current;
       }
+
+      // R116: unthrottled frame clock — the PTM NoteHighway positions its
+      // note elements at display refresh rate via direct DOM writes
+      // (independent of the 25 ms React state gate below).
+      writeGameClock(elapsedMs);
 
       // Throttle React state updates to ~40fps (25ms) for smooth visuals
       const now = performance.now();

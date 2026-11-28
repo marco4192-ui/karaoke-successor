@@ -9,6 +9,7 @@ import { useGameResults } from '@/hooks/use-game-results';
 import { playSongMedia, scheduleMediaWatchdog } from '@/hooks/use-media-playback';
 import { computeGameElapsedMs, buildP2PitchResult, getEffectiveSongEnd } from '@/hooks/game-loop-utils';
 import { getVisibleNotes, NOTE_WINDOW } from '@/lib/game/note-utils';
+import { writeGameClock } from '@/lib/game/game-clock';
 import { DIFFICULTY_PITCH_CONFIGS, KARAOKE_DEFAULT_CONFIG } from '@/lib/audio/pitch-config';
 import type { TimingData } from '@/components/screens/game-screen-types';
 import type { Note, LyricLine } from '@/types/game';
@@ -730,6 +731,11 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       lastElapsedMsRef.current = elapsed;
 
       const adjustedTime = elapsed + timingOffset;
+
+      // R116: unthrottled frame clock for the NoteHighway's direct-DOM
+      // position loop — the note motion glides at display refresh rate and
+      // can no longer quantize onto the 25 ms store-write grid.
+      writeGameClock(adjustedTime);
 
       // Update visible notes refs every frame (BR-pattern).
       // This gives NoteHighway frame-accurate note positions without

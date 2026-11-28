@@ -33,6 +33,7 @@ import type {
 } from './medley-types';
 import { getDynamicDifficulty } from './medley-scoring';
 import { setMedleySyncSnapshot, clearMedleySyncSnapshot, type MedleySyncMatchup } from '@/lib/game/medley-sync';
+import { writeGameClock } from '@/lib/game/game-clock';
 
 // ── Sub-hook imports ──
 import { useMedleyAudio } from './hooks/use-medley-audio';
@@ -855,6 +856,14 @@ export function useMedleyGame({
       const effectiveStart = audio.effectiveSnippetRef.current?.startTime ?? currentSnippet.startTime;
       const effectiveEnd = audio.effectiveSnippetRef.current?.endTime ?? currentSnippet.endTime;
       const snippetTime = songTimeMs - effectiveStart;
+
+      // R116: unthrottled frame clock — the medley NoteHighway positions its
+      // note elements at display refresh rate via direct DOM writes
+      // (independent of the 25 ms React state gate below). The highway's
+      // time basis is ABSOLUTE song time (medley-game-playing computes
+      // absoluteTime = effectiveStart + currentTimeMs for its props), so the
+      // clock must carry the same basis.
+      writeGameClock(effectiveStart + snippetTime);
 
       const perfNow = performance.now();
 
