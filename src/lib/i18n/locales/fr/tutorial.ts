@@ -99,6 +99,11 @@ export const tutorialTranslations = {
           body: 'C\'est ici que vous choisissez le mode de fête : Battle Royale (dernier debout), Passe le Micro, tournoi (tableau), medley et plus.\n\nChaque carte montre à quoi vous attendre — un clic ouvre la sélection des joueurs.',
           details: 'Après un clic sur une carte de mode suit la sélection des joueurs : choisissez des profils (ou connectez des appareils compagnons), puis réglez tailles d\'équipe, nombre de tours ou limites de temps selon le mode.\n\nAstuce fête à thème : quand un thème est actif dans les paramètres (p. ex. "Fête 80s"), chaque sélection de chanson en mode fête ne puise automatiquement que dans les chansons correspondantes — la fête reste dans le sujet.',
         },
+        mottoParty: {
+          title: 'Fête à Thème 🎈',
+          body: 'Mettez tout le jeu au diapason d\'un thème (p. ex. "Fête 80s") : ici, sous Paramètres → Fête à Thème, vous combinez genre, langue et époque — avec un thème actif, vos invités ne trouvent que des chansons correspondantes.',
+          details: 'Comment le thème agit sur le jeu :\n• Tant qu\'il est actif, le thème remplace TOUS les champs de recherche et filtres — bibliothèque, sélection des chansons en mode fête et app compagnon ne puisent que dans le réservoir du thème.\n• Vos invités ne peuvent tout simplement pas se tromper de chanson — parfait pour les soirées à thème.\n• Combinez librement avec la logique ET : genre (p. ex. rock) + langue (p. ex. anglais) + époque (p. ex. 1980–1989).\n• Chansons jouées et scores restent intacts ; désactivez le thème et tout revient instantanément à la vue normale.\n\nAstuce : la visite des paramètres (chapitre "Bibliothèque & Thème") explique l\'onglet encore plus en détail.',
+        },
         jukeboxCard: {
           title: 'Jukebox',
           body: 'Karaoké sans compétition : créez des playlists, mettez des chansons en file, partagez vos favorites. Le parfait animateur d\'ambiance.',
@@ -145,7 +150,8 @@ export const tutorialTranslations = {
         entry: 'Entrer',
         layout: 'Disposition',
         notes: 'Éditer les notes',
-        extras: 'Extras & harmonisation',
+        metadataStudio: 'Studio de Métadonnées',
+        extras: 'Extras et raccourcis',
       },
       steps: {
         welcome: {
@@ -206,7 +212,22 @@ export const tutorialTranslations = {
         metadataStudio: {
           title: 'Studio de Métadonnées',
           body: 'Le turbo de l\'harmonisation : suggestions IA et par règles pour genre, langue et année — avec écoute avant attribution, édition fine manuelle et file de révision pour les correspondances incertaines.',
-          details: 'Le flux du studio :\n1. "Analyser toutes les chansons" — le moteur de règles (chemins de fichiers, tags) et éventuellement l\'IA suggèrent genre/langue/année.\n2. Les suggestions portent une confiance : vert = sûr, jaune = à revoir.\n3. Écoute : un clic sur une chanson joue un extrait — vérifiez les suggestions au plus vite.\n4. Attribuez individuellement ou "appliquer tous les verts".\n\nLa file de révision rassemble les correspondances incertaines pour plus tard — rien ne se perd.',
+          details: 'Le flux du studio :\n1. "Analyser toutes les chansons" — le moteur de règles (chemins de fichiers, tags) et éventuellement l\'IA suggèrent genre/langue/année.\n2. Les suggestions portent une confiance : vert = sûr, jaune = à revoir.\n3. Écoute : un clic sur une chanson joue un extrait — vérifiez les suggestions au plus vite.\n4. Attribuez individuellement ou "appliquer tous les verts".\n\nLa file de révision rassemble les correspondances incertaines pour plus tard — rien ne se perd.\n\nAu-delà du genre/de la langue/de l\'année, le studio signale aussi les chansons sans vidéo, pochette ou fond (filtre "No Video" au-dessus de la liste) — la façon d\'intégrer des liens vidéo des grandes plateformes est montrée dans les prochaines étapes.',
+        },
+        studioSettings: {
+          title: 'Réglages du studio ⚙️',
+          body: 'Créez vos propres entrées de genre et de langue — et consultez et ajustez les règles d\'harmonisation. Les entrées personnalisées apparaissent instantanément dans les filtres de la bibliothèque, dans l\'éditeur et dans le Studio de Métadonnées.',
+          details: 'Pourquoi des entrées personnalisées ? Les listes intégrées ne couvrent pas tout ("Schlager", "K-Pop", dialecte …). Vos entrées :\n• apparaissent instantanément dans les filtres de la bibliothèque\n• sont sélectionnables dans l\'éditeur et le Studio de Métadonnées\n• sont respectées par l\'harmonisation (les règles en tiennent compte)\n\nLa suppression fonctionne aussi — les chansons gardent l\'entrée jusqu\'à sa réassignation.\n\nSous "Harmonisation basée sur des règles", vous voyez chaque règle de l\'harmonisation du studio (p. ex. "Bubblegum Pop → Pop") et pouvez changer les cibles, désactiver des règles ou créer les vôtres.',
+        },
+        videoLinks: {
+          title: 'Intégrer des liens vidéo 🎬',
+          body: 'Les chansons n\'ont pas besoin de leur propre fichier vidéo : cliquez maintenant sur le panneau de métadonnées en haut à droite — à l\'intérieur, vous trouverez le champ "Vidéo" pour les liens vidéo des grandes plateformes.',
+          details: 'Comment accéder au lien vidéo :\n1. Ouvrez une chanson dans l\'éditeur (la visite vient d\'en ouvrir une).\n2. Ouvrez le panneau de métadonnées via l\'icône ⚙ en haut à droite.\n3. Dans la partie infos de la chanson du panneau : le champ "Vidéo" (#VIDEO:/#SOURCE:) — collez le lien là.\n\nLa prochaine étape montre le champ en direct.',
+        },
+        videoUrl: {
+          title: 'Liens vidéo : YouTube & co 📺',
+          body: 'Collez ici le lien vidéo de la chanson : YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico — ou une URL vidéo directe (.mp4) ou un nom de fichier local.',
+          details: 'Tout ce que le champ accepte :\n• Liens des grandes plateformes vidéo : YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico — dans le jeu, la vidéo tourne en lecteur intégré, sans téléchargement.\n• URL vidéo directes (.mp4, .webm, .avi, .mkv) et codes d\'intégration complets (p. ex. VK "Embed").\n• Fichiers vidéo locaux : entrez simplement le nom du fichier.\n\nÀ l\'enregistrement, tout est trié automatiquement : les vrais fichiers vidéo vont dans #VIDEO:, les URL vidéo dans #SOURCE:.\n\nAudio : si la chanson a son propre fichier audio, la vidéo de la plateforme reste muette (le fichier audio fournit le son et le score) — sans fichier audio séparé, la plateforme fournit l\'audio. Aucun export instrumental n\'est proposé pour les vidéos des plateformes de streaming.\n\nSi la vidéo et les notes se désynchronisent, le champ "Décalage vidéo" ci-dessous ajuste le décalage.',
         },
         shortcuts: {
           title: 'Raccourcis',

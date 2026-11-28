@@ -100,6 +100,11 @@ export const tutorialTranslations = {
           body: 'Täältä valitset juhlatilan: Battle Royale (viimeinen laulaja voittaa), Mikrofonin vaihto, turnaus (turnauspuu), Medley-kisa ja muita.\n\nJokainen kortti kertoo, mitä on luvassa — yksi klikkaus avaa pelaajavalinnan.',
           details: 'Tilakortin klikkaamisen jälkeen tulee pelaajavalinta: valitse profiilit (tai yhdistä companion-laitteet) ja aseta sitten joukkuekoot, kierrosmäärät tai aikarajat tilasta riippuen.\n\nTeemajuhlavinkki: kun teema on aktiivisena asetuksissa (esim. "80-luvun juhlat"), jokainen kappalevalinta juhlatilassa nostaa automaattisesti vain sopivia kappaleita — juhla pysyy aiheessaan.',
         },
+        mottoParty: {
+          title: 'Teemajuhlat 🎈',
+          body: 'Aseta koko peli yhteen teemaan (esim. "80-luvun juhlat"): täällä kohdassa Asetukset → Teemajuhlat yhdistät genren, kielen ja aikakauden — aktiivisen teeman aikana vieraasi löytävät vain sopivia kappaleita.',
+          details: 'Miten teema vaikuttaa peliin:\n• Ollessaan aktiivinen teema korvaa KAIKKI hakukentät ja suodattimet — kirjasto, juhlapelien kappalevalinta ja companion-sovellus poimivat vain teemavarannosta.\n• Vierasi eivät yksinkertaisesti voi valita väärää kappaletta — täydellinen teema-iltoihin.\n• Yhdistele vapaasti AND-logiikalla: genre (esim. rock) + kieli (esim. englanti) + aikakausi (esim. 1980–1989).\n• Pelatut kappaleet ja huipputulokset pysyvät ennallaan; deaktivoi teema, ja kaikki palautuu heti normaaliin näkymään.\n\nVinkki: asetuskierros (luku "Kirjasto & Teema") selittää välilehden vielä tarkemmin.',
+        },
         jukeboxCard: {
           title: 'Jukeboksi',
           body: 'Karaoke ilman kilpailua: rakenna soittolistoja, lisää kappaleita jonoon, jaa suosikkeja. Täydellinen taustaviihde.',
@@ -146,7 +151,8 @@ export const tutorialTranslations = {
         entry: 'Pääsy editoriin',
         layout: 'Asettelu',
         notes: 'Nuottien muokkaus',
-        extras: 'Ekstrat & harmonisointi',
+        metadataStudio: 'Metadata Studio',
+        extras: 'Ekstrat & pikanäppäimet',
       },
       steps: {
         welcome: {
@@ -207,7 +213,22 @@ export const tutorialTranslations = {
         metadataStudio: {
           title: 'Metadata Studio',
           body: 'Harmonisointiturbo: AI- ja sääntöehdotukset genrelle, kielelle ja vuodelle — kuuntelu ennen vahvistusta, manuaalinen hienosäätö ja epävarmojen kohtien tarkistusjono.',
-          details: 'Studion työnkulku:\n1. "Analysoi kaikki kappaleet" — sääntömoottori (tiedostopolut, tagit) ja valinnaisesti AI ehdottavat genren/kielen/vuoden.\n2. Ehdotuksilla on varmuusaste: vihreä = varma, keltainen = tarkista.\n3. Kuuntele: kappaleen klikkaus soittaa pätkän — varmista ehdotukset nopeasti.\n4. Vahvista yksitellen tai "käytä kaikkia vihreitä".\n\nTarkistusjono kerää epävarmat kohdat myöhemmäksi — mikään ei katoa.',
+          details: 'Studion työnkulku:\n1. "Analysoi kaikki kappaleet" — sääntömoottori (tiedostopolut, tagit) ja valinnaisesti AI ehdottavat genren/kielen/vuoden.\n2. Ehdotuksilla on varmuusaste: vihreä = varma, keltainen = tarkista.\n3. Kuuntele: kappaleen klikkaus soittaa pätkän — varmista ehdotukset nopeasti.\n4. Vahvista yksitellen tai "käytä kaikkia vihreitä".\n\nTarkistusjono kerää epävarmat kohdat myöhemmäksi — mikään ei katoa.\n\nGenren/kielen/vuoden lisäksi studio merkitsee myös kappaleet, joilta puuttuu video, kansikuva tai tausta ("No Video"-suodatin listan yläpuolella) — miten suurten videopalveluiden videolinkit upotetaan, näytetään seuraavissa vaiheissa.',
+        },
+        studioSettings: {
+          title: 'Studion asetukset ⚙️',
+          body: 'Luo omia genre- ja kielimerkintöjä — ja katso ja säädä harmonisointisääntöjä. Omat merkinnät ilmestyvät heti kirjaston suodattimiin, editoriin ja Metadata Studioon.',
+          details: 'Miksi omia merkintöjä? Sisäänrakennetut listat eivät kata kaikkea ("Schlager", "K-Pop", murre …). Omat merkinnät:\n• ilmestyvät heti kirjaston suodattimiin\n• ovat valittavissa editorissa ja Metadata Studiossa\n• harmonisointi huomioi ne (säännöt kunnioittavat niitä)\n\nPoistaminen onnistuu myös — kappaleet säilyttävät merkinnän, kunnes se määritetään uudelleen.\n\nKohdassa "Sääntöperustainen harmonisointi" näet jokaisen studion harmonisoinnin säännön (esim. "Bubblegum Pop → Pop") ja voit vaihtaa kohteita, poistaa sääntöjä käytöstä tai luoda omia.',
+        },
+        videoLinks: {
+          title: 'Videolinkkien upottaminen 🎬',
+          body: 'Kappaleet eivät tarvitse omaa videotiedostoa: klikkaa nyt metatietopaneelia oikeassa yläkulmassa — sieltä löydät "Video"-kentän suurten videopalveluiden videolinkeille.',
+          details: 'Näin pääset videolinkkiin:\n1. Avaa kappale editorissa (kierros avasi juuri yhden).\n2. Avaa metatietopaneeli ⚙-kuvakkeesta oikeassa yläkulmassa.\n3. Paneelin kappaleiden tieto-osassa: "Video"-kenttä (#VIDEO:/#SOURCE:) — liitä linkki siihen.\n\nSeuraava vaihe näyttää kentän livenä.',
+        },
+        videoUrl: {
+          title: 'Videolinkit: YouTube ym. 📺',
+          body: 'Liitä tähän kappaleen videolinkki: YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico — tai suora videon URL (.mp4) tai paikallinen tiedostonimi.',
+          details: 'Kaikki mitä kenttä hyväksyy:\n• Linkit suurilta videopalveluilta: YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico — pelissä video toimii upotettuna soittimena, latausta ei tarvita.\n• Suorat videoiden URL:t (.mp4, .webm, .avi, .mkv) ja täydelliset upotuskoodit (esim. VK "Embed").\n• Paikalliset videotiedostot: riittää, kun kirjoitat tiedostonimen.\n\nTallennettaessa kaikki lajitellaan automaattisesti: oikeat videotiedostot menevät #VIDEO:een, videoiden URL:t #SOURCE:en.\n\nÄäni: jos kappaleella on oma äänitiedosto, palvelun video pysyy mykistettynä (äänen ja pisteytyksen tarjoaa äänitiedosto) — ilman erillistä äänitiedostoa äänen tarjoaa palvelu. Suoratoistopalveluiden videoille ei tarjota instrumentaalivientiä.\n\nJos video ja nuotit erkanevat, alla oleva "Videoviive"-kenttä säätää siirtymän.',
         },
         shortcuts: {
           title: 'Pikanäppäimet',

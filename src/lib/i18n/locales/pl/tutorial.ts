@@ -101,6 +101,11 @@ export const tutorialTranslations = {
           body: 'Tu wybierasz tryb imprezowy: Battle Royale (ostatni na scenie), Przekaż mikrofon, turniej (drabinka), medley i więcej.\n\nKażda karta pokazuje, czego się spodziewać — jedno kliknięcie otwiera wybór graczy.',
           details: 'Po kliknięciu karty trybu następuje wybór graczy: wybierz profile (lub podłącz urządzenia kompanów), a potem ustaw wielkości drużyn, liczby rund lub limity czasu — zależnie od trybu.\n\nWskazówka o imprezie tematycznej: gdy w ustawieniach aktywny jest motyw (np. „Impreza lat 80.”), każdy wybór piosenki w trybie imprezowym sięga automatycznie tylko pasujących utworów — impreza trzyma się tematu.',
         },
+        mottoParty: {
+          title: 'Impreza tematyczna 🎈',
+          body: 'Ustaw całą grę na jeden motyw (np. „Impreza lat 80.”): tutaj w Ustawienia → Impreza tematyczna łączysz gatunek, język i epokę — z aktywnym motywem twoi goście znajdują wyłącznie pasujące piosenki.',
+          details: 'Jak motyw wpływa na grę:\n• Gdy jest aktywny, motyw zastępuje WSZYSTKIE pola wyszukiwania i filtry — biblioteka, wybór piosenek na imprezie i aplikacja kompana korzystają tylko z puli motywu.\n• Twoi goście po prostu nie mogą wybrać niepasującej piosenki — idealne na tematyczne wieczory.\n• Łącz dowolnie logiką I: gatunek (np. rock) + język (np. angielski) + epoka (np. 1980–1989).\n• Zagrane piosenki i wyniki zostają nietknięte; wyłącz motyw i wszystko natychmiast wraca do normalnego widoku.\n\nWskazówka: samouczek ustawień (rozdział „Biblioteka i motyw”) wyjaśnia zakładkę jeszcze dokładniej.',
+        },
         jukeboxCard: {
           title: 'Jukebox',
           body: 'Karaoke bez rywalizacji: buduj playlisty, ustawiaj piosenki w kolejce, dziel się ulubionymi. Doskonała rozrywka w tle.',
@@ -147,7 +152,8 @@ export const tutorialTranslations = {
         entry: 'Wejście',
         layout: 'Układ',
         notes: 'Edycja nut',
-        extras: 'Dodatki i harmonizacja',
+        metadataStudio: 'Metadata Studio',
+        extras: 'Dodatki i skróty',
       },
       steps: {
         welcome: {
@@ -208,7 +214,22 @@ export const tutorialTranslations = {
         metadataStudio: {
           title: 'Metadata Studio',
           body: 'Turbo harmonizacji: sugestie AI i regułowe dla gatunku, języka i roku — z odsłuchiem przed przypisaniem, ręczną korektą i kolejką przeglądu dla niepewnych dopasowań.',
-          details: 'Przepływ pracy w studiu:\n1. „Analizuj wszystkie piosenki” — silnik reguł (ścieżki plików, tagi) i opcjonalnie AI proponują gatunek/język/rok.\n2. Sugestie niosą pewność: zielona = pewna, żółta = do przeglądu.\n3. Odsłuch: kliknięcie piosenki odtwarza fragment — najszybsza weryfikacja sugestii.\n4. Przypisz pojedynczo albo „zastosuj wszystkie zielone”.\n\nKolejka przeglądu zbiera niepewne dopasowania na później — nic nie ginie.',
+          details: 'Przepływ pracy w studiu:\n1. „Analizuj wszystkie piosenki” — silnik reguł (ścieżki plików, tagi) i opcjonalnie AI proponują gatunek/język/rok.\n2. Sugestie niosą pewność: zielona = pewna, żółta = do przeglądu.\n3. Odsłuch: kliknięcie piosenki odtwarza fragment — najszybsza weryfikacja sugestii.\n4. Przypisz pojedynczo albo „zastosuj wszystkie zielone”.\n\nKolejka przeglądu zbiera niepewne dopasowania na później — nic nie ginie.\n\nPoza gatunkiem/językiem/rokiem studio oznacza też piosenki z brakującym wideo, okładką lub tłem (filtr „No Video” nad listą) — jak osadzać linki do wideo z dużych platform, pokazują następne kroki.',
+        },
+        studioSettings: {
+          title: 'Ustawienia studia ⚙️',
+          body: 'Twórz własne wpisy gatunków i języków — oraz przeglądaj i dostosowuj reguły harmonizacji. Własne wpisy pojawiają się natychmiast w filtrach biblioteki, w edytorze i w Metadata Studio.',
+          details: 'Po co własne wpisy? Wbudowane listy nie obejmują wszystkiego („Schlager”, „K-Pop”, dialekt …). Twoje wpisy:\n• pojawiają się natychmiast w filtrach biblioteki\n• są do wyboru w edytorze i w Metadata Studio\n• są respektowane przez harmonizację (reguły je uwzględniają)\n\nUsuwanie też działa — piosenki zachowują wpis, aż zostanie ponownie przypisany.\n\nW sekcji „Harmonizacja oparta na regułach” widzisz każdą regułę harmonizacji studia (np. „Bubblegum Pop → Pop”) i możesz zmieniać cele, wyłączać reguły lub tworzyć własne.',
+        },
+        videoLinks: {
+          title: 'Osadzanie linków do wideo 🎬',
+          body: 'Piosenki nie potrzebują własnego pliku wideo: kliknij teraz panel metadanych w prawym górnym rogu — w środku znajdziesz pole „Wideo” na linki do wideo z dużych platform.',
+          details: 'Jak dotrzeć do linku wideo:\n1. Otwórz piosenkę w edytorze (samouczek właśnie jedną otworzył).\n2. Otwórz panel metadanych przez ikonę ⚙ w prawym górnym rogu.\n3. W części z informacjami o piosence: pole „Wideo” (#VIDEO:/#SOURCE:) — wklej tam link.\n\nNastępny krok pokazuje pole na żywo.',
+        },
+        videoUrl: {
+          title: 'Linki do wideo: YouTube i spółka 📺',
+          body: 'Wklej tu link do wideo piosenki: YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico — albo bezpośredni URL wideo (.mp4) albo nazwę pliku lokalnego.',
+          details: 'Wszystko, co przyjmuje pole:\n• Linki z dużych platform wideo: YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico — w grze wideo odtwarza się jako osadzony odtwarzacz, bez pobierania.\n• Bezpośrednie URL-e wideo (.mp4, .webm, .avi, .mkv) i pełne kody do osadzenia (np. VK „Embed”).\n• Lokalne pliki wideo: wystarczy wpisać nazwę pliku.\n\nPrzy zapisie wszystko jest rozdzielane automatycznie: prawdziwe pliki wideo trafiają do #VIDEO:, URL-e wideo do #SOURCE:.\n\nAudio: jeśli piosenka ma własny plik audio, wideo z platformy pozostaje wyciszone (plik audio zapewnia dźwięk i punktację) — bez osobnego pliku audio dźwięk zapewnia platforma. Dla wideo z platform streamingowych nie ma eksportu instrumentalnego.\n\nJeśli wideo i nuty się rozjeżdżają, pole „Przesunięcie wideo” poniżej koryguje przesunięcie.',
         },
         shortcuts: {
           title: 'Skróty',

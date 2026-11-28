@@ -108,6 +108,16 @@ export const basicTour: TourDefinition = {
           target: '[data-testid^="party-mode-"]',
           placement: 'bottom',
         },
+        {
+          // R115: Motto-Party — das ganze Spiel auf ein Motto stellen
+          // (Settings → Motto-Party); live im Motto-Tab der Einstellungen.
+          id: 'mottoParty',
+          navigate: 'settings',
+          action: 'settings-open-tab',
+          settingsTab: 'motto',
+          target: '[data-testid="settings-intro-motto"]',
+          placement: 'bottom',
+        },
       ],
     },
     {

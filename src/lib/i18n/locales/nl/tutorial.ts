@@ -101,6 +101,11 @@ export const tutorialTranslations = {
           body: 'Hier kies je de partymodus: Battle Royale (laatste overeind), Geef de Mic, toernooi (schema), medley en meer.\n\nElke kaart toont wat je kunt verwachten — één klik opent de spelersselectie.',
           details: 'Na het klikken op een moduskaart volgt de spelersselectie: kies profielen (of verbind companion-apparaten) en stel daarna teamgroottes, rondeaantallen of tijdslimieten in, afhankelijk van de modus.\n\nThemaparty-tip: wanneer er een thema actief staat in de instellingen (bijv. "Feest van de jaren 80"), trekt elke nummerselectie in de partymodus automatisch alleen uit passende nummers — het feest blijft in het thema.',
         },
+        mottoParty: {
+          title: 'Themaparty 🎈',
+          body: 'Zet de hele game in het teken van één thema (bijv. "Feest van de jaren 80"): hier onder Instellingen → Themaparty combineer je genre, taal en tijdperk — met een actief thema vinden je gasten alleen nog passende nummers.',
+          details: 'Wat het thema met de game doet:\n• Zolang het actief is, vervangt het thema ALLE zoekvelden en filters — bibliotheek, nummerselectie in de partymodus en companion-app putten alleen nog uit de themapoel.\n• Je gasten kunnen simpelweg geen verkeerd nummer kiezen — perfect voor thema-avonden.\n• Combineer vrij met EN-logica: genre (bijv. rock) + taal (bijv. Engels) + tijdperk (bijv. 1980–1989).\n• Gespeelde nummers en highscores blijven onaangeroerd; deactivateer het thema en alles keert direct terug naar de normale weergave.\n\nTip: de instellingenrondleiding (hoofdstuk "Bibliotheek & Thema") legt het tabblad nog uitgebreider uit.',
+        },
         jukeboxCard: {
           title: 'Jukebox',
           body: 'Karaoke zonder competitie: bouw afspeellijsten, zet nummers klaar, deel favorieten. De perfecte achtergrondamuseur.',
@@ -147,7 +152,8 @@ export const tutorialTranslations = {
         entry: 'Binnenkomen',
         layout: 'Opbouw',
         notes: 'Noten bewerken',
-        extras: 'Extra\'s & harmoniseren',
+        metadataStudio: 'Metadata Studio',
+        extras: 'Extra\'s & sneltoetsen',
       },
       steps: {
         welcome: {
@@ -208,7 +214,22 @@ export const tutorialTranslations = {
         metadataStudio: {
           title: 'Metadata Studio',
           body: 'De harmonisatieturbo: AI- en regelsuggesties voor genre, taal en jaar — met eerst beluisteren dan toewijzen, handmatige fijnafstelling en een revisiewachtrij voor twijfelgevallen.',
-          details: 'De studio-workflow:\n1. "Alle nummers analyseren" — de regelengine (bestandspaden, tags) en optioneel AI stellen genre/taal/jaar voor.\n2. Suggesties dragen zekerheid: groen = zeker, geel = herzien.\n3. Beluisteren: op een nummer klikken speelt een fragment — suggesties snel verifiëren.\n4. Individueel toewijzen of "alle groenen toepassen".\n\nDe revisiewachtrij verzamelt twijfelgevallen voor later — er raakt niets kwijt.',
+          details: 'De studio-workflow:\n1. "Alle nummers analyseren" — de regelengine (bestandspaden, tags) en optioneel AI stellen genre/taal/jaar voor.\n2. Suggesties dragen zekerheid: groen = zeker, geel = herzien.\n3. Beluisteren: op een nummer klikken speelt een fragment — suggesties snel verifiëren.\n4. Individueel toewijzen of "alle groenen toepassen".\n\nDe revisiewachtrij verzamelt twijfelgevallen voor later — er raakt niets kwijt.\n\nNaast genre/taal/jaar markeert de studio ook nummers met ontbrekende video, hoes of achtergrond ("No Video"-filter boven de lijst) — hoe je videolinks van de grote platforms insluit, laten de volgende stappen zien.',
+        },
+        studioSettings: {
+          title: 'Studio-instellingen ⚙️',
+          body: 'Maak je eigen genre- en taalitems aan — en bekijk en pas de harmonisatieregels aan. Eigen items verschijnen direct in de bibliotheekfilters, in de editor en in de Metadata Studio.',
+          details: 'Waarom eigen items? De ingebouwde lijsten dekken niet alles ("Schlager", "K-Pop", dialect …). Je eigen items:\n• verschijnen direct in de bibliotheekfilters\n• zijn kiesbaar in de editor en de Metadata Studio\n• worden gerespecteerd door de harmonisatie (regels houden er rekening mee)\n\nVerwijderen kan ook — nummers behouden het item tot het opnieuw wordt toegewezen.\n\nOnder "Regelgebaseerde harmonisatie" zie je elke regel van de studioharmonisatie (bijv. "Bubblegum Pop → Pop") en kun je doelen wijzigen, regels uitschakelen of eigen regels aanmaken.',
+        },
+        videoLinks: {
+          title: 'Videolinks insluiten 🎬',
+          body: 'Nummers hebben geen eigen videobestand nodig: klik nu op het metadatapaneel rechtsboven — daarin vind je het veld "Video" voor videolinks van de grote videoplatforms.',
+          details: 'Zo kom je bij de videolink:\n1. Open een nummer in de editor (de rondleiding heeft er net één geopend).\n2. Open het metadatapaneel via het ⚙-icoon rechtsboven.\n3. In het nummerinfodeel van het paneel: het veld "Video" (#VIDEO:/#SOURCE:) — plak de link daar.\n\nDe volgende stap toont het veld live.',
+        },
+        videoUrl: {
+          title: 'Videolinks: YouTube & co 📺',
+          body: 'Plak hier de videolink van het nummer: YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico — of een directe videolink (.mp4) of een lokale bestandsnaam.',
+          details: 'Alles wat het veld accepteert:\n• Links van de grote videoplatforms: YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico — in het spel draait de video als ingesloten speler, zonder download nodig.\n• Directe videolinks (.mp4, .webm, .avi, .mkv) en volledige embedcodes (bijv. VK "Embed").\n• Lokale videobestanden: vul gewoon de bestandsnaam in.\n\nBij het opslaan wordt alles automatisch gesorteerd: echte videobestanden gaan naar #VIDEO:, videolinks naar #SOURCE:.\n\nAudio: heeft het nummer een eigen audiobestand, dan blijft de platformvideo gedempt (het audiobestand levert geluid en scoring) — zonder apart audiobestand levert het platform de audio. Voor video\'s van streamingplatforms wordt geen instrumentale export aangeboden.\n\nLopen video en noten uit de pas, dan corrigeert het veld "Videoverschil" hieronder de afwijking.',
         },
         shortcuts: {
           title: 'Sneltoetsen',

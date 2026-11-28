@@ -100,6 +100,11 @@ export const tutorialTranslations = {
           body: 'Här väljer du festläge: Battle Royale (sist kvar vinner), Ge över Micen, turnering (utslagsträd), medley och mer.\n\nVarje kort visar vad som väntar — ett klick öppnar spelarvalet.',
           details: 'Efter klick på ett lägeskort följer spelarvalet: välj profiler (eller anslut companion-enheter) och ställ sedan in lagstorlekar, antal omgångar eller tidsgränser beroende på läge.\n\nTemafest-tips: när ett tema är aktivt i inställningarna (t.ex. "80-talsfest") drar varje låtval i festläget automatiskt bara från matchande låtar — festen håller sig på temat.',
         },
+        mottoParty: {
+          title: 'Temafest 🎈',
+          body: 'Ställ in hela spelet på ett tema (t.ex. "80-talsfest"): här under Inställningar → Temafest kombinerar du genre, språk och era — med ett aktivt tema hittar dina gäster bara matchande låtar.',
+          details: 'Så temat påverkar spelet:\n• Medan det är aktivt ersätter temat ALLA sökfält och filter — biblioteket, låtvalet på festen och companion-appen drar bara från temapoolen.\n• Dina gäster kan helt enkelt inte välja fel låt — perfekt för temakvällar.\n• Kombinera fritt med OCH-logik: genre (t.ex. rock) + språk (t.ex. engelska) + era (t.ex. 1980–1989).\n• Spelade låtar och highscores lämnas orörda; avaktivera temat och allt återgår direkt till normalvyn.\n\nTips: inställningsrundturen (kapitlet "Bibliotek & Tema") förklarar fliken ännu mer i detalj.',
+        },
         jukeboxCard: {
           title: 'Jukebox',
           body: 'Karaoke utan tävling: bygg spellistor, köa låtar, dela favoriter. Den perfekta bakgrundsunderhållaren.',
@@ -146,7 +151,8 @@ export const tutorialTranslations = {
         entry: 'Vägen in',
         layout: 'Layout',
         notes: 'Redigera noter',
-        extras: 'Extras & harmonisering',
+        metadataStudio: 'Metadata-studio',
+        extras: 'Extras & kortkommandon',
       },
       steps: {
         welcome: {
@@ -207,7 +213,22 @@ export const tutorialTranslations = {
         metadataStudio: {
           title: 'Metadata-studion',
           body: 'Harmoniseringsturbon: AI- och regelbaserade förslag på genre, språk och år — med lyssna-före-tilldelning, manuell finjustering och en granskningskö för osäkra träffar.',
-          details: 'Studiens arbetsflöde:\n1. "Analysera alla låtar" — regelverket (filsökvägar, taggar) och valfritt AI föreslår genre/språk/år.\n2. Förslagen bär konfidens: grön = säker, gul = granska.\n3. Lyssna: ett klick på en låt spelar ett utdrag — verifiera förslag på snabbaste sätt.\n4. Tilldela en och en eller "applicera alla gröna".\n\nGranskningskön samlar osäkra träffar till senare — inget går förlorat.',
+          details: 'Studiens arbetsflöde:\n1. "Analysera alla låtar" — regelverket (filsökvägar, taggar) och valfritt AI föreslår genre/språk/år.\n2. Förslagen bär konfidens: grön = säker, gul = granska.\n3. Lyssna: ett klick på en låt spelar ett utdrag — verifiera förslag på snabbaste sätt.\n4. Tilldela en och en eller "applicera alla gröna".\n\nGranskningskön samlar osäkra träffar till senare — inget går förlorat.\n\nUtöver genre/språk/år flaggar studion även låtar utan video, omslag eller bakgrund ("No Video"-filtret ovanför listan) — hur du bäddar in videolänkar från de stora videoplattformarna visas i de kommande stegen.',
+        },
+        studioSettings: {
+          title: 'Studio-inställningar ⚙️',
+          body: 'Skapa egna genre- och språkposter — och se över och justera harmoniseringsreglerna. Egna poster dyker upp direkt i biblioteksfilter, editorn och Metadata-studion.',
+          details: 'Varför egna poster? De inbyggda listorna täcker inte allt ("Schlager", "K-Pop", dialekt …). Dina egna poster:\n• dyker upp direkt i biblioteksfilter\n• är valbara i editorn och Metadata-studion\n• respekteras av harmoniseringen (reglerna tar hänsyn till dem)\n\nRadering fungerar också — låtarna behåller posten tills den tilldelas om.\n\nUnder "Regelbaserad harmonisering" ser du varje regel i studions harmonisering (t.ex. "Bubblegum Pop → Pop") och kan ändra mål, inaktivera regler eller skapa egna.',
+        },
+        videoLinks: {
+          title: 'Bädda in videolänkar 🎬',
+          body: 'Låtar behöver ingen egen videofil: klicka nu på metadatapanelen uppe till höger — där inne hittar du fältet "Video" för videolänkar från de stora videoplattformarna.',
+          details: 'Så kommer du åt videolänken:\n1. Öppna en låt i editorn (rundturen öppnade just en).\n2. Öppna metadatapanelen via ⚙-ikonen uppe till höger.\n3. I låtinfodelen av panelen: fältet "Video" (#VIDEO:/#SOURCE:) — klistra in länken där.\n\nNästa steg visar fältet live.',
+        },
+        videoUrl: {
+          title: 'Videolänkar: YouTube m.m. 📺',
+          body: 'Klistra in låtens videolänk här: YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico — eller en direkt videolänk (.mp4) eller ett lokalt filnamn.',
+          details: 'Allt fältet accepterar:\n• Länkar från de stora videoplattformarna: YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico — i spelet spelas videon som en inbäddad spelare, ingen nedladdning behövs.\n• Direkta videolänkar (.mp4, .webm, .avi, .mkv) och kompletta inbäddningskoder (t.ex. VK "Embed").\n• Lokala videofiler: skriv bara in filnamnet.\n\nVid sparning sorteras allt automatiskt: riktiga videofiler hamnar i #VIDEO:, videolänkar i #SOURCE:.\n\nLjud: har låten en egen ljudfil förblir plattformsvideon avstängd (ljudfilen ger ljud och poängsättning) — utan en separat ljudfil ger plattformen ljudet. Ingen instrumental export erbjuds för videor från strömningsplattformar.\n\nDrar video och noter isär justerar fältet "Videoförskjutning" nedanför förskjutningen.',
         },
         shortcuts: {
           title: 'Kortkommandon',

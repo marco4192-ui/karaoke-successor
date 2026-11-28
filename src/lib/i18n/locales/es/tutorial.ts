@@ -99,6 +99,11 @@ export const tutorialTranslations = {
           body: 'Aquí eliges el modo de fiesta: Battle Royale (el último en pie), Pasa el Micrófono, torneo (bracket), medley y más.\n\nCada tarjeta muestra qué esperar — un clic abre la selección de jugadores.',
           details: 'Tras pulsar una tarjeta de modo llega la selección de jugadores: elige perfiles (o conecta dispositivos compañeros) y luego ajusta tamaños de equipo, número de rondas o límites de tiempo según el modo.\n\nConsejo para fiestas temáticas: con un tema activo en los ajustes (p. ej. "Fiesta 80s"), cada selección de canciones en el modo fiesta saca solo automáticamente canciones que encajan — la fiesta no se sale del tema.',
         },
+        mottoParty: {
+          title: 'Fiesta Temática 🎈',
+          body: 'Pon todo el juego bajo un tema (p. ej. "Fiesta 80s"): aquí, en Ajustes → Fiesta Temática, combinas género, idioma y época — con un tema activo, tus invitados solo encuentran canciones que encajan.',
+          details: 'Así afecta el tema al juego:\n• Mientras esté activo, el tema sustituye TODOS los campos de búsqueda y filtros — biblioteca, selección de canciones del modo fiesta y app compañera solo sacan del repertorio del tema.\n• Tus invitados sencillamente no pueden elegir una canción equivocada — perfecto para noches temáticas.\n• Combina libremente con lógica Y: género (p. ej. rock) + idioma (p. ej. inglés) + época (p. ej. 1980–1989).\n• Las canciones cantadas y las puntuaciones quedan intactas; desactiva el tema y todo vuelve al instante a la vista normal.\n\nConsejo: el tour de ajustes (capítulo "Biblioteca y tema") explica la pestaña con aún más detalle.',
+        },
         jukeboxCard: {
           title: 'Jukebox',
           body: 'Karaoke sin competición: crea listas, encola canciones, comparte tus favoritas. El perfecto animador de fondo.',
@@ -145,7 +150,8 @@ export const tutorialTranslations = {
         entry: 'Entrar',
         layout: 'Distribución',
         notes: 'Editar notas',
-        extras: 'Extras y armonizar',
+        metadataStudio: 'Estudio de Metadatos',
+        extras: 'Extras y atajos',
       },
       steps: {
         welcome: {
@@ -206,7 +212,22 @@ export const tutorialTranslations = {
         metadataStudio: {
           title: 'Estudio de Metadatos',
           body: 'El turbo de la armonización: sugerencias de IA y por reglas para género, idioma y año — con escucha antes de asignar, edición fina manual y cola de revisión para coincidencias dudosas.',
-          details: 'El flujo del estudio:\n1. "Analizar todas las canciones" — el motor de reglas (rutas de archivo, etiquetas) y opcionalmente la IA sugieren género/idioma/año.\n2. Las sugerencias traen nivel de confianza: verde = seguro, amarillo = revisar.\n3. Escucha: al hacer clic en una canción suena un fragmento — verifica las sugerencias por la vía rápida.\n4. Asigna individualmente o "aplicar todos los verdes".\n\nLa cola de revisión reúne las coincidencias dudosas para más tarde — no se pierde nada.',
+          details: 'El flujo del estudio:\n1. "Analizar todas las canciones" — el motor de reglas (rutas de archivo, etiquetas) y opcionalmente la IA sugieren género/idioma/año.\n2. Las sugerencias traen nivel de confianza: verde = seguro, amarillo = revisar.\n3. Escucha: al hacer clic en una canción suena un fragmento — verifica las sugerencias por la vía rápida.\n4. Asigna individualmente o "aplicar todos los verdes".\n\nLa cola de revisión reúne las coincidencias dudosas para más tarde — no se pierde nada.\n\nMás allá de género/idioma/año, el estudio también marca las canciones con vídeo, portada o fondo faltantes (filtro "No Video" sobre la lista) — cómo incrustar enlaces de vídeo de las grandes plataformas se muestra en los próximos pasos.',
+        },
+        studioSettings: {
+          title: 'Ajustes del estudio ⚙️',
+          body: 'Crea tus propias entradas de género e idioma — y consulta y ajusta las reglas de armonización. Las entradas propias aparecen al instante en los filtros de la biblioteca, en el editor y en el Estudio de Metadatos.',
+          details: '¿Por qué entradas propias? Las listas integradas no lo cubren todo ("Schlager", "K-Pop", dialecto …). Tus entradas:\n• aparecen al instante en los filtros de la biblioteca\n• se pueden elegir en el editor y en el Estudio de Metadatos\n• las respeta la armonización (las reglas las tienen en cuenta)\n\nBorrar también funciona — las canciones conservan la entrada hasta que se reasigna.\n\nEn "Armonización basada en reglas" ves cada regla de la armonización del estudio (p. ej. "Bubblegum Pop → Pop") y puedes cambiar destinos, desactivar reglas o crear las tuyas.',
+        },
+        videoLinks: {
+          title: 'Incrustar enlaces de vídeo 🎬',
+          body: 'Las canciones no necesitan su propio archivo de vídeo: haz clic ahora en el panel de metadatos de arriba a la derecha — dentro encontrarás el campo "Vídeo" para enlaces de vídeo de las grandes plataformas.',
+          details: 'Cómo llegar al enlace de vídeo:\n1. Abre una canción en el editor (el tour acaba de abrir una).\n2. Abre el panel de metadatos con el icono ⚙ de arriba a la derecha.\n3. En la parte de información de la canción del panel: el campo "Vídeo" (#VIDEO:/#SOURCE:) — pega ahí el enlace.\n\nEl siguiente paso muestra el campo en vivo.',
+        },
+        videoUrl: {
+          title: 'Enlaces de vídeo: YouTube y compañía 📺',
+          body: 'Pega aquí el enlace de vídeo de la canción: YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico — o una URL de vídeo directa (.mp4) o un nombre de archivo local.',
+          details: 'Todo lo que acepta el campo:\n• Enlaces de las grandes plataformas de vídeo: YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico — en el juego el vídeo corre como reproductor incrustado, sin descarga.\n• URLs de vídeo directas (.mp4, .webm, .avi, .mkv) y códigos de incrustación completos (p. ej. VK "Embed").\n• Archivos de vídeo locales: basta con escribir el nombre del archivo.\n\nAl guardar todo se ordena automáticamente: los archivos de vídeo reales van a #VIDEO:, las URLs de vídeo a #SOURCE:.\n\nAudio: si la canción tiene su propio archivo de audio, el vídeo de la plataforma se queda silenciado (el archivo de audio aporta sonido y puntuación) — sin archivo de audio aparte, la plataforma aporta el audio. Para vídeos de plataformas de streaming no se ofrece exportación instrumental.\n\nSi el vídeo y las notas se desfasan, el campo "Desfase de vídeo" de abajo ajusta el desfase.',
         },
         shortcuts: {
           title: 'Atajos',

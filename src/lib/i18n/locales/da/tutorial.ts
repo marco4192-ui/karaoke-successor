@@ -100,6 +100,11 @@ export const tutorialTranslations = {
           body: 'Her vælger du festtilstanden: Battle Royale (sidste sanger står tilbage), Pass the Mic, Tournament Mode (bracket), Medley Contest og mere.\n\nHvert kort viser, hvad der venter — ét klik åbner spillervalget.',
           details: 'Efter klik på et tilstandskort følger spillervalget: vælg profiler (eller forbind companion-enheder), og sæt derefter holdstørrelser, antal runder eller tidsgrænser alt efter tilstanden.\n\nTemafest-tip: når et tema er aktivt i indstillingerne (f.eks. "80\'er-fest"), trækker hvert sangvalg i festtilstanden automatisk kun fra matchende sange — festen holder sig på emnet.',
         },
+        mottoParty: {
+          title: 'Temafest 🎈',
+          body: 'Stil hele spillet på ét tema (f.eks. "80\'er-fest"): her under Indstillinger → Temafest kombinerer du genre, sprog og æra — med et aktivt tema finder dine gæster kun matchende sange.',
+          details: 'Sådan påvirker temaet spillet:\n• Mens det er aktivt, erstatter temaet ALLE søgefelter og filtre — bibliotek, sangvalg i festtilstanden og companion-appen trækker kun fra temapuljen.\n• Dine gæster kan simpelthen ikke vælge en forkert sang — perfekt til temaaftener.\n• Kombinér frit med AND-logik: genre (f.eks. rock) + sprog (f.eks. engelsk) + æra (f.eks. 1980–1989).\n• Spillede sange og highscores forbliver urørte; deaktivér temaet, og alt vender straks tilbage til den normale visning.\n\nTip: indstillings-rundturen (kapitlet "Bibliotek & Tema") forklarer fanen i endnu mere detalje.',
+        },
         jukeboxCard: {
           title: 'Jukebox',
           body: 'Karaoke uden konkurrence: byg spillelister, stil sange i kø, del favoritter. Den perfekte underholder i baggrunden.',
@@ -146,7 +151,8 @@ export const tutorialTranslations = {
         entry: 'Adgang',
         layout: 'Layout',
         notes: 'Noderedigering',
-        extras: 'Ekstra & harmonisering',
+        metadataStudio: 'Metadata Studio',
+        extras: 'Ekstra & genveje',
       },
       steps: {
         welcome: {
@@ -207,7 +213,22 @@ export const tutorialTranslations = {
         metadataStudio: {
           title: 'Metadata Studio',
           body: 'Harmoniserings-turboen: AI- og regel-forslag til genre, sprog og år — med lyt-før-tildeling, manuel finredigering og en revisionskø til usikre matches.',
-          details: 'Studiets arbejdsgang:\n1. "Analysér alle sange" — regelmotoren (filstier, tags) og eventuelt AI foreslår genre/sprog/år.\n2. Forslagene har konfidens: grøn = sikker, gul = gennemgå.\n3. Lyt: klik på en sang afspiller et uddrag — verificér forslagene på den hurtige måde.\n4. Tildel enkeltvis eller "anvend alle grønne".\n\nRevisionskøen samler usikre matches til senere — intet går tabt.',
+          details: 'Studiets arbejdsgang:\n1. "Analysér alle sange" — regelmotoren (filstier, tags) og eventuelt AI foreslår genre/sprog/år.\n2. Forslagene har konfidens: grøn = sikker, gul = gennemgå.\n3. Lyt: klik på en sang afspiller et uddrag — verificér forslagene på den hurtige måde.\n4. Tildel enkeltvis eller "anvend alle grønne".\n\nRevisionskøen samler usikre matches til senere — intet går tabt.\n\nUd over genre/sprog/år markerer studiet også sange med manglende video, cover eller baggrund ("No Video"-filteret over listen) — hvordan man indlejrer videolinks fra de store videoplatforme vises i de næste trin.',
+        },
+        studioSettings: {
+          title: 'Studiets indstillinger ⚙️',
+          body: 'Opret dine egne genre- og sprogposter — og se og justér harmoniseringsreglerne. Egne poster dukker op med det samme i biblioteksfiltrene, i editoren og i Metadata Studio.',
+          details: 'Hvorfor egne poster? De indbyggede lister dækker ikke alt ("Schlager", "K-Pop", dialekt …). Dine egne poster:\n• dukker op med det samme i biblioteksfiltrene\n• kan vælges i editoren og Metadata Studio\n• respekteres af harmoniseringen (reglerne tager højde for dem)\n\nSletning virker også — sangene beholder posten, indtil den tildeles igen.\n\nUnder "Regelbaseret harmonisering" ser du hver regel i studiets harmonisering (f.eks. "Bubblegum Pop → Pop") og kan ændre mål, deaktivere regler eller oprette dine egne.',
+        },
+        videoLinks: {
+          title: 'Indlejre videolinks 🎬',
+          body: 'Sange behøver ikke deres egen videofil: klik nu på metadatapanelet øverst til højre — derinde finder du feltet "Video" til videolinks fra de store videoplatforme.',
+          details: 'Sådan kommer du til videolinket:\n1. Åbn en sang i editoren (rundturen åbnede netop en).\n2. Åbn metadatapanelet via ⚙-ikonet øverst til højre.\n3. I sanginfo-delen af panelet: feltet "Video" (#VIDEO:/#SOURCE:) — indsæt linket der.\n\nNæste trin viser feltet live.',
+        },
+        videoUrl: {
+          title: 'Videolinks: YouTube m.m. 📺',
+          body: 'Indsæt sangens videolink her: YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico — eller en direkte video-URL (.mp4) eller et lokalt filnavn.',
+          details: 'Alt hvad feltet accepterer:\n• Links fra de store videoplatforme: YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico — i spillet kører videoen som en indlejret afspiller, uden download.\n• Direkte video-URL\'er (.mp4, .webm, .avi, .mkv) og komplette indlejningskoder (f.eks. VK "Embed").\n• Lokale videofiler: skriv blot filnavnet.\n\nVed gemning sorteres alt automatisk: ægte videofiler lander i #VIDEO:, video-URL\'er i #SOURCE:.\n\nLyd: Har sangen sin egen lydfil, forbliver platformvideoen muted (lydfilen leverer lyd og scoring) — uden en separat lydfil leverer platformen lyden. Instrumental-eksport tilbydes ikke for videoer fra streamingplatforme.\n\nHvis video og noder glider fra hinanden, justerer feltet "Videoforskydning" nedenfor forskydningen.',
         },
         shortcuts: {
           title: 'Genveje',

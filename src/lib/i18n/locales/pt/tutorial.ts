@@ -102,6 +102,11 @@ export const tutorialTranslations = {
           body: 'É aqui que se escolhe o modo de festa: Battle Royale (o último de pé vence), Passe o Microfone, torneio (chaveamento), medley e mais.\n\nCada cartão mostra o que esperar — um clique abre a seleção de jogadores.',
           details: 'Depois de clicar num cartão de modo vem a seleção de jogadores: escolha os perfis (ou conecte dispositivos Companion) e defina tamanho das equipes, número de rodadas ou limites de tempo, conforme o modo.\n\nDica de festa temática: com um tema ativo nas configurações (ex.: "Festa Anos 80"), toda seleção de músicas no modo festa sai automaticamente só das músicas compatíveis — a festa fica no tema.',
         },
+        mottoParty: {
+          title: 'Festa Temática 🎈',
+          body: 'Coloque todo o jogo num tema (ex.: "Festa Anos 80"): aqui, em Configurações → Festa Temática, você combina gênero, idioma e época — com um tema ativo, seus convidados só encontram músicas compatíveis.',
+          details: 'Como o tema afeta o jogo:\n• Enquanto ativo, o tema substitui TODOS os campos de busca e filtros — biblioteca, seleção de músicas da festa e app Companion só tiram do repertório do tema.\n• Seus convidados simplesmente não conseguem escolher uma música errada — perfeito para noites temáticas.\n• Combine à vontade com lógica AND: gênero (ex.: rock) + idioma (ex.: inglês) + época (ex.: 1980–1989).\n• Músicas tocadas e pontuações ficam intactas; desative o tema e tudo volta na hora à visão normal.\n\nDica: o tour de configurações (capítulo "Biblioteca e Tema") explica a aba com ainda mais detalhe.',
+        },
         jukeboxCard: {
           title: 'Jukebox',
           body: 'Karaokê sem competição: monte playlists, enfileire músicas, compartilhe favoritos. O entretenimento perfeito de fundo.',
@@ -148,7 +153,8 @@ export const tutorialTranslations = {
         entry: 'Entrando',
         layout: 'Layout',
         notes: 'Editando notas',
-        extras: 'Extras e harmonização',
+        metadataStudio: 'Metadata Studio',
+        extras: 'Extras e atalhos',
       },
       steps: {
         welcome: {
@@ -209,7 +215,22 @@ export const tutorialTranslations = {
         metadataStudio: {
           title: 'Metadata Studio',
           body: 'O turbo da harmonização: sugestões de IA e de regras para gênero, idioma e ano — com escuta antes de atribuir, edição fina manual e fila de revisão para os casos incertos.',
-          details: 'O fluxo do estúdio:\n1. "Analisar todas as músicas" — o motor de regras (caminhos de arquivo, tags) e opcionalmente a IA sugerem gênero/idioma/ano.\n2. As sugestões vêm com confiança: verde = certo, amarelo = revisar.\n3. Escuta: clicar numa música toca um trecho — verifique as sugestões na hora.\n4. Atribua individualmente ou "aplicar todos os verdes".\n\nA fila de revisão junta os casos incertos para depois — nada se perde.',
+          details: 'O fluxo do estúdio:\n1. "Analisar todas as músicas" — o motor de regras (caminhos de arquivo, tags) e opcionalmente a IA sugerem gênero/idioma/ano.\n2. As sugestões vêm com confiança: verde = certo, amarelo = revisar.\n3. Escuta: clicar numa música toca um trecho — verifique as sugestões na hora.\n4. Atribua individualmente ou "aplicar todos os verdes".\n\nA fila de revisão junta os casos incertos para depois — nada se perde.\n\nAlém de gênero/idioma/ano, o estúdio também marca as músicas com vídeo, capa ou fundo faltando (filtro "No Video" acima da lista) — como embutir links de vídeo das grandes plataformas é mostrado nos próximos passos.',
+        },
+        studioSettings: {
+          title: 'Configurações do estúdio ⚙️',
+          body: 'Crie suas próprias entradas de gênero e idioma — e veja e ajuste as regras de harmonização. Entradas personalizadas aparecem na hora nos filtros da biblioteca, no editor e no Metadata Studio.',
+          details: 'Por que entradas personalizadas? As listas embutidas não cobrem tudo ("Schlager", "K-Pop", dialeto …). Suas entradas:\n• aparecem na hora nos filtros da biblioteca\n• ficam selecionáveis no editor e no Metadata Studio\n• são respeitadas pela harmonização (as regras as consideram)\n\nExcluir também funciona — as músicas mantêm a entrada até ela ser reatribuída.\n\nEm "Harmonização baseada em regras" você vê cada regra da harmonização do estúdio (ex.: "Bubblegum Pop → Pop") e pode mudar destinos, desativar regras ou criar as suas.',
+        },
+        videoLinks: {
+          title: 'Embutir links de vídeo 🎬',
+          body: 'As músicas não precisam de um arquivo de vídeo próprio: clique agora no painel de metadados no canto superior direito — dentro dele você encontra o campo "Vídeo" para links de vídeo das grandes plataformas.',
+          details: 'Como chegar ao link de vídeo:\n1. Abra uma música no editor (o tour acabou de abrir uma).\n2. Abra o painel de metadados pelo ícone ⚙ no canto superior direito.\n3. Na parte de informações da música do painel: o campo "Vídeo" (#VIDEO:/#SOURCE:) — cole o link ali.\n\nO próximo passo mostra o campo ao vivo.',
+        },
+        videoUrl: {
+          title: 'Links de vídeo: YouTube & cia. 📺',
+          body: 'Cole aqui o link de vídeo da música: YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico — ou uma URL de vídeo direta (.mp4) ou um nome de arquivo local.',
+          details: 'Tudo o que o campo aceita:\n• Links das grandes plataformas de vídeo: YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico — no jogo o vídeo roda como player embutido, sem precisar de download.\n• URLs de vídeo diretas (.mp4, .webm, .avi, .mkv) e códigos de incorporação completos (ex.: VK "Embed").\n• Arquivos de vídeo locais: basta digitar o nome do arquivo.\n\nAo salvar, tudo é separado automaticamente: arquivos de vídeo de verdade vão para #VIDEO:, URLs de vídeo para #SOURCE:.\n\nÁudio: se a música tem seu próprio arquivo de áudio, o vídeo da plataforma fica mudo (o arquivo de áudio fornece som e pontuação) — sem um arquivo de áudio separado, a plataforma fornece o áudio. Não há exportação instrumental para vídeos de plataformas de streaming.\n\nSe vídeo e notas se descompassam, o campo "Desvio de vídeo" abaixo corrige o desvio.',
         },
         shortcuts: {
           title: 'Atalhos',

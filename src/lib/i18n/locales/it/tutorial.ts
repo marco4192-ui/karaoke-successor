@@ -102,6 +102,11 @@ export const tutorialTranslations = {
           body: 'È qui che si sceglie la modalità festa: Battle Royale (l\'ultimo in piedi vince), Passa il Microfono, torneo (tabellone), medley e altro.\n\nOgni scheda dice cosa aspettarsi — un clic apre la selezione dei giocatori.',
           details: 'Dopo il clic su una scheda segue la selezione dei giocatori: scegli i profili (o collega i dispositivi companion), poi imposta la dimensione delle squadre, il numero di round o i limiti di tempo in base alla modalità.\n\nConsiglio per le feste a tema: con un tema attivo nelle impostazioni (es. "Festa Anni 80"), ogni selezione di canzoni nella modalità festa attinge automaticamente solo dai brani coerenti — la festa resta in tema.',
         },
+        mottoParty: {
+          title: 'Festa a Tema 🎈',
+          body: 'Metti tutto il gioco a tema (es. "Festa Anni 80"): qui, in Impostazioni → Festa a Tema, combini genere, lingua ed epoca — con un tema attivo i tuoi ospiti trovano solo canzoni in tema.',
+          details: 'Come agisce il tema sul gioco:\n• Finché è attivo, il tema sostituisce TUTTI i campi di ricerca e i filtri — libreria, selezione canzoni della festa e app companion attingono solo dal serbatoio del tema.\n• I tuoi ospiti semplicemente non possono scegliere una canzone fuori tema — perfetto per le serate a tema.\n• Combina liberamente con logica AND: genere (es. rock) + lingua (es. inglese) + epoca (es. 1980–1989).\n• Canzoni suonate e punteggi restano intatti; disattiva il tema e tutto torna istantaneamente alla vista normale.\n\nConsiglio: il tour delle impostazioni (capitolo "Libreria e Tema") spiega la scheda ancora più nel dettaglio.',
+        },
         jukeboxCard: {
           title: 'Jukebox',
           body: 'Karaoke senza competizione: crea playlist, metti canzoni in coda, condividi i preferiti. L\'intrattenitore perfetto per la serata.',
@@ -148,7 +153,8 @@ export const tutorialTranslations = {
         entry: 'Per entrare',
         layout: 'Layout',
         notes: 'Modificare le note',
-        extras: 'Extra e armonizzazione',
+        metadataStudio: 'Metadata Studio',
+        extras: 'Extra e scorciatoie',
       },
       steps: {
         welcome: {
@@ -209,7 +215,22 @@ export const tutorialTranslations = {
         metadataStudio: {
           title: 'Metadata Studio',
           body: 'Il turbo dell\'armonizzazione: suggerimenti da AI e regole per genere, lingua e anno — con ascolto prima dell\'assegnazione, ritocco manuale e coda di revisione per i casi dubbi.',
-          details: 'Il flusso dello studio:\n1. "Analizza tutte le canzoni" — il motore di regole (percorsi dei file, tag) ed eventualmente l\'AI suggeriscono genere/lingua/anno.\n2. I suggerimenti arrivano con un livello di fiducia: verde = sicuro, giallo = da rivedere.\n3. Ascolto: un clic sulla canzone riproduce un frammento — verifichi i suggerimenti al volo.\n4. Assegna singolarmente oppure "applica tutti i verdi".\n\nLa coda di revisione raccoglie i casi dubbi per dopo — non si perde nulla.',
+          details: 'Il flusso dello studio:\n1. "Analizza tutte le canzoni" — il motore di regole (percorsi dei file, tag) ed eventualmente l\'AI suggeriscono genere/lingua/anno.\n2. I suggerimenti arrivano con un livello di fiducia: verde = sicuro, giallo = da rivedere.\n3. Ascolto: un clic sulla canzone riproduce un frammento — verifichi i suggerimenti al volo.\n4. Assegna singolarmente oppure "applica tutti i verdi".\n\nLa coda di revisione raccoglie i casi dubbi per dopo — non si perde nulla.\n\nOltre a genere/lingua/anno, lo studio segnala anche le canzoni con video, copertina o sfondo mancanti (filtro "No Video" sopra l\'elenco) — come incorporare link video dalle grandi piattaforme è mostrato nei prossimi passi.',
+        },
+        studioSettings: {
+          title: 'Impostazioni dello studio ⚙️',
+          body: 'Crea le tue voci di genere e lingua — e vedi e modifica le regole di armonizzazione. Le voci personalizzate compaiono all\'istante nei filtri della libreria, nell\'editor e nel Metadata Studio.',
+          details: 'Perché voci personalizzate? Le liste integrate non coprono tutto ("Schlager", "K-Pop", dialetto …). Le tue voci:\n• compaiono all\'istante nei filtri della libreria\n• sono selezionabili nell\'editor e nel Metadata Studio\n• sono rispettate dall\'armonizzazione (le regole le considerano)\n\nCancellare si può — le canzoni mantengono la voce finché non viene riassegnata.\n\nIn "Armonizzazione basata su regole" vedi ogni regola dell\'armonizzazione dello studio (es. "Bubblegum Pop → Pop") e puoi cambiare i target, disattivare regole o crearne di tue.',
+        },
+        videoLinks: {
+          title: 'Incorporare link video 🎬',
+          body: 'Le canzoni non hanno bisogno di un loro file video: clicca ora sul pannello dei metadati in alto a destra — al suo interno trovi il campo "Video" per i link video delle grandi piattaforme.',
+          details: 'Come arrivare al link video:\n1. Apri una canzone nell\'editor (il tour ne ha appena aperta una).\n2. Apri il pannello dei metadati tramite l\'icona ⚙ in alto a destra.\n3. Nella parte info canzone del pannello: il campo "Video" (#VIDEO:/#SOURCE:) — incolla lì il link.\n\nIl prossimo passo mostra il campo dal vivo.',
+        },
+        videoUrl: {
+          title: 'Link video: YouTube & co 📺',
+          body: 'Incolla qui il link video della canzone: YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico — oppure un URL video diretto (.mp4) o il nome di un file locale.',
+          details: 'Tutto ciò che il campo accetta:\n• Link dalle grandi piattaforme video: YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico — nel gioco il video gira come player incorporato, senza bisogno di download.\n• URL video diretti (.mp4, .webm, .avi, .mkv) e codici di incorporamento completi (es. VK "Embed").\n• File video locali: basta inserire il nome del file.\n\nAl salvataggio tutto viene smistato automaticamente: i file video veri finiscono in #VIDEO:, gli URL video in #SOURCE:.\n\nAudio: se la canzone ha un suo file audio, il video della piattaforma resta muto (il file audio fornisce suono e punteggio) — senza un file audio separato, la piattaforma fornisce l\'audio. Per i video delle piattaforme di streaming non è previsto l\'export strumentale.\n\nSe video e note vanno fuori sincrono, il campo "Offset video" qui sotto regola lo scarto.',
         },
         shortcuts: {
           title: 'Scorciatoie',

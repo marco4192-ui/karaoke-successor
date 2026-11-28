@@ -94,6 +94,55 @@ export const editorTour: TourDefinition = {
       ],
     },
     {
+      // R115: eigenes Kapitel unter dem Editor-Label — Studio selbst,
+      // seine Einstellungen (Settings → Metadaten Studio) und das Einbinden
+      // von Videolinks der großen Videoplattformen (Song-Info-Tab).
+      id: 'metadataStudio',
+      icon: '🎛️',
+      steps: [
+        {
+          id: 'metadataStudio',
+          navigate: 'editor',
+          // Metadata Studio lives in the LIST view (below the song grid):
+          // close an opened song first — never discarding unsaved changes.
+          action: 'editor-close-song',
+          target: '[data-testid="metadata-studio-toggle"]',
+          placement: 'top',
+        },
+        {
+          // Einstellungsmöglichkeiten des Studios: eigene Genres/Sprachen
+          // + Regel-Editor (Settings → Metadaten Studio).
+          id: 'studioSettings',
+          navigate: 'settings',
+          action: 'settings-open-tab',
+          settingsTab: 'taxonomy',
+          target: '[data-testid="settings-intro-taxonomy"]',
+          placement: 'bottom',
+        },
+        {
+          // Videolinks einbinden: Song öffnen + Metadaten-Panel aufklappen.
+          // clickToContinue klickt den echten Panel-Toggle — der nächste
+          // Schritt spotlightet dann das Video-URL-Feld (#song-video).
+          id: 'videoLinks',
+          navigate: 'editor',
+          action: 'editor-open-first-song',
+          target: '[data-testid="editor-panel-metadata-toggle"]',
+          placement: 'bottom',
+          clickToContinue: true,
+          skipIf: () => getAllSongs().length === 0,
+        },
+        {
+          // Das Video-URL-Feld im geöffneten Metadaten-Panel (Song-Info-Tab).
+          id: 'videoUrl',
+          navigate: 'editor',
+          action: 'editor-open-first-song',
+          target: '#song-video',
+          placement: 'left',
+          skipIf: () => getAllSongs().length === 0,
+        },
+      ],
+    },
+    {
       id: 'extras',
       icon: '✨',
       steps: [
@@ -103,15 +152,6 @@ export const editorTour: TourDefinition = {
           action: 'editor-open-first-song',
           target: '[data-testid="editor-panel-metadata-toggle"]',
           placement: 'bottom',
-        },
-        {
-          id: 'metadataStudio',
-          navigate: 'editor',
-          // Metadata Studio lives in the LIST view (below the song grid):
-          // close an opened song first — never discarding unsaved changes.
-          action: 'editor-close-song',
-          target: '[data-testid="metadata-studio-toggle"]',
-          placement: 'top',
         },
         {
           id: 'shortcuts',

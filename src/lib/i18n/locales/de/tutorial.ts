@@ -99,6 +99,11 @@ export const tutorialTranslations = {
           body: 'Hier wählt ihr den Party-Modus: Battle Royal (Last Man Standing), Gib-das-Mikro-weiter, Turnier (K.-o.-Baum), Medley und mehr.\\n\\nJede Karte zeigt, was dich erwartet — ein Klick startet die Spielerauswahl.',
           details: 'Nach dem Klick auf eine Modus-Karte folgt die Spielerauswahl: Ihr wählt Profile aus (oder verbindet Companion-Geräte), legt ggf. Team-Größen, Rundenanzahl oder Zeitlimits fest — je nach Modus.\n\nMotto-Party-Tipp: Wenn in den Einstellungen ein Motto aktiv ist (z. B. „80er Jahre Party"), greift jede Song-Auswahl im Party-Modus automatisch nur noch auf passende Songs zu — so bleibt die Party im Thema.',
         },
+        mottoParty: {
+          title: 'Motto-Party 🎈',
+          body: 'Das ganze Spiel auf ein Motto einstellen (z. B. „80er Jahre Party"): Hier unter Einstellungen → Motto-Party kombinierst du Genre, Sprache und Ära — bei aktivem Motto finden deine Gäste nur noch passende Songs.',
+          details: 'So wirkt sich das Motto aus:\n• Bei aktivem Motto ersetzt es ALLE Suchfelder und Filter — Bibliothek, Party-Song-Auswahl und Companion-App greifen nur noch auf den Motto-Pool zu.\n• Die Gäste können also gar nichts Falsches auswählen — ideal für Themenabende.\n• Kombinierbar per UND-Logik: Genre (z. B. Rock) + Sprache (z. B. Deutsch) + Ära (z. B. 1980–1989).\n• Gespielte Songs und Highscores bleiben unberührt; deaktivierst du das Motto, kehrt sofort alles zur normalen Ansicht zurück.\n\nTipp: Die Einstellungen-Tour (Kapitel „Bibliothek & Motto") erklärt den Tab noch ausführlicher.',
+        },
         jukeboxCard: {
           title: 'Jukebox',
           body: 'Karaoke ohne Wettkampf: Playlists bauen, Songs einreihen, Vorlieben teilen. Ideal als Hintergrund-Entertainer.',
@@ -145,7 +150,8 @@ export const tutorialTranslations = {
         entry: 'Einstieg',
         layout: 'Aufbau',
         notes: 'Noten bearbeiten',
-        extras: 'Extras & Harmonize',
+        metadataStudio: 'Metadaten Studio',
+        extras: 'Extras & Shortcuts',
       },
       steps: {
         welcome: {
@@ -206,7 +212,22 @@ export const tutorialTranslations = {
         metadataStudio: {
           title: 'Metadata Studio',
           body: 'Der Harmonize-Turbo: Datenbank- und Regel-Vorschläge für Genre, Sprache und Jahr — mit Vorhören vor dem Zuweisen, manueller Feinbearbeitung und Review-Queue für unklare Begriffe.',
-          details: 'Der Arbeitsablauf im Studio:\n1. „Starten“ — die Musikdatenbanken (iTunes/Deezer/MusicBrainz) und die Regel-Engine schlagen Genre/Sprache/Jahr vor.\n2. Jeder Vorschlag nennt seine Quelle (iTunes/Deezer/MusicBrainz).\n3. Vorhören: Klick auf den Song spielt einen Ausschnitt — so verifizierst du Vorschläge am schnellen Weg.\n4. Zuweisen einzeln oder „Alle übernehmen“.\n\nDie Review-Queue sammelt unklare Begriffe für später — du verlierst nichts.',
+          details: 'Der Arbeitsablauf im Studio:\n1. „Starten“ — die Musikdatenbanken (iTunes/Deezer/MusicBrainz) und die Regel-Engine schlagen Genre/Sprache/Jahr vor.\n2. Jeder Vorschlag nennt seine Quelle (iTunes/Deezer/MusicBrainz).\n3. Vorhören: Klick auf den Song spielt einen Ausschnitt — so verifizierst du Vorschläge am schnellen Weg.\n4. Zuweisen einzeln oder „Alle übernehmen“.\n\nDie Review-Queue sammelt unklare Begriffe für später — du verlierst nichts.\n\nAußer Genre/Sprache/Jahr zeigt das Studio auch Songs mit fehlendem Video, Cover oder Hintergrund an („No Video“-Filter oben in der Liste) — wie du Videolinks der großen Videoplattformen einbindest, zeigen die nächsten Schritte.',
+        },
+        studioSettings: {
+          title: 'Studio-Einstellungen ⚙️',
+          body: 'Eigene Genre- und Sprach-Einträge anlegen — und die Regeln der Harmonisierung einsehen und anpassen. Eigene Einträge erscheinen sofort in den Bibliotheks-Filtern, im Editor und im Metadata Studio.',
+          details: 'Warum eigene Einträge? Standard-Listen decken nicht alles ab („Schlager“, „K-Pop“, „Mundart“ …). Eigene Einträge:\n• erscheinen sofort in den Bibliotheks-Filtern\n• stehen im Editor und Metadata Studio zur Auswahl\n• harmonisieren mit (Regeln respektieren sie)\n\nLöschen geht auch — Songs behalten den Eintrag, bis er neu zugewiesen wird.\n\nUnter „Regel-basierte Harmonisierung“ siehst du jede Regel der Studio-Harmonisierung (z. B. „Bubblegum Pop → Pop“) und kannst Ziele ändern, Regeln deaktivieren oder eigene anlegen.',
+        },
+        videoLinks: {
+          title: 'Videolinks einbinden 🎬',
+          body: 'Songs brauchen kein eigenes Video-File: Klicke jetzt oben rechts auf das Metadaten-Panel — darin findest du das Feld „Video“ für Videolinks der großen Videoplattformen.',
+          details: 'So kommst du an den Video-Link:\n1. Song im Editor öffnen (die Tour hat gerade einen geöffnet).\n2. Metadaten-Panel über das ⚙-Symbol oben rechts aufklappen.\n3. Im Song-Info-Teil des Panels: Feld „Video“ (#VIDEO:/#SOURCE:) — dort den Link einfügen.\n\nDer nächste Schritt zeigt das Feld live.',
+        },
+        videoUrl: {
+          title: 'Videolinks: YouTube & Co. 📺',
+          body: 'Hier fügst du den Videolink eines Songs ein: YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico — oder eine direkte Video-URL (.mp4) bzw. einen lokalen Dateinamen.',
+          details: 'Alles, was das Feld akzeptiert:\n• Links der großen Videoplattformen: YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico — im Spiel läuft das Video dann als eingebetteter Player, ganz ohne Download.\n• Direkte Video-URLs (.mp4, .webm, .avi, .mkv) und komplette Einbettungs-Codes (z. B. VK „Einbetten“).\n• Lokale Videodateien: einfach den Dateinamen eintragen.\n\nBeim Speichern wird automatisch richtig sortiert: echte Videodateien landen in #VIDEO:, Video-URLs in #SOURCE:.\n\nTon: Hat der Song eine eigene Audio-Datei, bleibt das Plattform-Video stumm (die Audio-Datei liefert Ton und Wertung) — ohne eigene Audio-Datei liefert die Plattform den Ton. Für Streaming-Plattform-Videos wird kein Instrumental-Export angeboten.\n\nLäuft Video und Noten auseinander, justiert das Feld „Video-Gap“ darunter den Versatz.',
         },
         shortcuts: {
           title: 'Shortcuts',

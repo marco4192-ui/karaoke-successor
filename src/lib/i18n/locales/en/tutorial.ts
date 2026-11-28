@@ -100,6 +100,11 @@ export const tutorialTranslations = {
           body: 'This is where you pick the party mode: Battle Royale (last man standing), Pass-the-Mic, tournament (bracket), medley and more.\n\nEach card shows what to expect — one click opens player selection.',
           details: 'After clicking a mode card, player selection follows: pick profiles (or connect companion devices), then set team sizes, round counts or time limits depending on the mode.\n\nTheme-party tip: when a theme is active in the settings (e.g. "80s Party"), every song selection in party mode automatically draws only from matching songs — the party stays on topic.',
         },
+        mottoParty: {
+          title: 'Theme party 🎈',
+          body: 'Put the whole game on one theme (e.g. "80s Party"): here under Settings → Theme Party you combine genre, language and era — with an active theme your guests only ever find matching songs.',
+          details: 'How the theme affects the game:\n• While active, the theme replaces ALL search fields and filters — library, party song selection and companion app only draw from the theme pool.\n• Your guests simply cannot pick a wrong song — perfect for themed nights.\n• Combine freely with AND logic: genre (e.g. rock) + language (e.g. German) + era (e.g. 1980–1989).\n• Played songs and highscores stay untouched; deactivate the theme and everything instantly returns to the normal view.\n\nTip: the settings tour (chapter "Library & Theme") explains the tab in even more detail.',
+        },
         jukeboxCard: {
           title: 'Jukebox',
           body: 'Karaoke without competition: build playlists, queue songs, share favourites. The perfect background entertainer.',
@@ -146,7 +151,8 @@ export const tutorialTranslations = {
         entry: 'Getting in',
         layout: 'Layout',
         notes: 'Editing notes',
-        extras: 'Extras & harmonize',
+        metadataStudio: 'Metadata Studio',
+        extras: 'Extras & Shortcuts',
       },
       steps: {
         welcome: {
@@ -207,7 +213,22 @@ export const tutorialTranslations = {
         metadataStudio: {
           title: 'Metadata Studio',
           body: 'The harmonize turbo: music database and rule suggestions for genre, language and year — with listen-before-assign, manual fine-editing and a review queue for unclear terms.',
-          details: 'The studio workflow:\n1. "Run" — the music databases (iTunes/Deezer/MusicBrainz) and the rule engine suggest genre/language/year.\n2. Every suggestion names its source (iTunes/Deezer/MusicBrainz).\n3. Listen: clicking a song plays a snippet — verify suggestions the quick way.\n4. Assign individually or "apply all".\n\nThe review queue collects unclear terms for later — nothing gets lost.',
+          details: 'The studio workflow:\n1. "Run" — the music databases (iTunes/Deezer/MusicBrainz) and the rule engine suggest genre/language/year.\n2. Every suggestion names its source (iTunes/Deezer/MusicBrainz).\n3. Listen: clicking a song plays a snippet — verify suggestions the quick way.\n4. Assign individually or "apply all".\n\nThe review queue collects unclear terms for later — nothing gets lost.\n\nBeyond genre/language/year the studio also flags songs with a missing video, cover or background ("No Video" filter above the list) — how to embed video links from the big video platforms is shown in the next steps.',
+        },
+        studioSettings: {
+          title: 'Studio settings ⚙️',
+          body: 'Create your own genre and language entries — and view and adjust the harmonization rules. Custom entries appear instantly in the library filters, the editor and the Metadata Studio.',
+          details: 'Why custom entries? The built-in lists do not cover everything ("Schlager", "K-Pop", dialect …). Your own entries:\n• appear instantly in the library filters\n• are selectable in the editor and Metadata Studio\n• are respected by harmonization (rules honor them)\n\nDeleting works too — songs keep the entry until it is reassigned.\n\nUnder "Rule-based harmonization" you see every rule of the studio harmonization (e.g. "Bubblegum Pop → Pop") and can change targets, disable rules or create your own.',
+        },
+        videoLinks: {
+          title: 'Embedding video links 🎬',
+          body: 'Songs do not need their own video file: click the metadata panel at the top right now — inside it you will find the "Video" field for video links from the big video platforms.',
+          details: 'How to get to the video link:\n1. Open a song in the editor (the tour just opened one).\n2. Open the metadata panel via the ⚙ icon at the top right.\n3. In the song info part of the panel: the "Video" field (#VIDEO:/#SOURCE:) — paste the link there.\n\nThe next step shows the field live.',
+        },
+        videoUrl: {
+          title: 'Video links: YouTube & Co. 📺',
+          body: 'Paste the song\'s video link here: YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico — or a direct video URL (.mp4) or a local file name.',
+          details: 'Everything the field accepts:\n• Links from the big video platforms: YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico — in the game the video runs as an embedded player, no download needed.\n• Direct video URLs (.mp4, .webm, .avi, .mkv) and complete embed codes (e.g. VK "Embed").\n• Local video files: just enter the file name.\n\nOn save everything is sorted automatically: real video files go into #VIDEO:, video URLs into #SOURCE:.\n\nAudio: if the song has its own audio file, the platform video stays muted (the audio file provides sound and scoring) — without a separate audio file the platform provides the audio. No instrumental export is offered for streaming platform videos.\n\nIf video and notes drift apart, the "Video Gap" field below adjusts the offset.',
         },
         shortcuts: {
           title: 'Shortcuts',
