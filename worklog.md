@@ -1337,3 +1337,28 @@ Nutzer-Report: „das Spiel stockt nur noch, gar kein smoother Notenlauf mehr. E
 - Umgesetzt: YIN-Cadence 30 Hz überall (Root Cause des Sing-Stockens — NS-off-Regressionsfolge aus R110), Pitch-Pull-Nur-bei-Companion, kein Poll-Auftakt-Sturm. Push-First-Architektur (R111) bleibt unverändert: Socket.IO = Datenpfad, HTTP = reiner Liveness-Fallback.
 - AKTIONEN NUTZER: Desktop-App neu bauen/laden (Client-Änderungen) und beim nächsten Mic-Gesang prüfen: Notenlauf muss beim Singen glatt bleiben (YIN jetzt 30 Hz) und im Netzwerk-Tab dürfen im Desktop-Mic-Spiel KEINE getpitch-Requests mehr auftauchen.
 - Offen/Risiken: (a) Auf sehr schwacher Hardware kann 30-Hz-YIN (3–7 ms/Call) weiterhin spürbar sein — nächste Stufe wäre YIN in einen Web Worker (größerer Umbau); (b) Headless-Default „Companion" ohne Mic hält den 2-s-Liveness-Loop aktiv (legitim: das System kann nicht wissen, ob ein Handy kommt) — mit Desktop-Mic-Konfiguration komplett aus.
+
+---
+
+## R115 — Tutorial-Erweiterung: Kapitel „Metadaten Studio" (Editor) + Punkt „Motto-Party" (Party-Modi)
+
+**Task ID:** R115 · **Agent:** Z.ai Code · **Datum:** 28.11.
+
+### Task
+
+Nutzer-Wunsch: (1) Tutorial um den Punkt „Metadaten-Studio" ergänzen — platziert unter dem Editor-Label — inkl. Erklärung der Einstellungsmöglichkeiten unter Einstellungen sowie analog der Möglichkeit, Videolinks der bekannten großen Videoplattformen einzubinden. (2) Es fehlt der Punkt „Motto-Party", platziert unter den „Party-Modi".
+
+### Umsetzung
+
+- **Editor-Tour — neues Kapitel `metadataStudio` (🎛️)** zwischen „Noten bearbeiten" und „extras", 4 Schritte:
+  1. `metadataStudio` (aus extras hierher verschoben, unverändert — Studio-Toggle in der Editor-Listenansicht via editor-close-song).
+  2. `studioSettings` (NEU) — springt live in Einstellungen → Metadaten Studio (action `settings-open-tab`/taxonomy + Spotlight `settings-intro-taxonomy`); erklärt eigene Genre-/Sprach-Einträge (erscheinen sofort in Filtern/Editor/Studio; Löschen-Verhalten) + Regel-basierte Harmonisierung (Ziele ändern, Regeln deaktivieren, eigene anlegen).
+  3. `videoLinks` (NEU) — `editor-open-first-song` + Spotlight auf dem Metadaten-Panel-Toggle mit `clickToContinue` (Spotlight-Click wird auf den echten Toggle geforwarded → Panel klappt auf).
+  4. `videoUrl` (NEU) — Spotlight auf dem Video-URL-Feld (`#song-video`) im Song-Info-Tab; erklärt das Einbinden von Videolinks der großen Plattformen (YouTube, Dailymotion, Vimeo, Rutube, VK, Bilibili, Niconico), direkte Video-URLs (.mp4/.webm/.avi/.mkv), Einbettungs-Codes, #VIDEO:/#SOURCE:-Automatik, Ton-Logik (Plattform-Video stumm bei eigener Audio-Datei; Plattform liefert Ton ohne eigene Audio), Instrumental-Export-Gate bei Streaming-Videos, Video-Gap-Justage. Beide Schritte mit `skipIf` bei leerer Bibliothek (Kapitel endet dann nach Schritt 2 — verifiziert).
+- **Basic-Tour — Schritt `mottoParty`** im Party-Modi-Kapitel (jetzt 3 Schritte) nach `partyModes`: navigiert live in Einstellungen → Motto-Party (Spotlight `settings-intro-motto`), erklärt Genre/Sprache/Ära-Kombination per UND-Logik, Motto ersetzt ALLE Suchfelder/Filter (Bibliothek, Party-Song-Auswahl, Companion-App), Gäste können nichts Falsches auswählen, Highscores unberührt, Deaktivierung stellt sofort alles zurück.
+- **Kapitel-Rename:** extras „Extras & Harmonize" → „Extras & Shortcuts" (Harmonize-Schritt ist ins eigene Kapitel gezogen; übrig bleiben panels/shortcuts/finish).
+- **i18n:** de+en neu (Chapters + 4 neue Steps + metadataStudio-Details um No-Video/Cover/Background-Badge-Absatz mit Videolink-Überleitung erweitert); 14 Locales per Subagent (Task r115-i18n): Kapitel-Label = jeweiliger Settings-Tab-Name (settingsTabs.taxonomy verbatim, z. B. zh 元数据工作室, ru Студия метаданных), Motto-Party-Name je Locale aus settings.steps.motto.title übernommen, extras-Übersetzung, 4 neue Steps + Details-Anhang; Quote-Stil/\n-Escapes je Datei beibehalten.
+
+### Verifikation
+
+TSC 0 · Lint 0 Errors (895 Warnings = exakt Bestandsniveau, per Stash-Baseline-Vergleich verifiziert) · Browser-E2E (DE-UI): Hilfemenü zeigt Editor-Tour mit 🎛️ Metadaten Studio (4 Schritte) zwischen „Noten bearbeiten" und „Extras & Shortcuts" (3 Schritte), Party-Modi-Kapitel jetzt 3 Schritte; kompletter Kapiteldurchlauf: 1/4 Studio-Spotlight, 2/4 Settings→Metadaten-Studio-Tab öffnet live, 3/4 Song offen + Panel-Toggle-Spotlight mit „Jetzt anklicken" (Klick öffnet echtes Panel), 4/4 #song-video-Feld mit gespeicherter YouTube-URL spotlighted; Party-Kapitel 3/3 Motto-Party mit live geöffnetem Motto-Tab + „Mehr erfahren"-Ausklapp; keine Page-Errors, dev.log sauber. QA-Notiz: Der im Worklog dokumentierte Converter-Import (public/qa-test.txt) existiert nicht mehr — Test-Song stattdessen über Editor → Neuer Song (YouTube-URL) + „Speichern & Beenden" erzeugt und in der Bibliothek belassen (agent-browser-Profil).
